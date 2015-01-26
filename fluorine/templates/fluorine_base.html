@@ -1,0 +1,66 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    
+    {% if jquery_include %}
+        <script type="text/javascript"
+		    src="/assets/frappe/js/lib/jquery/jquery.min.js"></script>
+    {% endif %}
+    
+    <script type="text/javascript"
+	    src="/assets/fluorine/js/before_fluorine_helper.js"></script>
+    
+    {% if developer_mode %}
+	    <script type="text/javascript"
+		    src="/assets/fluorine/js/meteor.devel.js"></script>
+	        <script type="text/javascript">
+                {%- for spacetemp in compiled_spacebars_js %}
+                    {{ spacetemp }}
+                {%- endfor -%}
+            </script>
+    {% else %}
+	    <script type="text/javascript"
+		    src="/assets/js/meteor.js"></script>
+    {% endif %}
+    
+    <script type="text/javascript"
+	    src="/assets/fluorine/js/after_fluorine_helper.js"></script>
+    
+    {% block head %}
+    <link rel="stylesheet" href="style.css" />
+    <title>{% block title %}{% endblock %} - My Webpage</title>
+    {% endblock %}
+    
+	{%- for link in web_include_css %}
+	<link type="text/css" rel="stylesheet" href="{{ link }}">
+	{%- endfor -%}
+    
+	{%- for link in web_include_js %}
+	<script type="text/javascript" src="{{ link }}"></script>
+	{%- endfor -%}
+    
+	{%- for link in spacebars_include_js %}
+	<script type="text/spacebars" src="{{ link }}" name="{{ name }}"></script>
+	{%- endfor -%}
+    
+	{%- for name in spacebars_scripts_js %}
+	<script type="text/spacebars" name="{{ name }}">
+	    {{ spacebars_scripts_js_content }}
+	</script>
+	{%- endfor -%}
+    
+	{%- for link in client_hooks_js %}
+        <script type="text/javascript" src="{{ link }}"></script>
+	{%- endfor -%}
+
+    
+</head>
+<body>
+    <div id="content">{% block content %} {{ content or "" }} {% endblock %}</div>
+    <div id="footer">
+        {% block footer %}
+        &copy; Copyright 2008 by <a href="http://domain.invalid/">you</a>.
+        {% endblock %}
+    </div>
+</body>

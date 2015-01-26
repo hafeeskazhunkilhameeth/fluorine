@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include fluorine *.css
+recursive-include fluorine *.csv
+recursive-include fluorine *.html
+recursive-include fluorine *.ico
+recursive-include fluorine *.js
+recursive-include fluorine *.json
+recursive-include fluorine *.md
+recursive-include fluorine *.png
+recursive-include fluorine *.py
+recursive-include fluorine *.svg
+recursive-include fluorine *.txt
+recursive-exclude fluorine *.pyc

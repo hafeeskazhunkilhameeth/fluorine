@@ -1,0 +1,9 @@
+{
+	"js/before_fluorine_helper.js": [
+		"public/js/before_fluorine_helper.js"
+	],
+    "js/after_fluorine_helper.js":[
+        "public/js/after_fluorine_helper.js"
+    ]
+}
+
