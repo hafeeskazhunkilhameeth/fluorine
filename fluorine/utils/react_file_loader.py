@@ -31,7 +31,7 @@ def get_js_to_client():
 	files_in_lib, files_to_read, main_files = read_client_files(fluorine_temp_path)
 	hooks_js = move_to_public(files_in_lib, files_to_read, main_files)
 
-	#remove_directory(fluorine_temp_path)
+	remove_directory(fluorine_temp_path)
 
 	return hooks_js
 
