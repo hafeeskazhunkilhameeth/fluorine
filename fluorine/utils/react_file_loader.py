@@ -29,14 +29,14 @@ def get_js_to_client():
 	frappe.create_folder(fluorine_temp_path)
 	copy_client_files(fluorine_temp_path)
 	files_in_lib, files_to_read, main_files = read_client_files(fluorine_temp_path)
-	hooks_js = move_to_public(fluorine_temp_path, files_in_lib, files_to_read, main_files)
+	hooks_js = move_to_public(files_in_lib, files_to_read, main_files)
 
-	remove_directory(fluorine_temp_path)
+	#remove_directory(fluorine_temp_path)
 
 	return hooks_js
 
 
-def move_to_public(fluorine_temp_path, files_in_lib, files_to_read, main_files):
+def move_to_public(files_in_lib, files_to_read, main_files):
 	#{"name":file, "path": path}
 	hooks_js = {"client_hooks_js":[]}
 	fpath = "/assets/fluorine/js/react"
@@ -74,7 +74,7 @@ def move_to_public(fluorine_temp_path, files_in_lib, files_to_read, main_files):
 	for f in reversed(files_to_read):
 		dest = os.path.join(fluorine_publicjs_path, f.get("name"))
 		#copy_file(f.get("path"), dest)
-		copy_with_wrapper(f.get("path"), dest)
+		copy_with_wrapper(f.get("path"), dest, use_wrapper=not f.get("compatibility", False))
 		hooks_js["client_hooks_js"].append(os.path.join(fpath, f.get("name")))
 		make_app_hook(where, f.get("name"), fpath)
 
@@ -89,9 +89,10 @@ def move_to_public(fluorine_temp_path, files_in_lib, files_to_read, main_files):
 	return hooks_js
 
 
-def copy_with_wrapper(src, dst):
+def copy_with_wrapper(src, dst, use_wrapper=True):
 	content = read(src)
-	content = wrapper(content)
+	if use_wrapper:
+		content = wrapper(content)
 	write(dst, content)
 	return content
 
