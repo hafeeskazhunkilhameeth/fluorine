@@ -8,7 +8,8 @@ import fluorine as fluor
 #import fluorine.utils.file as file
 from fluorine.utils import file
 
-react = {"Reactive Web": "web", "Reactive App": "app", "Both": "both"}
+#react = {"Reactive Web": "web", "Reactive App": "app", "Both": "both"}
+from fluorine.utils import react
 
 class FluorineReactivity(Document):
 	def on_update(self, method=None):

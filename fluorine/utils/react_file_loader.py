@@ -13,7 +13,8 @@ other folders deepest first
 files with main.* (start with main) are load last
 """
 
-react = {"Reactive Web": "web", "Reactive App": "app", "Both": "both"}
+from . import react
+#react = {"Reactive Web": "web", "Reactive App": "app", "Both": "both"}
 
 def copy_file(src, dst):
 	import shutil

@@ -6,6 +6,8 @@ import hashlib, os
 from . import file
 import copy
 
+react = {"Reactive Web": "web", "Reactive App": "app", "Both": "both"}
+
 def start_hash(rootDir):
 	hash = {}
 	for dirName, subdirList, fileList in os.walk(rootDir):
