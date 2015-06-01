@@ -48,6 +48,97 @@
    "label": "Base Template:", 
    "permlevel": 0, 
    "precision": ""
+  }, 
+  {
+   "fieldname": "column_break_4", 
+   "fieldtype": "Column Break", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
+   "fieldname": "meteor", 
+   "fieldtype": "Section Break", 
+   "label": "Meteor", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
+   "default": "1", 
+   "description": "Check to enter in develop mode.", 
+   "fieldname": "fluor_dev_mode", 
+   "fieldtype": "Check", 
+   "label": "Develop Mode", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
+   "default": "http://localhost", 
+   "description": "Enter the url/ip to use for meteor host.", 
+   "fieldname": "fluor_meteor_host", 
+   "fieldtype": "Data", 
+   "label": "Meteor Host", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
+   "default": "3000", 
+   "description": "Enter the port where meteor should connect.", 
+   "fieldname": "fluor_meteor_port", 
+   "fieldtype": "Int", 
+   "label": "Meteor Port", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
+   "fieldname": "mongodb", 
+   "fieldtype": "Section Break", 
+   "label": "MongoDB", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
+   "default": "http://localhost", 
+   "description": "Enter the url of mongoldb.", 
+   "fieldname": "fluor_mongo_host", 
+   "fieldtype": "Data", 
+   "label": "MongoDB Host", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
+   "default": "27017", 
+   "description": "Enter the port where mongo should connect.", 
+   "fieldname": "fluor_mongo_port", 
+   "fieldtype": "Data", 
+   "label": "MongoDB Port", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
+   "default": "fluorine", 
+   "description": "Enter the mongo database name.", 
+   "fieldname": "fluor_mongo_database", 
+   "fieldtype": "Data", 
+   "label": "MongoDB Database", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
+   "fieldname": "make_meteor_file", 
+   "fieldtype": "Section Break", 
+   "hidden": 1, 
+   "label": "Make Meteor File", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
+   "description": "Make a meteor.js file.", 
+   "fieldname": "fluor_make_meteor_file_btn", 
+   "fieldtype": "Button", 
+   "hidden": 0, 
+   "label": "Make Meteor File", 
+   "permlevel": 0, 
+   "precision": ""
   }
  ], 
  "hide_heading": 0, 
@@ -58,7 +149,7 @@
  "is_submittable": 0, 
  "issingle": 1, 
  "istable": 0, 
- "modified": "2015-01-08 12:13:07.690366", 
+ "modified": "2015-05-27 16:58:49.956210", 
  "modified_by": "Administrator", 
  "module": "Fluorine", 
  "name": "Fluorine Reactivity", 

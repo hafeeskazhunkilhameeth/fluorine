@@ -36,7 +36,8 @@ class MyFileSystemLoader(FileSystemLoader):
 	def get_source(self, environment, template):
 		print "new get_source templates {}".format(template)
 		found = False
-		#print "list_templates(extensions=None, filter_func=None) {}".format()
+		contents = filename = uptodate = None
+
 		for app in self.apps:
 			#temp = template.split("/")
 			#temp.insert(0, app + "/" + app)

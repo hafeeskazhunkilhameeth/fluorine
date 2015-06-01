@@ -190,11 +190,13 @@ def compile_spacebars_templates(context):
 			templates.append({"name":name, "code": m.group(1)})
 
 	path = get_path_reactivity()
-	subprocess.Popen(["node", path + "/compile_spacebars_js.js", path + "/fluorine_program.json"], cwd=path, shell=False, close_fds=True)
+	print "path in compile_spacebars_templates {}".format(os.path.join(path, "compile_spacebars_js.js"))
+	node = subprocess.Popen(["node", os.path.join(path, "server/compile_spacebars_js.js"), os.path.join(path, "fluorine_program.json")], cwd=os.path.join(path, "server"), shell=False, close_fds=True)
 	c = zerorpc.Client()
 	c.connect("tcp://127.0.0.1:4242")
 	#for key, val in out.items():
 	compiled_templates = c.compile(templates)
+	node.kill()
 
 	return compiled_templates
 #print "In override spacebars"

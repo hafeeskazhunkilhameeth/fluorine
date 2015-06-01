@@ -2,11 +2,22 @@
 <html lang="en">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    
+    <meta charset="UTF-8">
     {% if jquery_include %}
         <script type="text/javascript"
 		    src="/assets/frappe/js/lib/jquery/jquery.min.js"></script>
     {% endif %}
+
+	<script type="text/javascript">
+		var __meteor_runtime_config__ = {
+			"meteorRelease": "{{ meteorRelease }}",
+			"ROOT_URL": "{{ meteor_root_url }}",
+			"ROOT_URL_PATH_PREFIX": "{{ meteor_url_path_prefix }}",
+			"autoupdateVersion": "{{ meteor_autoupdate_version }}",
+			"autoupdateVersionRefreshable": "{{ meteor_autoupdate_version_freshable }}",
+			"DDP_DEFAULT_CONNECTION_URL": "{{ meteor_ddp_default_connection_url }}"
+		}
+	</script>
     
     <script type="text/javascript"
 	    src="/assets/fluorine/js/before_fluorine_helper.js"></script>
@@ -60,7 +71,7 @@
     <div id="content">{% block content %} {{ content or "" }} {% endblock %}</div>
     <div id="footer">
         {% block footer %}
-        &copy; Copyright 2008 by <a href="http://domain.invalid/">you</a>.
+        &copy; Copyright 2015 by <a href="http://domain.invalid/">you</a>.
         {% endblock %}
     </div>
 </body>

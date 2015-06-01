@@ -1,7 +1,13 @@
 __author__ = 'luissaguas'
 
 import frappe, os, re
-import fluorine as fluor
+
+from fluorine.utils import file
+from fluorine.utils import fhooks
+from fluorine.utils import react
+from fluorine.utils import assets_public_path
+
+
 
 """
 client file loader
@@ -13,8 +19,6 @@ other folders deepest first
 files with main.* (start with main) are load last
 """
 
-from . import react
-#react = {"Reactive Web": "web", "Reactive App": "app", "Both": "both"}
 
 def copy_file(src, dst):
 	import shutil
@@ -39,31 +43,44 @@ def get_js_to_client():
 
 def move_to_public(files_in_lib, files_to_read, main_files):
 	#{"name":file, "path": path}
+	import fluorine
 	hooks_js = {"client_hooks_js":[]}
-	fpath = "/assets/fluorine/js/react"
+	fpath = assets_public_path
 
+	hooks = frappe.get_hooks(app_name="fluorine")
+	paths = fluorine.utils.get_js_paths()
+
+	def check_in_hook(name):
+		return name in hooks["app_include_js"]
 
 	def start_hook(where):
 		if where in ("both", "app"):
 			#if not hooks.web_include_js:
 			#	hooks["web_include_js"] = []
+			fhooks.remove_react_from_app_hook(paths, hooks=hooks)
+
+			print "start_hook app {}".format(hooks.app_include_js)
 			if not hooks.app_include_js:
-				hooks["app_include_js"] = []
+				hooks["app_include_js"] = paths
+			else:
+				hooks["app_include_js"].extend(paths)
 
 	def make_app_hook(where, name, path):
 		if where in ("both", "app"):
 			#hooks.web_include_js.append(os.path.join(path, name))
-			hooks["app_include_js"].append(os.path.join(path, name))
+			path = os.path.join(path, name)
+			if not check_in_hook(path):
+				hooks["app_include_js"].append(path)
 
-	hooks = frappe.get_hooks(app_name="fluorine")
 
 	fl = frappe.get_doc("Fluorine Reactivity")
 	where = react.get(fl.fluorine_reactivity, None)
 
 	start_hook(where)
 
-
 	fluorine_publicjs_path = os.path.join(frappe.get_app_path("fluorine"), "public", "js", "react")
+	#empty folder
+	file.remove_folder_content(fluorine_publicjs_path)
 
 	for f in reversed(files_in_lib):
 		dest = os.path.join(fluorine_publicjs_path, f.get("name"))
@@ -86,7 +103,8 @@ def move_to_public(files_in_lib, files_to_read, main_files):
 		hooks_js["client_hooks_js"].append(os.path.join(fpath, f.get("name")))
 		make_app_hook(where, f.get("name"), fpath)
 
-	fluor.save_batch_hook(hooks, frappe.get_app_path("fluorine") + "/hooks.py")
+	fhooks.save_batch_hook(hooks, frappe.get_app_path("fluorine") + "/hooks.py")
+
 	return hooks_js
 
 

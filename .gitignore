@@ -4,5 +4,6 @@
 *.swp
 tags
 react/
+reactivity/
 meteor.devel.js
 meteor.js

@@ -1,14 +1,10 @@
 from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
-import os
-
-import frappe
-
-import fluorine as fluor
-#import fluorine.utils
-#import fluorine.utils.file as file
-from fluorine.utils import file
+import os, subprocess
+from fluorine.utils import start_hash
+import file
+import fcache
 
 
 def check_jquery(hook, hooks):
@@ -39,7 +35,7 @@ def check_includes(hook, hooks):
 
 def update_includes(hook, iweb):
 	#d = file.read_file("hook_help.txt")
-	d = fluor.get_cached_value("hooks_helper")
+	d = fcache.get_cached_value("hooks_helper")
 
 	if not d:
 		return
@@ -50,7 +46,7 @@ def update_includes(hook, iweb):
 		iweb.insert(1, fweb[1])
 		if fweb[2:]:
 			iweb.extend(fweb[2:])
-		fluor.clear_frappe_caches()
+		fcache.clear_frappe_caches()
 	#print "hooks {} name {}".format(iweb, hook)
 
 """
@@ -99,10 +95,52 @@ def flourine_get_hooks(hook=None, default=None, app_name=None):
 frappe.get_hooks = flourine_get_hooks
 """
 
+def run_reactivity(path, version, mthost="http://localhost", mtport=3000, mghost="http://localhost", mgport=27017, mgdb="fluorine", restart=False):
+	#if make_meteor_config:
+	#make_meteor_config_file(mthost, mtport, version)
+	from . import is_open_port
+	if is_open_port() and not restart:
+		print "Port is open!"
+		return
+
+	import copy
+	print "Port is not open!"
+	environ = copy.copy(os.environ)
+	if not os.environ.get("FLUOR_METEOR_ROOT_URL", None):
+		#os.environ["ROOT_URL"] = "http://localhost"
+		environ["ROOT_URL"] = mthost.strip(' \t\n\r')#"http://localhost"
+	if not os.environ.get("FLUOR_METEOR_PORT", None):
+		#os.environ["PORT"] = str(3000)
+		environ["PORT"] = str(mtport)
+	if not os.environ.get("FLUOR_MONGO_URL", None):
+		#os.environ["MONGO_URL"] = "mongodb://localhost:27017/ekaiser"
+		mghost = mghost.replace("http://","").replace("mongodb://","").strip(' \t\n\r')
+		environ["MONGO_URL"] = "mongodb://" + mghost + ":" + str(mgport) + "/" + mgdb#"mongodb://localhost:27017/ekaiser"
+
+	#os.environ["AUTOUPDATE_VERSION"] = str(128)
+	environ["AUTOUPDATE_VERSION"] = str(version)
+
+	if restart:
+		#TODO - find a way to communicate with the process started with popen
+		print "kill react watch "
+		import zerorpc
+		try:
+			c = zerorpc.Client()
+			c.connect("tcp://127.0.0.1:5252")
+			c.stop_and_exit()
+		except:
+			print "stop and exit exception"
+	#subprocess.Popen(["node", path + "/main.js"], cwd=path, env=os.environ)
+	#react = subprocess.Popen(["node", path + "/main.js"], cwd=path, shell=False, close_fds=True, env=environ)
+	#react = subprocess.Popen(["node", path + "/rundevserver.js"], cwd=path, shell=False, close_fds=True, env=environ)
+	subprocess.Popen(["python", path + "/startfluorine.py", path + "/app"], cwd=path, shell=False, close_fds=True, env=environ)
+
+
 def start_reactivity():
+	from . import meteor_autoupdate_version
 	path = file.get_path_server_observe()
 	#file.observe_dir(path)
-	print fluor.utils.start_hash(path)
+	print start_hash(path)
 	path_reactivity = file.get_path_reactivity()
 	js_path = file.get_path_assets_js()
 	meteor_files = ("meteor.devel.js", "meteor.js")
@@ -111,14 +149,10 @@ def start_reactivity():
 	for f in meteor_files:
 		path_file = os.path.join(js_path, f)
 		if os.path.exists(path_file) and os.path.exists(boot_file):
-			file.run_reactivity(path_reactivity)
+			run_reactivity(path_reactivity, meteor_autoupdate_version())
 			break
 
-print "frappe.__file__ {}".format(os.getcwd())
-
-#for key, val in hooks.items():
-#	print key, val
-
+print "frappe.__file__ 2 {}".format(os.getcwd())
 
 import sys
 
