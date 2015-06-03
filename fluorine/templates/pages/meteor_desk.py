@@ -1,16 +1,37 @@
-__author__ = 'luissaguas'
+# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# MIT License. See license.txt
 
-import fluorine
-from fluorine.utils.spacebars_template import fluorine_build_context
-from fluorine.utils import file
-import fluorine.utils
+from __future__ import unicode_literals
+
 import frappe
+from fluorine.utils.spacebars_template import fluorine_build_context
+import fluorine.utils
+from fluorine.utils import get_Frappe_Version
+from fluorine.utils import file
 
+frappe_version = get_Frappe_Version()
+
+if frappe_version >=5:
+	import deskv5 as desk
+	#base_template_path = "templates/pages/deskv5.html"
+else:
+	import deskv4 as desk
+	#base_template_path = "templates/pages/deskv4.html"
+
+no_sitemap = desk.no_sitemap
+no_cache = desk.no_cache
+base_template_path = desk.base_template_path
 
 def get_context(context):
+	context.frappe_version = frappe_version
+	set_meteor_conetxt(context)
+	return desk.get_context(context)
 
-	print "fluorine get_context called again 3!!!"
 
+
+def set_meteor_conetxt(context):
+
+	print "fluorine get_context called again app !!!"
 	devmode = fluorine.utils.check_dev_mode()
 	frappe.local.fenv = None
 	frappe.local.floader = None
@@ -28,8 +49,8 @@ def get_context(context):
 	context.meteor_autoupdate_version_freshable = fluorine.utils.meteor_autoupdate_version_freshable()
 	context.meteor_ddp_default_connection_url = meteor_host
 
-	context.meteor_web = True
+	context.meteor_web = False
 	context.custom_template = doc.fluorine_base_template
-	context.whatfor = "common" if devmode else "web"
+	context.whatfor = "common" if devmode else "app"
 
-	return fluorine_build_context(context, "meteor_web")
+	return fluorine_build_context(context, "meteor_app")

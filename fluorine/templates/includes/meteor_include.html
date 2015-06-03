@@ -1,0 +1,48 @@
+
+<script type="text/javascript">
+		var __meteor_runtime_config__ = {
+			"meteorRelease": "{{ meteorRelease }}",
+			"ROOT_URL": "{{ meteor_root_url }}",
+			"ROOT_URL_PATH_PREFIX": "{{ meteor_url_path_prefix }}",
+			"autoupdateVersion": "{{ meteor_autoupdate_version }}",
+			"autoupdateVersionRefreshable": "{{ meteor_autoupdate_version_freshable }}",
+			"DDP_DEFAULT_CONNECTION_URL": "{{ meteor_ddp_default_connection_url }}"
+		}
+</script>
+
+
+<!--
+	Meteor Inlude Files
+-->
+ 	<script type="text/javascript"
+	    src="/assets/fluorine/js/before_fluorine_helper.js"></script>
+
+    {% if developer_mode %}
+	    <script type="text/javascript"
+		    src="/assets/fluorine/js/meteor_{{ whatfor }}.devel.js"></script>
+	        <script type="text/javascript">
+                {%- for spacetemp in compiled_spacebars_js %}
+                    {{ spacetemp }}
+                {%- endfor -%}
+            </script>
+    {% else %}
+	    <script type="text/javascript"
+		    src="/assets/fluorine/js/meteor_{{ whatfor }}.js"></script>
+    {% endif %}
+
+    <script type="text/javascript"
+	    src="/assets/fluorine/js/after_fluorine_helper.js"></script>
+
+	{%- for link in spacebars_include_js %}
+	<script type="text/spacebars" src="{{ link }}" name="{{ name }}"></script>
+	{%- endfor -%}
+
+	{%- for name in spacebars_scripts_js %}
+	<script type="text/spacebars" name="{{ name }}">
+	    {{ spacebars_scripts_js_content }}
+	</script>
+	{%- endfor -%}
+
+	{%- for link in client_hooks_js %}
+        <script type="text/javascript" src="{{ link }}"></script>
+	{%- endfor -%}

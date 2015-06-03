@@ -98,7 +98,10 @@ frappe.get_hooks = flourine_get_hooks
 def run_reactivity(path, version, mthost="http://localhost", mtport=3000, mghost="http://localhost", mgport=27017, mgdb="fluorine", restart=False):
 	#if make_meteor_config:
 	#make_meteor_config_file(mthost, mtport, version)
-	from . import is_open_port
+	import frappe
+	import os
+	import signal
+	from . import is_open_port, __file__
 	if is_open_port() and not restart:
 		print "Port is open!"
 		return
@@ -117,33 +120,43 @@ def run_reactivity(path, version, mthost="http://localhost", mtport=3000, mghost
 		mghost = mghost.replace("http://","").replace("mongodb://","").strip(' \t\n\r')
 		environ["MONGO_URL"] = "mongodb://" + mghost + ":" + str(mgport) + "/" + mgdb#"mongodb://localhost:27017/ekaiser"
 
-	#os.environ["AUTOUPDATE_VERSION"] = str(128)
 	environ["AUTOUPDATE_VERSION"] = str(version)
-
+	pidfile = os.path.join(os.path.dirname(__file__), "pids.txt")
 	if restart:
 		#TODO - find a way to communicate with the process started with popen
 		print "kill react watch "
-		import zerorpc
-		try:
-			c = zerorpc.Client()
-			c.connect("tcp://127.0.0.1:5252")
-			c.stop_and_exit()
-		except:
-			print "stop and exit exception"
+		if os.path.exists(pidfile):
+			f = frappe.get_file_json(pidfile)
+			pid = f.get("startfluorine")
+			try:
+				os.kill(pid, signal.SIGKILL)#signal.SIGQUIT
+				print "process with pid {} was killed".format(pid)
+			except:
+				print "process with pid {} was not killed".format(pid)
+		#import zerorpc
+		#try:
+		#	c = zerorpc.Client()
+		#	c.connect("tcp://127.0.0.1:5252")
+		#	c.stop_and_exit()
+		#except:
+		#	print "stop and exit exception"
 	#subprocess.Popen(["node", path + "/main.js"], cwd=path, env=os.environ)
 	#react = subprocess.Popen(["node", path + "/main.js"], cwd=path, shell=False, close_fds=True, env=environ)
 	#react = subprocess.Popen(["node", path + "/rundevserver.js"], cwd=path, shell=False, close_fds=True, env=environ)
-	subprocess.Popen(["python", path + "/startfluorine.py", path + "/app"], cwd=path, shell=False, close_fds=True, env=environ)
+	p = subprocess.Popen(["python", path + "/startfluorine.py", path + "/app"], cwd=path, shell=False, close_fds=True, env=environ)
+	file.save_js_file(pidfile, {"startfluorine": p.pid})
 
 
 def start_reactivity():
+	import frappe
 	from . import meteor_autoupdate_version
 	path = file.get_path_server_observe()
 	#file.observe_dir(path)
 	print start_hash(path)
 	path_reactivity = file.get_path_reactivity()
-	js_path = file.get_path_assets_js()
-	meteor_files = ("meteor.devel.js", "meteor.js")
+	#js_path = file.get_path_assets_js()
+	js_path = os.path.join(frappe.get_app_path("fluorine"), "public/js")
+	meteor_files = ("meteor_common.devel.js", "meteor_app.devel.js", "meteor_web.devel.js", "meteor_app.js", "meteor_web.js")
 	boot_file = os.path.join(path_reactivity, "server", "boot.js")
 	print "in start_reactivity js_path {} boot_file {} curr path {}".format(js_path, boot_file, os.getcwd())
 	for f in meteor_files:

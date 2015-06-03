@@ -48,10 +48,13 @@ def get_js_paths():
 
 def start_hash(rootDir):
 	hash = {}
+	ignore_file = [".DS_Store"]
 	for dirName, subdirList, fileList in os.walk(rootDir):
 		print('Found directory: %s' % dirName)
 		for fname in fileList:
 			print('\t%s' % fname)
+			if fname in ignore_file:
+				continue
 			file = os.path.join(dirName, fname)
 			hash[file] = make_hash(file)
 	return hash
@@ -110,6 +113,11 @@ def meteor_url_path_prefix():
 
 def jquery_include():
 	return True
+
+def get_Frappe_Version(version=None):
+	version = version or frappe.__version__
+	import semantic_version as sv
+	return sv.Version(version)
 
 
 if check_dev_mode():

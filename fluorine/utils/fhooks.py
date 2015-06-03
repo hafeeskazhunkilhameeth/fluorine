@@ -4,18 +4,39 @@ import frappe, os, json
 
 from fluorine.utils import assets_public_path
 from fluorine.utils import fcache
+from fluorine.utils import file
 
+
+def change_base_template(template_path, hooks=None, page_default=True):
+
+	if not hooks:
+		hooks = frappe.get_hooks(app_name="fluorine")
+		hooks.pop("base_template", None)
+		hooks.pop("home_page", None)
+
+	if not page_default:
+		hooks["base_template"] = ["templates/fluorine_base.html"]
+		hooks["home_page"] = ["fluorine_home"]
+
+	fluorine_path = frappe.get_app_path("fluorine")
+	save_batch_hook(hooks, fluorine_path + "/hooks.py")
+	save_custom_template(template_path)
+	fcache.clear_frappe_caches()
+
+
+def save_custom_template(template_path):
+	fluorine_path = frappe.get_app_path("fluorine")
+	tplt = os.path.join(fluorine_path, "templates", "pages", "fluorine_home.html")
+	content = "{% extends '"+ template_path + "' %}"
+	file.save_file(tplt, content)
+
+#not used
 def add_react_to_hook(paths, page_default=True):
 
 	lpaths = paths[:]
 	hooks = frappe.get_hooks(app_name="fluorine")
 	hooks.pop("base_template", None)
 	hooks.pop("home_page", None)
-	#remove_react_from_hook(hooks, paths)
-
-	#if hooks.app_include_js:
-	#	hooks.app_include_js.extend(objjs.get("app_include_js"))
-	#else:
 
 	files = get_hook_files_from_disk()
 
@@ -33,8 +54,6 @@ def add_react_to_hook(paths, page_default=True):
 		hooks.app_include_js = lpaths
 
 	if not page_default:
-		#fluor.set_base_template(self.fluorine_base_template)
-		#objjs["base_template"] = [self.fluorine_base_template]
 		hooks["base_template"] = ["templates/fluorine_base.html"]#[fluorine_base_template]#frappe.get_app_path("fluorine") + "/templates" + "/fluorine_base.html"
 		hooks["home_page"] = ["fluorine_home"]
 
@@ -45,7 +64,7 @@ def add_react_to_hook(paths, page_default=True):
 
 	fcache.clear_frappe_caches()
 
-
+#not used
 def remove_react_from_hook(paths, where="app", hooks=None, include_files_from_disk=True):
 
 	lpaths = paths[:]
@@ -75,11 +94,11 @@ def remove_react_from_hook(paths, where="app", hooks=None, include_files_from_di
 	save_batch_hook(hooks, frappe.get_app_path("fluorine") + "/hooks.py")
 	fcache.clear_frappe_caches()
 
-
+#not used
 def remove_react_from_app_hook(paths, hooks=None, include_files_from_disk=True):
 	remove_react_from_hook(paths, where="app", hooks=hooks, include_files_from_disk=include_files_from_disk)
 
-
+#not used
 def remove_react_from_web_hook(paths, hooks=None, include_files_from_disk=True):
 	remove_react_from_hook(paths, where="web", hooks=hooks, include_files_from_disk=include_files_from_disk)
 

@@ -1,0 +1,3 @@
+{
+    "startfluorine": 40231
+}

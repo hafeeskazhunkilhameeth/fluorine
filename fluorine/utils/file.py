@@ -60,23 +60,27 @@ class cd:
 		os.chdir(self.savedPath)
 
 
-def make_meteor_file(packages=None, jquery=0, client_only=0, devmode=1):
+def make_meteor_file(packages=None, jquery=0, client_only=0, devmode=1, whatfor="meteor_web"):
 	#module_path = os.path.dirname(fluorine.__file__)
 	#path = os.path.realpath(os.path.join(module_path, "..", "reactivity"))
 	#base = get_site_base_path()
 	#path = os.path.realpath(os.path.join(base, "..", "..", "apps", "reactivity"))
+	w = {"meteor_web": "web", "meteor_app": "app", "common":"common"}
 	packages = packages or []
 	path = get_path_reactivity()
 	#js_path = os.path.realpath(os.path.join(base,"..", "assets", "js"))
-	if not devmode:
-		js_path = get_path_assets_js()
-	else:
-		js_path = frappe.get_app_path("fluorine") + "/public/js"
+	#if not devmode:
+	#	js_path = get_path_assets_js()
+	#else:
+	js_path = os.path.join(frappe.get_app_path("fluorine"), "public/js")
 	#packages.append("iron:router")
 	print "meteor_file_path js_path {} path  {}".format(js_path, path)
+	#fluorine_publicjs_path = os.path.join(frappe.get_app_path("fluorine"), "public", "js", "react")
+	#file.remove_folder_content(fluorine_publicjs_path)
+	#copy_all_files(os.path.join(path, "app"), "meteor_web")
 	#with cd(path):
 		#subprocess.call(['./build-meteor-client.sh', js_path, str(frappe.conf.developer_mode), " ".join(packages)])
-	proc = subprocess.Popen([path + '/build-meteor-client.sh', js_path, str(devmode), " ".join(packages), str(jquery), str(client_only)], cwd=path, close_fds=True)
+	proc = subprocess.Popen([path + '/build-meteor-client.sh', js_path, str(devmode), " ".join(packages), str(jquery), str(client_only), w[whatfor]], cwd=path, close_fds=True)
 	proc.wait()
 	#observe_dir(get_path_server_observe())
 
@@ -212,3 +216,83 @@ def get_meteor_config(mthost, mtport,  version, version_fresh):
 				"meteor_ddp_default_connection_url": meteor_host}
 
 	return meteor_config
+
+
+def copy_all_files_with_symlink(src, dst, whatfor, extension="js"):
+	from react_file_loader import copy_client_files
+	#fluorine_dst_temp_path = os.path.join(frappe.get_app_path("fluorine"), "templates", "react", "temp")
+	copy_client_files(src, whatfor, extension=extension, with_wrapper=False)
+	#react_path = get_path_reactivity()
+	#dst = os.path.join(react_path, "app")
+	for l in os.listdir(src):
+		os.symlink(os.path.join(src, l), os.path.join(dst,l))
+
+	#remove_directory(src)
+
+#TODO
+def copy_all_files(dst, whatfor, extension="js"):
+	from react_file_loader import copy_client_files, remove_directory
+	fluorine_dst_temp_path = os.path.join(frappe.get_app_path("fluorine"), "templates", "react", "temp")
+	copy_client_files(fluorine_dst_temp_path, whatfor, extension=extension, with_wrapper=False)
+	apps = frappe.get_installed_apps()
+	for app in apps:
+		pathname = frappe.get_app_path(app)
+		src = os.path.join(pathname, "templates", "react")
+		if pathname and os.path.exists(src):
+			copytree(src, dst, whatfor)
+
+	remove_directory(fluorine_dst_temp_path)
+
+#patch copytree to support meteor_web and meteor_app folders
+def copytree(src, dst, whatfor, symlinks=False, ignore=None):
+	from shutil import copy2, copystat, Error, WindowsError
+	names = os.listdir(src)
+	if ignore is not None:
+		ignored_names = ignore(src, names)
+	else:
+		ignored_names = set()
+
+	if not os.path.exists(dst):
+		os.makedirs(dst)
+	errors = []
+	for name in names:
+		if name in ignored_names:
+			continue
+
+		#patch - remove meteor_app or meteor_web from path
+		if whatfor in dst:
+			head, tail = dst.split(whatfor)
+			if tail and tail.startswith("/"):
+				tail = tail[1:]
+			dst = os.path.join(head,tail)
+			print "dst whatfor {}".format(dst)
+
+		srcname = os.path.join(src, name)
+		if whatfor in name:
+			name = ""
+		dstname = os.path.join(dst, name)
+
+		try:
+			if symlinks and os.path.islink(srcname):
+				linkto = os.readlink(srcname)
+				os.symlink(linkto, dstname)
+			elif os.path.isdir(srcname):
+				copytree(srcname, dstname, whatfor, symlinks, ignore)
+			else:
+				copy2(srcname, dstname)
+			# XXX What about devices, sockets etc.?
+		except (IOError, os.error) as why:
+			errors.append((srcname, dstname, str(why)))
+		# catch the Error from the recursive copytree so that we can
+		# continue with other files
+		except Error as err:
+			errors.extend(err.args[0])
+	try:
+		copystat(src, dst)
+	except WindowsError:
+		# can't copy file access times on Windows
+		pass
+	except OSError as why:
+		errors.extend((src, dst, str(why)))
+	if errors:
+		raise Error(errors)

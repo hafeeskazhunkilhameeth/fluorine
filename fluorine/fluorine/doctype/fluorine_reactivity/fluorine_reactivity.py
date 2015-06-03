@@ -7,7 +7,6 @@ from frappe.model.document import Document
 import fluorine as fluor
 from fluorine.utils import file
 from fluorine.utils import fhooks
-from fluorine.utils import react
 from fluorine.utils import fcache
 
 
@@ -17,16 +16,9 @@ class FluorineReactivity(Document):
 		fluor.utils.set_config({
 				"developer_mode": self.fluor_dev_mode
 		})
-		#print "self.fluorine_reactivity {}".format(self.fluorine_reactivity)
-		paths = fluor.utils.get_js_paths()
 
 		if self.fluorine_state == "off":
-			fhooks.remove_react_from_app_hook(paths)
-			return
-
-		objjs = reactivity(react.get(self.fluorine_reactivity, None), paths)
-
-		if not objjs:
+			fhooks.change_base_template()
 			return
 
 		page_default = True
@@ -34,41 +26,45 @@ class FluorineReactivity(Document):
 		if self.fluorine_base_template and self.fluorine_base_template.lower() != "default":
 			page_default = False
 
-		fhooks.add_react_to_hook(paths, page_default=page_default)
-
-		#elif self.fluorine_base_template.lower() == "default" or self.fluorine_state == "off":
-		#	fluor.remove_base_template()
-		#fluor.save_batch_hook_all("hooks_helper", objjs)
-
-		#if not in dev mode compile to meteor.js
-		#if not fluor.check_dev_mode():
-			#file.observer.stop()
-			#jq = 1 if self.fluorine_base_template and self.fluorine_base_template.lower() != "default" else 0
-		#	jq = 0
-		#	file.make_meteor_file(jquery=jq, devmode=0)
-		#else:
-		#	jq = 0
-		#	file.make_meteor_file(jquery=jq, devmode=1)
-			#file.observer.join()
-
-def reactivity(where, path):
-
-	#fluor.delete_fluorine_session("hooks_helper")
-	objjs = {}
-
-	if where == "both" or where == "app":
-		objjs["app_include_js"] = path
-		#it is inserted in fluorine_home.html
-		#objjs["web_include_js"] = path
-
-	return objjs
+		fhooks.change_base_template(self.fluorine_base_template, page_default=page_default)
 
 
 @frappe.whitelist()
 def make_meteor_file(devmode, mthost, mtport, mghost, mgport, mgdb):
-	version = fluor.utils.meteor_autoupdate_version()
+	devmode = frappe.utils.cint(devmode)
 	fcache.clear_frappe_caches()
-	file.make_meteor_file(jquery=0, devmode=devmode)
-	file.make_meteor_config_file(mthost, mtport, version)
+	whatfor = ["common"] if devmode else ["meteor_web", "meteor_app"]
+	for w in whatfor:
+		prepare_client_files(w, devmode)
+		file.make_meteor_file(jquery=0, devmode=devmode, whatfor=w)
+	#fluorine_publicjs_path = os.path.join(frappe.get_app_path("fluorine"), "public", "js", "react")
+	#file.remove_folder_content(fluorine_publicjs_path)
+	#file.make_meteor_config_file(mthost, mtport, version)
+	if devmode:
+		restart_reactivity(mthost=mthost, mtport=mtport, mghost=mghost, mgport=mgport, mgdb=mgdb)
+
+def restart_reactivity(mthost="http://localhost", mtport=3000, mghost="http://localhost", mgport=27017, mgdb="fluorine"):
+	from fluorine.utils.reactivity import run_reactivity
 	path = file.get_path_reactivity()
-	fluor.utils.reactivity.run_reactivity(path, version, mthost=mthost, mtport=mtport, mghost=mghost, mgport=mgport, mgdb=mgdb, restart=True)
+	version = fluor.utils.meteor_autoupdate_version()
+	run_reactivity(path, version, mthost=mthost, mtport=mtport, mghost=mghost, mgport=mgport, mgdb=mgdb, restart=True)
+
+def prepare_client_files(whatfor, devmode):
+	import os
+	fluorine_dst_temp_path = os.path.join(frappe.get_app_path("fluorine"), "templates", "react", "temp")
+	react_path = file.get_path_reactivity()
+	dst = os.path.join(react_path, "app")
+	remove_tmp_app_dir(fluorine_dst_temp_path, dst)
+	if devmode:
+		return
+	frappe.create_folder(dst)
+	file.copy_all_files_with_symlink(fluorine_dst_temp_path, dst, whatfor, extension=["js", "html"])
+
+
+def remove_tmp_app_dir(src, dst):
+	from fluorine.utils.react_file_loader import remove_directory
+	try:
+		remove_directory(src)
+		remove_directory(dst)
+	except:
+		pass

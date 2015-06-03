@@ -1,0 +1,5 @@
+{% if frappe_version == 5  %}
+	{% include "templates/pages/deskv5.html" %}
+{% else %}
+	{% include "templates/pages/deskv4.html" %}
+{% endif %}
