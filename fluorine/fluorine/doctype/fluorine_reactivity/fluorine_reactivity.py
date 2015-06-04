@@ -25,8 +25,9 @@ class FluorineReactivity(Document):
 
 		if self.fluorine_base_template and self.fluorine_base_template.lower() != "default":
 			page_default = False
+			fhooks.save_custom_template(self.fluorine_base_template)
 
-		fhooks.change_base_template(self.fluorine_base_template, page_default=page_default)
+		fhooks.change_base_template(page_default=page_default)
 
 
 @frappe.whitelist()

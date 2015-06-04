@@ -18,6 +18,20 @@ cur_frm.cscript.refresh = function(doc){
 	if(doc.__islocal !== 1){
 		unhide_field(["make_meteor_file"]);
 	}
+
+	if(doc.fluorine_state === "off"){
+		hide_field(["fluorine_reactivity", "fluorine_base_template"]);
+	}else{
+		unhide_field(["fluorine_reactivity", "fluorine_base_template"]);
+	}
+}
+
+cur_frm.cscript["fluorine_state"] = function(doc){
+	if(doc.fluorine_state === "off"){
+		hide_field(["fluorine_reactivity", "fluorine_base_template"]);
+	}else{
+		unhide_field(["fluorine_reactivity", "fluorine_base_template"]);
+	}
 }
 
 $(document).on("save", function(ev, doc){

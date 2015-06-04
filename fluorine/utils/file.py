@@ -221,7 +221,8 @@ def get_meteor_config(mthost, mtport,  version, version_fresh):
 def copy_all_files_with_symlink(src, dst, whatfor, extension="js"):
 	from react_file_loader import copy_client_files
 	#fluorine_dst_temp_path = os.path.join(frappe.get_app_path("fluorine"), "templates", "react", "temp")
-	copy_client_files(src, whatfor, extension=extension, with_wrapper=False)
+	exclude= ["temp"]
+	copy_client_files(src, whatfor, extension=extension, with_wrapper=False, exclude_top=exclude, exclude_any=exclude)
 	#react_path = get_path_reactivity()
 	#dst = os.path.join(react_path, "app")
 	for l in os.listdir(src):

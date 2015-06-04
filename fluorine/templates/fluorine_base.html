@@ -24,15 +24,21 @@
         {{ head or "" }}
     {% endblock %}
 
-    {%- for link in web_include_css %}
-        <link type="text/css" rel="stylesheet" href="{{ link }}">
-    {%- endfor -%}
+    {% if frappe_include %}
+        <script type="text/javascript"
+		    src="/assets/js/frappe-web.min.js"></script>
+    {% endif %}
 
 	{% include "templates/includes/meteor_include.html" %}
 
-    {%- for link in web_include_js %}
+    {%- for link in meteor_web_include_css %}
+        <link type="text/css" rel="stylesheet" href="{{ link }}">
+    {%- endfor -%}
+
+    {%- for link in meteor_web_include_js %}
         <script type="text/javascript" src="{{ link }}"></script>
     {%- endfor -%}
+
 </head>
 <body>
     {% block content %} {{ content or "" }} {% endblock %}

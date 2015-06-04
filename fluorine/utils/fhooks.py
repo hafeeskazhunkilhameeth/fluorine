@@ -7,7 +7,7 @@ from fluorine.utils import fcache
 from fluorine.utils import file
 
 
-def change_base_template(template_path, hooks=None, page_default=True):
+def change_base_template(hooks=None, page_default=True):
 
 	if not hooks:
 		hooks = frappe.get_hooks(app_name="fluorine")
@@ -20,12 +20,13 @@ def change_base_template(template_path, hooks=None, page_default=True):
 
 	fluorine_path = frappe.get_app_path("fluorine")
 	save_batch_hook(hooks, fluorine_path + "/hooks.py")
-	save_custom_template(template_path)
 	fcache.clear_frappe_caches()
 
 
 def save_custom_template(template_path):
 	fluorine_path = frappe.get_app_path("fluorine")
+	if not template_path.startswith("templates/pages/"):
+		template_path = os.path.join("templates/pages/", template_path)
 	tplt = os.path.join(fluorine_path, "templates", "pages", "fluorine_home.html")
 	content = "{% extends '"+ template_path + "' %}"
 	file.save_file(tplt, content)

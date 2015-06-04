@@ -129,12 +129,12 @@ def wrapper(content):
 	return w % content
 
 
-def copy_client_files(fluorine_temp_path, whatfor, extension="js", with_wrapper=True):
+def copy_client_files(fluorine_temp_path, whatfor, extension="js", with_wrapper=True, exclude_top=None, exclude_any=None):
 	apps = frappe.get_installed_apps()[::-1]
 
 	_whatfor = ["meteor_app", "meteor_web", "meteor_frappe"]
-	exclude_top = ["public", "private", "tests","server","temp"]
-	exclude_any = ["tests","server","temp"]
+	exclude_top = exclude_top or ["public", "private", "tests","server","temp"]
+	exclude_any = exclude_any or ["tests","server","temp"]
 	folders_path = []
 
 	exclude = [""]

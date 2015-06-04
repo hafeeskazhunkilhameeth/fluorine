@@ -32,4 +32,7 @@ def get_context(context):
 	context.custom_template = doc.fluorine_base_template
 	context.whatfor = "common" if devmode else "web"
 
+	context.meteor_web_include_css = frappe.get_hooks("meteor_web_include_css")
+	context.meteor_web_include_js = frappe.get_hooks("meteor_web_include_js")
+
 	return fluorine_build_context(context, "meteor_web")
