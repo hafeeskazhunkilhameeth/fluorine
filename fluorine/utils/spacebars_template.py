@@ -15,9 +15,10 @@ from jinja2 import ChoiceLoader
 import hashlib, json, os, re
 from collections import OrderedDict
 
+
 def fluorine_get_fenv():
 
-	from jinja2 import Environment, DebugUndefined
+	from jinja2 import DebugUndefined
 	from fluorine.utils.fjinja import MyEnvironment
 
 	fenv = MyEnvironment(loader = fluorine_get_floader(),
@@ -51,11 +52,10 @@ def fluorine_get_floader():
 
 
 def fluorine_get_template(path):
-	#return fluorine_get_fenv().get_template(path)
-	return fluorine_get_fenv().make_meteor_templates_list(path)
+	return fluorine_get_fenv().addto_meteor_templates_list(path)
 
+"""
 def fluorine_render_blocks(context, whatfor):
-	"""returns a dict of block name and its rendered content"""
 	env = fluorine_get_fenv()
 
 	def _render_blocks(template_path):
@@ -69,9 +69,9 @@ def fluorine_render_blocks(context, whatfor):
 		#fluorine_get_template(template_path)
 	fluorine_get_template(context["spacebars_template"])
 	#_render_blocks(context["spacebars_template"])
+"""
 
-
-def compile_templates(mtl, context):
+def compile_jinja_templates(mtl, context):
 	from file import save_file, remove_file
 
 	out = {}
@@ -86,7 +86,7 @@ def compile_templates(mtl, context):
 			for block, render in items:
 				if block.startswith("spacebars"):
 					block = block[10:]
-					make_heritage(block, context)
+					#make_heritage(block, context)
 					out[block] = scrub_relative_urls(concat(render(template.new_context(context))))
 		else:
 			remove_file(dstPath)
@@ -283,12 +283,9 @@ def fluorine_build_context(context, whatfor):
 			meteor = f.get("meteor_folder", {})
 			refresh = meteor.get("folder_refresh", True)
 			space_compile = meteor.get("compile", True)
-			print "refresh {} compile {}".format(refresh, space_compile)
-			#if refresh:
-			#	save_js_file(frefresh, {"refresh": False, "compile": space_compile})
 
 	if refresh or space_compile or whatfor == "meteor_app":
-		compile_spacebar_templates(context, whatfor)
+		process_react_templates(context, whatfor)
 
 	if refresh:
 		fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
@@ -299,18 +296,19 @@ def fluorine_build_context(context, whatfor):
 
 	return context
 
-def compile_spacebar_templates(context, whatfor):
+def process_react_templates(context, whatfor):
 
 	from react_file_loader import read_client_files
-
+	from fjinja import process_hooks_apps
 	#first installed app first
 	apps = frappe.get_installed_apps()#[::-1]
-
+	list_apps_remove = process_hooks_apps(apps)
 	spacebars_templates = {}
 	spacebars_context = []
 
 	for app in apps:
-
+		if app in list_apps_remove:
+			continue
 		pathname = frappe.get_app_path(app)
 		path = os.path.join(pathname, "templates", "react")
 		if os.path.exists(path):
@@ -319,26 +317,17 @@ def compile_spacebar_templates(context, whatfor):
 				for obj in reversed(f):
 					file_path = obj.get("path")
 					file_name = obj.get("name")
-					#render_spacebar_html(context, file_path, obj.get("name"), pathname, app, whatfor)
-					#fluorine_render_blocks(context, whatfor=whatfor)
-					#print "context[spacebars_template] {}".format(context["spacebars_template"])
 					root = file_path[:-len(file_name)]
-					spacebars_template = os.path.join(os.path.relpath(root, pathname), file_name)
-					if fluorine_get_fenv().make_meteor_templates_list(spacebars_template):
+					spacebars_template_path = os.path.join(os.path.relpath(root, pathname), file_name)
+					if addto_meteor_templates_list(spacebars_template_path):
 						spacebars_context.append(frappe._dict({"file_path": file_path, "file_name": file_name, "app_path": pathname, "appname": app, "whatfor": whatfor }))
-					#if whatfor in ("meteor_app", "meteor_frappe"):
-					#	spacebars_templates.update(out)
-					#	context.update(out)
-					#dstPath = os.path.join(obj.get("filePath"), obj.get("fileName") + ".html")
-					#content = ""
-					#for k in out.keys():
-					#	content = content + out[k] + "\n"
-					#if content:
-					#	save_file(dstPath, content)
 
-	render_spacebar_html(context, spacebars_context)
-	mtl = fluorine_get_fenv().get_meteor_template_list()
-	out = compile_templates(mtl, context)
+	#get the context from all the python files of templates
+	get_spacebars_context(context, spacebars_context)
+	#get all the templates to use
+	mtl = get_meteor_template_list()
+	#and compile them all
+	out = compile_jinja_templates(mtl, context)
 	#only compile if meteor_app or meteor_frappe
 	if spacebars_templates and whatfor in ("meteor_app", "meteor_frappe"):
 		compiled_spacebars_js = compile_spacebars_templates(spacebars_templates)
@@ -346,6 +335,13 @@ def compile_spacebar_templates(context, whatfor):
 		arr.insert(0, "(function(){\n")
 		arr.append("})();\n")
 		context.compiled_spacebars_js = arr
+
+
+def addto_meteor_templates_list(template_path):
+	fluorine_get_fenv().addto_meteor_templates_list(template_path)
+
+def get_meteor_template_list():
+	return fluorine_get_fenv().get_meteor_template_list()
 
 """
 def compile_spacebar_templates(context, whatfor):
@@ -442,7 +438,7 @@ def get_page(url, context):
 	return scripts
 """
 
-def render_spacebar_html(context, spacebar_context):
+def get_spacebars_context(context, spacebar_context):
 
 	for obj in spacebar_context:
 		py_path = obj.file_path[:-5]
@@ -460,7 +456,6 @@ def render_spacebar_html(context, spacebar_context):
 				if hasattr(module, "get_children"):
 					context.get_children = module.get_children
 
-	return
 
 """
 def render_spacebar_html(context, file_path, file_name, app_path, appname, whatfor):

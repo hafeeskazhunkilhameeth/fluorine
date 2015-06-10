@@ -201,8 +201,8 @@ def copy_client_files(fluorine_temp_path, whatfor, extension="js", with_wrapper=
 						srcPath = os.path.join(root, f)
 						dstPath = os.path.join(destpath, f)
 						if ext[1] == "html":
-							from spacebars_template import render_spacebar_html
-							out = render_spacebar_html(context, srcPath, f, pathname, app)
+							from spacebars_template import get_spacebars_context
+							out = get_spacebars_context(context, srcPath, f, pathname, app)
 							for k in out.keys():
 								file.save_file(dstPath, out[k])
 						elif with_wrapper:

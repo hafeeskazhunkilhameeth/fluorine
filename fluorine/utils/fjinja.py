@@ -91,7 +91,7 @@ class MyEnvironment(Environment):
 			bytecode_cache=bytecode_cache
 		)
 	"""
-	def make_meteor_templates_list(self, path):
+	def addto_meteor_templates_list(self, path):
 		return self.get_template(path)
 
 	def get_meteor_template_list(self):
@@ -124,10 +124,27 @@ class MyFileSystemLoader(FileSystemLoader):
 	def __init__(self, apps, searchpath, encoding='utf-8'):
 		super(MyFileSystemLoader, self).__init__(searchpath, encoding=encoding)
 		self.apps = apps
-		self.meteor_template_list = []
+		#register the name of the jinja (xhtml files) templates founded
+		self.jinja_xhtml_template_list = []
 		self.remove_next_close = False
-		self.templates_list = []
+		#register the name of templates tags founded
+		self.meteor_tag_templates_list = []
+		#register the founded templates
 		self.templates_found = []
+		self.list_apps_remove = []
+		self.list_meteor_tplt_remove = frappe._dict({})
+		self.list_meteor_tplt_add = frappe._dict({})
+		self.curr_app = ""
+		self.curr_template = ""
+		self.start_hook_lists()
+
+	#TODO make cache
+	def start_hook_lists(self):
+		self.list_apps_remove.extend(process_hooks_apps(self.apps))
+		list_meteor_tplt_add, list_meteor_tplt_remove = process_hooks_meteor_templates(self.apps)
+		self.list_meteor_tplt_add.update(list_meteor_tplt_add)
+		self.list_meteor_tplt_remove.update(list_meteor_tplt_remove)
+
 
 	@internalcode
 	def load(self, environment, name, globals=None):
@@ -135,12 +152,15 @@ class MyFileSystemLoader(FileSystemLoader):
 		if name in self.templates_found:
 			return
 		template = super(MyFileSystemLoader, self).load(environment, name, globals=globals)
-		self.meteor_template_list.append({"name": name, "template": template})
+		self.jinja_xhtml_template_list.append({"name": name, "template": template})
 		return template
 
 	def get_source(self, environment, template):
 		#find the first template in revers order of installed apps and return
+
 		for app in self.apps:
+			if app in self.list_apps_remove:
+				continue
 			app_path = frappe.get_app_path(app)#get_package_path(app, "", "")
 			filepath = os.path.join(app_path, template)
 			relpath = os.path.relpath(filepath, os.path.normpath(os.path.join(os.path.join(os.getcwd(), ".."), "apps")))
@@ -148,6 +168,11 @@ class MyFileSystemLoader(FileSystemLoader):
 			try:
 				contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
 				#contents = re.sub("<template name=['\"](.+?)['\"](.*?)>(.*?)</template>", jinjarepl, contents, flags=re.S)
+
+				#used in check_in_remove_list to know which template tag to remove
+				self.curr_app = app
+				#used in check_in_remove_list to know which template file to remove the tag template name
+				self.curr_template = template
 				contents = self.replace_for_templates(contents)
 				self.templates_found.append(template)
 				self.process_references(contents)
@@ -170,11 +195,11 @@ class MyFileSystemLoader(FileSystemLoader):
 		for referenced_template_path in meta.find_referenced_templates(env.parse(source)):
 			if referenced_template_path:
 				#self.load(referenced_template_path)
-				fluorine_get_fenv().make_meteor_templates_list(referenced_template_path)
+				fluorine_get_fenv().addto_meteor_templates_list(referenced_template_path)
 
 	def replace_for_templates(self, contents):
 		new_content = []
-		print "start replace templ list is 5 {} content {}".format(self.templates_list, contents)
+		#print "start replace templ list is 5 {} content {}".format(self.meteor_tag_templates_list, contents)
 		def close_template(line):
 			if self.remove_next_close:
 				line = re.sub(r"</\s*template\s*>", '', line, 1, flags=re.S)
@@ -244,17 +269,103 @@ class MyFileSystemLoader(FileSystemLoader):
 		return source
 
 	def addBlockTemplate(self, m):
-		if m.group(1) in self.templates_list:
-			print "in_template_list {} tmpl_list {}".format(m.group(1), self.templates_list)
+		if m.group(1) in self.meteor_tag_templates_list or self.check_in_remove_list(m.group(1)):
+			print "in_template_list {} tmpl_list {}".format(m.group(1), self.meteor_tag_templates_list)
 			self.remove_next_close = True
 			return ""
-		self.templates_list.append(m.group(1))
+		self.meteor_tag_templates_list.append(m.group(1))
 		source = self.openBlock(m, name="spacebars_" + m.group(1)) + "<template name='{0}'{1}>".format(m.group(1), m.group(2))
 		return source
 
 	def get_meteor_template_list(self):
-		return self.meteor_template_list
+		return self.jinja_xhtml_template_list
 
+	def check_in_remove_list(self, name):
+		app = self.curr_app
+		template = self.curr_template
+
+		for obj in self.list_meteor_tplt_remove.get(app, []):
+			if obj.get("name") == name and obj.get("file") == template:
+				return True
+
+		return False
+
+def process_hooks_meteor_templates(apps):
+	list_meteor_tplt_add = frappe._dict({})
+	list_meteor_tplt_remove = frappe._dict({})
+
+
+	def check_in_remove_list(k, v):
+		lrm = list_meteor_tplt_remove.get(k)
+		if not lrm:
+			return False
+
+		for l in lrm:
+			if l == v:
+				return True
+
+		return False
+
+	def check_in_add_list(k, v):
+		ladd = list_meteor_tplt_add.get(k)
+		if not ladd:
+			return False
+
+		for l in ladd:
+			if l == v:
+				return True
+
+		return False
+
+	def process_remove(k, remove):
+		lrm = list_meteor_tplt_remove.get(k)
+		for r in remove:
+			if not check_in_add_list(k, r):
+				if not lrm:
+					list_meteor_tplt_remove[k] = remove
+					break
+				elif not check_in_remove_list(k, r):
+					lrm.append(r)
+
+	def process_add(k, add):
+		ladd = list_meteor_tplt_add.get(k)
+		for a in add:
+			if not check_in_remove_list(k, a):
+				if not ladd:
+					list_meteor_tplt_add[k] = add
+					break
+				elif not check_in_add_list(k, a):
+					ladd.append(a)
+
+	for app in apps:
+		hooks = frappe.get_hooks(hook="fluorine_meteor_templates", app_name=app)
+		if hooks:
+			for k,v in hooks.items():
+				remove = v.get("remove") or []
+				print "hooks meteor templates 4 {} remove {}".format(hooks, remove)
+				process_remove(k, remove)
+				add = v.get("add") or []
+				process_add(k, add)
+
+	print "meteor templates lists add {} remove {}".format(list_meteor_tplt_add, list_meteor_tplt_remove)
+	return list_meteor_tplt_add, list_meteor_tplt_remove
+
+def process_hooks_apps(apps):
+	list_apps_add = []
+	list_apps_remove = []
+	for app in apps:
+		hooks = frappe.get_hooks(hook="fluorine_apps", app_name=app)
+		print "hooks apps {}".format(hooks)
+		if hooks:
+			for k,v in hooks.items():
+				if v.get("remove")[0]:
+					if k not in list_apps_add:
+						list_apps_remove.append(k)
+				elif v.get("add")[0]:
+					if k not in list_apps_remove:
+						list_apps_add.append(k)
+
+	return list_apps_remove
 
 """
 class MyFileSystemLoader(FileSystemLoader):
