@@ -7,18 +7,13 @@ from frappe.website.utils import scrub_relative_urls
 from jinja2.utils import concat
 from jinja2 import meta
 import frappe
-import os, re
 from frappe.utils.jinja import set_filters, get_allowed_functions_for_jenv
 #from frappe.website.context import get_context
 #from fluorine.utils.packages_path import get_package_path
 from fjinja import MyFileSystemLoader
 from jinja2 import ChoiceLoader
-
-#import react_file_loader
-from react_file_loader import get_js_to_client
-
-#fenv = frappe.local("fenv")
-#floader = frappe.local("floader")
+import hashlib, json, os, re
+from collections import OrderedDict
 
 def fluorine_get_fenv():
 
@@ -41,6 +36,8 @@ def fluorine_get_floader():
 
 		path = os.path.normpath(os.path.join(os.getcwd(), "..")) + "/apps"
 
+		#first template to load is the last installed
+		#So, we can replace the oldest template by new one with the same name
 		apps = frappe.get_installed_apps()[::-1]
 
 		fluor_loader = [MyFileSystemLoader(apps, path)]
@@ -52,10 +49,11 @@ def fluorine_get_floader():
 
 
 def fluorine_get_template(path):
+	print "in get template {}".format(path)
 	return fluorine_get_fenv().get_template(path)
 
 
-def fluorine_render_blocks(context):
+def fluorine_render_blocks(context, whatfor):
 	"""returns a dict of block name and its rendered content"""
 	#import inspect
 	#print 'I am f1 and was called by', inspect.currentframe().f_back.f_code.co_name
@@ -65,15 +63,27 @@ def fluorine_render_blocks(context):
 
 	def _render_blocks(template_path):
 		#print "template_paths {}".format(template_path)
+		#get the first template. The last installed in this case
 		source = frappe.local.floader.get_source(frappe.local.fenv, template_path)[0]
 		for referenced_template_path in meta.find_referenced_templates(env.parse(source)):
 			if referenced_template_path:
 				_render_blocks(referenced_template_path)
 
 		template = fluorine_get_template(template_path)
-		for block, render in template.blocks.items():
-			make_heritage(block, context)
-			out[block] = scrub_relative_urls(concat(render(template.new_context(context))))
+		items = template.blocks.items()
+		#if not items:
+		from file import save_file
+		#from shutil import copyfile
+		dstPath = template.filename[:-6] + ".html"
+		content = scrub_relative_urls(concat(template.render(template.new_context(context))))
+		save_file(dstPath, content)
+		#return
+			#copyfile(template.filename, dst)
+			#out[block] = scrub_relative_urls(concat(render(template.new_context(context))))
+		if whatfor in ("meteor_app", "meteor_frappe"):
+			for block, render in items:
+				make_heritage(block, context)
+				out[block] = scrub_relative_urls(concat(render(template.new_context(context))))
 
 	_render_blocks(context["spacebars_template"])
 
@@ -165,78 +175,179 @@ def fluorine_build_context3(context, whatfor):
 	return context
 """
 
+def make_auto_update_version(path, meteorRelease, root_url, root_prefix, appId=None):
+	from fluorine.utils import file
+
+	runtimeCfg = OrderedDict()
+	runtimeCfg["meteorRelease"] = meteorRelease#"METEOR@1.1.0.2"
+	runtimeCfg["ROOT_URL"] = root_url#"http://localhost"
+	runtimeCfg["ROOT_URL_PATH_PREFIX"] = root_prefix
+	if appId:
+		runtimeCfg["appId"] = appId
+	#runtimeCfg["appId"] = "1uo02wweyt6o11xsntyy"
+	manifest = file.read(path)
+	manifest = json.loads(manifest).get("manifest")
+	autoupdateVersion, autoupdateVersionRefresh, frappe_manifest = meteor_hash_version(manifest, runtimeCfg)
+	print "sha1 digest {} {}".format(autoupdateVersion, autoupdateVersionRefresh)
+	#runtimeCfg["autoupdateVersion"] = autoupdateVersion
+	#autoupdateVersionRefresh = meteor_hash_version(manifest, runtimeCfg, css=True)
+	#print "sha1 digest ", autoupdateVersionRefresh
+	return autoupdateVersion, autoupdateVersionRefresh, frappe_manifest
+
+
+def meteor_hash_version(manifest, runtimeCfg):
+	sh1 = hashlib.sha1()
+	sh2 = hashlib.sha1()
+	frappe_manifest = []
+	#runtimeCfg = {"meteorRelease": meteorRelease,
+	#            "ROOT_URL": 'http://localhost',
+	#             "ROOT_URL_PATH_PREFIX": ""}
+
+	#runtimeCfg = """{'meteorRelease': %s,'ROOT_URL': 'http://localhost','ROOT_URL_PATH_PREFIX': ''}""" % meteorRelease
+	rt = json.dumps(runtimeCfg).replace(" ", "").encode('utf8')
+	print "json.dumps ", rt
+	sh1.update(rt)
+	sh2.update(rt)
+	for m in manifest:
+		if m.get("where") == "client" or m.get("where") == "internal":
+			if m.get("where") == "client":
+				frappe_manifest.append(m.get("url"))
+			if m.get("type") == "css":
+				sh2.update(m.get("path"))
+				sh2.update(m.get("hash"))
+				continue
+			sh1.update(m.get("path"))
+			sh1.update(m.get("hash"))
+
+	return sh1.hexdigest(), sh2.hexdigest(), frappe_manifest
+
+
 def fluorine_build_context(context, whatfor):
 
+	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity#, save_js_file
+
+	path_reactivity = get_path_reactivity()
+	devmode = context.developer_mode
+	refresh = False
+	space_compile = True
+
+	if devmode:
+		frefresh = os.path.join(path_reactivity, "common_site_config.json")
+		refresh = True
+		if os.path.exists(frefresh):
+			f = frappe.get_file_json(frefresh)
+			meteor = f.get("meteor_folder", {})
+			refresh = meteor.get("folder_refresh", True)
+			space_compile = meteor.get("compile", True)
+			print "refresh {} compile {}".format(refresh, space_compile)
+			#if refresh:
+			#	save_js_file(frefresh, {"refresh": False, "compile": space_compile})
+
+	if refresh or space_compile or whatfor == "meteor_app":
+		compile_spacebar_templates(context, whatfor)
+
+	if refresh:
+		fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
+		empty_directory(fluorine_publicjs_dst_path, ignore=(".meteor",))
+		make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, ignore=None, custom_pattern=["*.xhtml"])
+
+	make_meteor_props(context, whatfor)
+
+	return context
+
+def compile_spacebar_templates(context, whatfor):
+
 	from react_file_loader import read_client_files
-	from . import check_dev_mode
-	#print "befores fluorine_spacebars_build_context path {}".format(path)
-	#if path.find(".") == -1 and not path == "404":
-		#print "news fluorine_spacebars_build_context path {}".format(path)
-	#fl = frappe.get_doc("Fluorine Reactivity")
-	#if fl.fluorine_base_template and fl.fluorine_base_template.lower() != "default":
-	#	app_base_template = fl.fluorine_base_template
-	#else:
-	#	app_base_template = frappe.get_hooks("base_template")
-	#	if not app_base_template:
-	#		app_base_template = "templates/base.html"
+	from file import save_file
 
-	#if context.base_template_path == app_base_template:
-
-		#if not context.spacebars_data:
-		#	context.spacebars_data = {}
-		#print "context data path in override {}".format(context.data)
-		#context.update(context.data or {})
-	if isinstance(whatfor, basestring):
-		whatfor = [whatfor]
-
-	if not check_dev_mode():
-		whatfor.append("meteor_frappe")
-
+	#first installed app first
 	apps = frappe.get_installed_apps()#[::-1]
-	#apps.remove("fluorine")
-	name_templates = []
+
 	spacebars_templates = {}
 
 	for app in apps:
-		#print "app {}".format(app)
-		pathname = frappe.get_app_path(app)#get_package_path(app, "", "")
+
+		pathname = frappe.get_app_path(app)
 		path = os.path.join(pathname, "templates", "react")
 		if os.path.exists(path):
-			files = read_client_files(path, whatfor, extension="html")
-			for file in files:
-				#l = prepare_files(files)
-				for obj in reversed(file):
-					#print "app is {} path is {}".format(app, os.path.join(os.path.relpath(root, pathname), file))
-					#print(os.path.join(root, file[:-5] + ".py"))
-					#filename = os.path.join(root, file)
+			files = read_client_files(path, whatfor, extension="xhtml")
+			for f in files:
+				for obj in reversed(f):
 					file_path = obj.get("path")
-					out = render_spacebar_html(context, file_path, obj.get("name"), pathname, app)
-					#print "context teste123 {} out {}".format(context.teste123, out.get("teste123", None))
-					#print frappe.utils.pprint_dict(out)
-					spacebars_templates.update(out)
-					#for name in out:
-					#	name_templates.append(name)
-					context.update(out)
-						#print "new spacebars_data {}".format(context)
-	#context.data.update(context.spacebars_data or {})
-#print "In fluorine_spacebars_build_context"
-	if spacebars_templates:
+					out = render_spacebar_html(context, file_path, obj.get("name"), pathname, app, whatfor)
+					if whatfor in ("meteor_app", "meteor_frappe"):
+						spacebars_templates.update(out)
+						context.update(out)
+					#dstPath = os.path.join(obj.get("filePath"), obj.get("fileName") + ".html")
+					#content = ""
+					#for k in out.keys():
+					#	content = content + out[k] + "\n"
+					#if content:
+					#	save_file(dstPath, content)
+
+	#only compile if meteor_app or meteor_frappe
+	if spacebars_templates and whatfor in ("meteor_app", "meteor_frappe"):
 		compiled_spacebars_js = compile_spacebars_templates(spacebars_templates)
 		arr = compiled_spacebars_js.split("__templates__\n")
 		arr.insert(0, "(function(){\n")
 		arr.append("})();\n")
 		context.compiled_spacebars_js = arr
 
-	fluorine_publicjs_dst_path = os.path.join(frappe.get_app_path("fluorine"), "public", "js", "react")
-	hooks_js = get_js_to_client(fluorine_publicjs_dst_path, whatfor)
+def make_meteor_props(context, whatfor):
+	from file import get_path_reactivity, get_meteor_release
 
-	context.update(hooks_js)
-	#print "A compilar templates \n{}".format(context.compiled_spacebars_js)
+	path_reactivity = get_path_reactivity()
+	progarm_path = os.path.join(path_reactivity, whatfor, ".meteor/local/build/programs/web.browser/program.json")
+	config_path = os.path.join(path_reactivity, whatfor, ".meteor/local/build/programs/server/config.json")
+	context.meteorRelease = get_meteor_release(config_path)
+	appId = get_meteor_appId(os.path.join(path_reactivity, whatfor, ".meteor/.id"))
+	context.appId = appId.replace(" ","").replace("\n","")
 
-	return context
+	context.meteor_autoupdate_version, context.meteor_autoupdate_version_freshable, manifest =\
+				make_auto_update_version(progarm_path, context.meteorRelease, context.meteor_root_url, context.meteor_url_path_prefix, appId=context.appId)
 
+	context.meteor_package_js = manifest
+	context.meteor_runtime_config = True
 
-def render_spacebar_html(context, file_path, file_name, app_path, appname):
+def get_meteor_appId(path):
+	appid = None
+	with open(path, "r") as f:
+		for line in f:
+			if line.startswith("#") or line.startswith("\n"):
+				continue
+			appid = line
+			break
+	print "appId {}".format(appid)
+	return appid
+
+"""
+def get_page(url, context):
+	from bs4 import BeautifulSoup
+	import urllib2, json, ast
+
+	scripts = []
+	html = BeautifulSoup(urllib2.urlopen(url).read())
+	for link in html.find_all('script'):
+		src = link.get("src")
+		if src:
+			scripts.append(src)
+		else:
+			#uq = urllib2.unquote(link.string)
+			#mc = urllib2.unquote(link.string)
+			#u = mc.split("(")[2][:-3]
+			#mc = urllib2.unquote(str(link.string))
+
+			#get __meteor_runtime_config__ string and convert to object and unquote
+			c = urllib2.unquote(ast.literal_eval(link.string.split("(")[2][:-3]))
+			meteor_config = json.loads(c)
+			meteor_config["ROOT_URL"] = url
+			meteor_config["DDP_DEFAULT_CONNECTION_URL"] = url
+			context.meteor_runtime_config = json.dumps(meteor_config)
+			#print "scripts meteor {}".format(json.loads(c).get("ROOT_URL"))
+
+	return scripts
+"""
+def render_spacebar_html(context, file_path, file_name, app_path, appname, whatfor):
 
 	py_path = file_path[:-5]
 	root = file_path[:-len(file_name)]
@@ -253,7 +364,7 @@ def render_spacebar_html(context, file_path, file_name, app_path, appname):
 			if hasattr(module, "get_children"):
 				context.get_children = module.get_children
 	#heritage
-	out = fluorine_render_blocks(context)
+	out = fluorine_render_blocks(context, whatfor=whatfor)
 
 	return out
 

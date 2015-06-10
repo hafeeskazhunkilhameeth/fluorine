@@ -2,42 +2,14 @@
 <html lang="en">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
+
     {% block meta %}
-    <meta charset="UTF-8">
-    {{ meta }}
-    {% endblock %}
-    {% if jquery_include %}
-        <script type="text/javascript"
-		    src="/assets/frappe/js/lib/jquery/jquery.min.js"></script>
-    {% endif %}
-
-    <link rel="shortcut icon"
-		href="{{ favicon or "/assets/frappe/images/favicon.ico" }}"
-		type="image/x-icon">
-	<link rel="icon"
-		href="{{ favicon or "/assets/frappe/images/favicon.ico" }}"
-		type="image/x-icon">
-
-    {% block head %}
-        <link rel="stylesheet" href="style.css" />
-        <title>{% block title %} {{ title or "" }}{% endblock %}</title>
-        {{ head or "" }}
+        <meta charset="UTF-8">
+        {{ meta }}
     {% endblock %}
 
-    {% if frappe_include %}
-        <script type="text/javascript"
-		    src="/assets/js/frappe-web.min.js"></script>
-    {% endif %}
+    {% include "templates/includes/meteor_web.html" %}
 
-	{% include "templates/includes/meteor_include.html" %}
-
-    {%- for link in meteor_web_include_css %}
-        <link type="text/css" rel="stylesheet" href="{{ link }}">
-    {%- endfor -%}
-
-    {%- for link in meteor_web_include_js %}
-        <script type="text/javascript" src="{{ link }}"></script>
-    {%- endfor -%}
 
 </head>
 <body>

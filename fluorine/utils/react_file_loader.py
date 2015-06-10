@@ -115,10 +115,10 @@ def prepare_files_and_copy(files, fpath):
 
 
 def copy_with_wrapper(src, dst, use_wrapper=True):
-	content = read(src)
+	content = file.read(src)
 	if use_wrapper:
 		content = wrapper(content)
-	write(dst, content)
+	file.write(dst, content)
 	return content
 
 def wrapper(content):
@@ -205,8 +205,7 @@ def copy_client_files(fluorine_temp_path, whatfor, extension="js", with_wrapper=
 							out = render_spacebar_html(context, srcPath, f, pathname, app)
 							for k in out.keys():
 								file.save_file(dstPath, out[k])
-							continue
-						if with_wrapper:
+						elif with_wrapper:
 							copy_with_wrapper(srcPath, dstPath)
 						else:
 							copy_file(srcPath, dstPath)
@@ -231,17 +230,6 @@ def copy_client_files2(fluorine_temp_path, extension="js"):
 					for file in files:
 						if file.endswith("." + extension):
 							copy_file(os.path.join(root, file), os.path.join(destpath, app + "_" + file))
-
-
-def write(file_path, content):
-	with open(file_path, "w") as f:
-		f.write(content)
-
-
-def read(file_path):
-	with open(file_path, "r") as f:
-		content = f.read()
-	return content
 
 
 def read_client_files(temp_folder, whatfor, extension="js"):
@@ -313,6 +301,7 @@ def read_client_files(temp_folder, whatfor, extension="js"):
 
 		#for file in sorted(files, reverse=True):
 		for file in files:
+			print "files in read {}".format(files)
 			ext = file.rsplit(".", 1)
 			#if file.endswith("." + extension):
 			if ext > 1 and ext[1] in extension:
@@ -320,7 +309,7 @@ def read_client_files(temp_folder, whatfor, extension="js"):
 				path = os.path.join(root, file)
 				print "path read_client_files {}".format(path)
 				relpath = os.path.relpath(root, temp_folder)
-				obj = {"name":file, "path": path, "relpath": relpath,"deep": deeper}
+				obj = {"name":file, "path": path, "relpath": relpath, "filePath": root, "fileName": ext[0], "deep": deeper}
 				#if root.endswith("lib"):
 				if iscompatibility:
 					obj["compatibility"] = True

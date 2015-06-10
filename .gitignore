@@ -2,6 +2,7 @@
 *.pyc
 *.egg-info
 *.swp
+.meteor/
 tags
 react/
 reactivity/
@@ -9,4 +10,4 @@ meteor.devel.js
 meteor_web.js
 meteor_app.js
 meteor.js
-pids.txt
+pids.json

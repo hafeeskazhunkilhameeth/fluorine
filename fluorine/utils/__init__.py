@@ -119,6 +119,30 @@ def get_Frappe_Version(version=None):
 	import semantic_version as sv
 	return sv.Version(version)
 
+def build_meteor_context(context, devmode, whatfor):
+	from file import get_path_reactivity
+	import random
+
+	path_reactivity = get_path_reactivity()
+
+	config_path = os.path.join(path_reactivity, "common_site_config.json")
+	conf = frappe.get_file_json(config_path)
+	if not devmode:
+		add = 0
+		meteor_dns = conf.get("meteor_dns") or {}
+		all_dns = meteor_dns.get(whatfor)
+		n = random.randint(0, len(all_dns) - 1)
+		meteor = all_dns[n]
+	else:
+		meteor = conf.get("meteor_dev") or {}
+		add = 80 if whatfor == "meteor_app" else 0
+
+	meteor_host = meteor.get("host", "http://localhost") + ":" + str(meteor.get("port", 3000) + add)
+	context.meteor_root_url = meteor.get("host", "http://localhost")
+	context.meteor_root_url_port = meteor_host
+	context.meteor_url_path_prefix = meteor_url_path_prefix()
+	context.meteor_ddp_default_connection_url = meteor_host
+
 
 if check_dev_mode():
 	print "Enter Reactivity State !!!"

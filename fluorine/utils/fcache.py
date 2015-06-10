@@ -7,6 +7,18 @@ import frappe.website.render
 from fluorine.utils import file
 
 
+#called from clear_web (bench frappe --clear_web)
+def clear_cache(path):
+	print "clear web cache"
+	import fluorine, os
+	devmode = fluorine.utils.check_dev_mode()
+	if devmode:
+		path_reactivity = file.get_path_reactivity()
+		config_path = os.path.join(path_reactivity, "common_site_config.json")
+		f = frappe.get_file_json(config_path)
+		f["meteor_folder"].update({"folder_refresh": 1, "compile": 1})
+		file.save_js_file(config_path, f)
+
 def clear_frappe_caches():
 	frappe.clear_cache()
 	frappe.website.render.clear_cache()

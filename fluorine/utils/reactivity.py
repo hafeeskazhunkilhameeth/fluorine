@@ -95,7 +95,60 @@ def flourine_get_hooks(hook=None, default=None, app_name=None):
 frappe.get_hooks = flourine_get_hooks
 """
 
-def run_reactivity(path, version, mthost="http://localhost", mtport=3000, mghost="http://localhost", mgport=27017, mgdb="fluorine", restart=False):
+
+def run_meteor(path, mthost="http://localhost", mtport=3000, mghost="http://localhost", mgport=27017, mgdb="fluorine", restart=False):
+	#if make_meteor_config:
+	#make_meteor_config_file(mthost, mtport, version)
+	import frappe
+	import os
+	import signal
+	from . import is_open_port, __file__
+	if is_open_port() and not restart:
+		print "Port {} is open!".format(mtport)
+		return
+
+	import copy
+	print "Port {} is not open!".format(mtport)
+	environ = copy.copy(os.environ)
+	if not os.environ.get("FLUOR_METEOR_ROOT_URL", None):
+		#os.environ["ROOT_URL"] = "http://localhost"
+		environ["ROOT_URL"] = mthost.strip(' \t\n\r')#"http://localhost"
+	if not os.environ.get("FLUOR_METEOR_PORT", None):
+		#os.environ["PORT"] = str(3000)
+		environ["PORT"] = str(mtport)
+	if not os.environ.get("FLUOR_MONGO_URL", None):
+		#os.environ["MONGO_URL"] = "mongodb://localhost:27017/ekaiser"
+		mghost = mghost.replace("http://","").replace("mongodb://","").strip(' \t\n\r')
+		environ["MONGO_URL"] = "mongodb://" + mghost + ":" + str(mgport) + "/" + mgdb#"mongodb://localhost:27017/ekaiser"
+
+	#environ["AUTOUPDATE_VERSION"] = str(version)
+	pidfile = os.path.join(os.path.dirname(__file__), "pids.json")
+	if restart:
+		#TODO - find a way to communicate with the process started with popen
+		print "kill react watch "
+		if os.path.exists(pidfile):
+			f = frappe.get_file_json(pidfile)
+			pid = f.get("meteorapp")
+			try:
+				os.kill(pid, signal.SIGKILL)#signal.SIGQUIT
+				print "process with pid {} was killed".format(pid)
+			except:
+				print "process with pid {} was not killed".format(pid)
+		#import zerorpc
+		#try:
+		#	c = zerorpc.Client()
+		#	c.connect("tcp://127.0.0.1:5252")
+		#	c.stop_and_exit()
+		#except:
+		#	print "stop and exit exception"
+	#subprocess.Popen(["node", path + "/main.js"], cwd=path, env=os.environ)
+	#react = subprocess.Popen(["node", path + "/main.js"], cwd=path, shell=False, close_fds=True, env=environ)
+	#react = subprocess.Popen(["node", path + "/rundevserver.js"], cwd=path, shell=False, close_fds=True, env=environ)
+	p = subprocess.Popen(["meteor", "--port=" + str(mtport)], cwd=path, shell=False, close_fds=True, env=environ)
+	file.save_js_file(pidfile, {"meteorapp": p.pid})
+
+"""
+def run_reactivity(path, mthost="http://localhost", mtport=3000, mghost="http://localhost", mgport=27017, mgdb="fluorine", restart=False):
 	#if make_meteor_config:
 	#make_meteor_config_file(mthost, mtport, version)
 	import frappe
@@ -120,7 +173,7 @@ def run_reactivity(path, version, mthost="http://localhost", mtport=3000, mghost
 		mghost = mghost.replace("http://","").replace("mongodb://","").strip(' \t\n\r')
 		environ["MONGO_URL"] = "mongodb://" + mghost + ":" + str(mgport) + "/" + mgdb#"mongodb://localhost:27017/ekaiser"
 
-	environ["AUTOUPDATE_VERSION"] = str(version)
+	#environ["AUTOUPDATE_VERSION"] = str(version)
 	pidfile = os.path.join(os.path.dirname(__file__), "pids.txt")
 	if restart:
 		#TODO - find a way to communicate with the process started with popen
@@ -146,10 +199,36 @@ def run_reactivity(path, version, mthost="http://localhost", mtport=3000, mghost
 	p = subprocess.Popen(["python", path + "/startfluorine.py", path + "/app"], cwd=path, shell=False, close_fds=True, env=environ)
 	file.save_js_file(pidfile, {"startfluorine": p.pid})
 
+"""
 
+def start_meteor():
+	import frappe
+	#path = file.get_path_server_observe()
+	#file.observe_dir(path)
+	#print start_hash(path)
+	path_reactivity = file.get_path_reactivity()
+
+	config_path = os.path.join(path_reactivity, "common_site_config.json")
+	conf = frappe.get_file_json(config_path)
+	meteor = conf.get("meteor_dev") or {}
+	mongo = conf.get("meteor_mongo") or {}
+	mtport_web = meteor.get("port") or 3000
+	mtport_app = mtport_web + 80
+	mthost = meteor.get("host") or "http://localhost"
+	mghost = mongo.get("host") or "http://localhost"
+	mgport = mongo.get("port") or 27017
+	mgdb = mongo.get("db") or "fluorine"
+
+	for app in ("meteor_app", "meteor_web"):
+		meteor_path = os.path.join(path_reactivity, app)
+		path_meteor = os.path.join(meteor_path, ".meteor")
+		mtport = mtport_web if app == "meteor_web" else mtport_app
+		if os.path.exists(path_meteor):
+			run_meteor(meteor_path, mtport=mtport, mthost=mthost, mghost=mghost, mgport=mgport, mgdb=mgdb)
+
+"""
 def start_reactivity():
 	import frappe
-	from . import meteor_autoupdate_version
 	path = file.get_path_server_observe()
 	#file.observe_dir(path)
 	print start_hash(path)
@@ -162,13 +241,15 @@ def start_reactivity():
 	for f in meteor_files:
 		path_file = os.path.join(js_path, f)
 		if os.path.exists(path_file) and os.path.exists(boot_file):
-			run_reactivity(path_reactivity, meteor_autoupdate_version())
+			run_reactivity(path_reactivity)
 			break
-
+"""
 print "frappe.__file__ 2 {}".format(os.getcwd())
 
 import sys
 
 if any("--serve"==s for s in sys.argv):
+	import frappe
 	print "starting reactivity... {}".format(sys.argv)
-	start_reactivity()
+	#start_reactivity()
+	start_meteor()

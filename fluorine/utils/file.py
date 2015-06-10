@@ -7,7 +7,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import subprocess
 import shutil
-
+from shutil import ignore_patterns
 
 observer = None
 
@@ -108,6 +108,16 @@ def remove_folder_content(folder):
 			shutil.rmtree(os.path.join(root, d))
 
 
+def write(file_path, content):
+	with open(file_path, "w") as f:
+		f.write(content)
+
+
+def read(file_path):
+	with open(file_path, "r") as f:
+		content = f.read()
+	return content
+
 def read_file(file, mode="r"):
 	d = {}
 	#module_path = os.path.dirname(fluorine.__file__)
@@ -184,13 +194,13 @@ def get_fluorine_server_conf():
 def save_js_file(file_path, p, indent=4):
 	save_file(file_path, json.dumps(p, indent=indent))
 
-def save_file(file_path, p):
-	with open(file_path, "w") as f:
+def save_file(file_path, p, mode="w"):
+	with open(file_path, mode) as f:
 		f.write(p)
 
-def get_meteor_release():
-	rpath = get_path_reactivity()
-	cpath = os.path.join(rpath, "server", "config.json")
+def get_meteor_release(cpath):
+	#rpath = get_path_reactivity()
+	#cpath = os.path.join(rpath, "server", "config.json")
 
 	if os.path.exists(cpath):
 		config = frappe.get_file_json(cpath)
@@ -218,6 +228,23 @@ def get_meteor_config(mthost, mtport,  version, version_fresh):
 	return meteor_config
 
 
+def empty_directory(folder, ignore=None):
+	import os, shutil
+
+	if isinstance(ignore, basestring):
+		ignore = [ignore]
+
+	for f in os.listdir(folder):
+		file_path = os.path.join(folder, f)
+		try:
+			if os.path.isfile(file_path):
+				os.unlink(file_path)
+			elif os.path.isdir(file_path) and f not in ignore:
+				shutil.rmtree(file_path)
+		except Exception, e:
+			print e
+
+
 def copy_all_files_with_symlink(src, dst, whatfor, extension="js"):
 	from react_file_loader import copy_client_files
 	#fluorine_dst_temp_path = os.path.join(frappe.get_app_path("fluorine"), "templates", "react", "temp")
@@ -230,7 +257,313 @@ def copy_all_files_with_symlink(src, dst, whatfor, extension="js"):
 
 	#remove_directory(src)
 
+
+def make_all_files_with_symlink(dst, whatfor, ignore=None, custom_pattern=None):
+	_whatfor = ["meteor_app", "meteor_web", "meteor_frappe"]
+	folders_path = []
+	exclude = ["private", "public"]
+	custom_pattern = custom_pattern or []
+
+	if isinstance(whatfor, basestring):
+		whatfor = [whatfor]
+
+	try:
+		for w in whatfor:
+			_whatfor.remove(w)
+		exclude.extend(_whatfor)
+	except:
+		pass
+
+	custom_pattern = set(custom_pattern)
+	custom_pattern.update(['*.pyc', '.DS_Store', '*.py'])
+	pattern = ignore_patterns(*custom_pattern)
+
+	#first installed app first
+	apps = frappe.get_installed_apps()#[::-1]
+	for app in apps:
+		top_folder = True
+		pathname = frappe.get_app_path(app)
+		startpath = os.path.join(pathname, "templates", "react", whatfor[0])
+		meteorpath = os.path.join(pathname, "templates", "react")
+		if os.path.exists(meteorpath):
+			folders_path.append(app)
+			app_folders = "/".join(folders_path)
+			destpath = os.path.join(dst, app_folders)
+
+			process_top_folder(meteorpath, dst, app_folders, pattern)
+			process_pubpriv_folder(meteorpath, dst, app_folders, pattern)
+			process_pubpriv_folder(startpath, dst, app_folders, pattern)
+
+			for root, dirs, files in os.walk(startpath):
+				ign_names = pattern(meteorpath, files)
+				ign_dirs = pattern(meteorpath, dirs)
+				if top_folder:
+					ign_dirs.update(exclude)
+					[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
+					top_folder = False
+				else:
+					[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
+				relpath = os.path.relpath(root, startpath)
+				for f in files:
+					if f in ign_names:
+						continue
+					frappe.create_folder(os.path.realpath(os.path.join(destpath, relpath)))
+					os.symlink(os.path.join(root, f), os.path.realpath(os.path.join(destpath, relpath, f)))
+
+
+def process_pubpriv_folder(meteorpath, dst, app_folders, pattern):
+	ign_top = ("meteor_app", "meteor_web", "meteor_frappe")
+	for root, dirs, files in os.walk(meteorpath):
+		ign_names = pattern(meteorpath, files)
+		meteor_relpath = os.path.relpath(root, meteorpath)
+		folders = meteor_relpath.split("/",1)
+		[dirs.remove(toexclude) for toexclude in ign_top if toexclude in dirs]
+		for f in files:
+			if f in ign_names:
+				continue
+
+			if meteor_relpath.startswith(("public", "private")):
+				if len(folders) > 1:
+					frappe.create_folder(os.path.join(dst, folders[0], app_folders, folders[1]))
+					os.symlink(os.path.join(root, f), os.path.join(dst, folders[0], app_folders, folders[1], f))
+				else:
+					frappe.create_folder(os.path.join(dst, folders[0], app_folders))
+					os.symlink(os.path.join(root, f), os.path.join(dst, folders[0], app_folders, f))
+
+
+def process_top_folder(meteorpath, dst, app_folders, pattern):
+	ign_top = ("meteor_app", "meteor_web", "meteor_frappe", "public", "private")
+	destpath = os.path.join(dst, app_folders)
+	for root, dirs, files in os.walk(meteorpath):
+		ign_names = pattern(meteorpath, files)
+		meteor_relpath = os.path.relpath(root, meteorpath)
+		folders = meteor_relpath.split("/",1)
+		[dirs.remove(toexclude) for toexclude in ign_top if toexclude in dirs]
+		for f in files:
+			if f in ign_names:
+				continue
+			c = len(folders)
+			frappe.create_folder(os.path.join(destpath, folders[c]))
+			os.symlink(os.path.join(root, f), os.path.join(destpath, folders[c], f))
+
+"""
+def make_all_files_with_symlink3(dst, whatfor, ignore=None, custom_pattern=None):
+	_whatfor = ["meteor_app", "meteor_web", "meteor_frappe"]
+	folders_path = []
+	exclude = [""]
+	custom_pattern = custom_pattern or ('*.pyc', '.DS_Store', '*.py')
+
+	if isinstance(whatfor, basestring):
+		whatfor = [whatfor]
+
+	try:
+		for w in whatfor:
+			_whatfor.remove(w)
+		exclude = _whatfor
+	except:
+		pass
+
+	apps = frappe.get_installed_apps()[::-1]
+	for app in apps:
+		topfolder = True
+		pathname = frappe.get_app_path(app)
+		startpath = os.path.join(pathname, "templates", "react", whatfor[0])
+		meteorpath = os.path.join(pathname, "templates", "react")
+		if os.path.exists(meteorpath):
+			folders_path.append(app)
+			app_folders = "/".join(folders_path)
+			destpath = os.path.join(dst, app_folders)
+			for root, dirs, files in os.walk(meteorpath):
+				pattern = ignore_patterns(*custom_pattern)
+				ign_names = pattern(meteorpath, files)
+				[dirs.remove(toexclude) for toexclude in exclude if toexclude in dirs]
+				relpath = os.path.relpath(root, meteorpath)
+				if not relpath.startswith(("meteor_app", "meteor_web", "meteor_frappe", "public", "private")):
+					topfolder = True
+				relpath = os.path.relpath(root, startpath)
+				meteor_relpath = os.path.relpath(root, meteorpath)
+				for f in files:
+					if f in ign_names:
+						continue
+					print "relpath meteorpath {} startpath {}".format(os.path.relpath(root, meteorpath), os.path.relpath(root, startpath))
+					#if relpath.startswith((os.path.join(whatfor[0], "public"), os.path.join(whatfor[0], "private"))):
+					if relpath.startswith(("public", "private")):
+						folders = relpath.split("/",1)
+						if len(folders) > 1:
+							frappe.create_folder(os.path.join(dst, folders[0], app_folders, folders[1]))
+							os.symlink(os.path.join(root, f), os.path.join(dst, folders[0], app_folders, folders[1], f))
+						else:
+							frappe.create_folder(os.path.join(dst, folders[0], app_folders))
+							os.symlink(os.path.join(root, f), os.path.join(dst, folders[0], app_folders, f))
+					elif meteor_relpath.startswith(("public", "private")):
+						folders = meteor_relpath.split("/",1)
+						if len(folders) > 1:
+							frappe.create_folder(os.path.join(dst, folders[0], app_folders, folders[1]))
+							os.symlink(os.path.join(root, f), os.path.join(dst, folders[0], app_folders, folders[1], f))
+						else:
+							frappe.create_folder(os.path.join(dst, folders[0], app_folders))
+							os.symlink(os.path.join(root, f), os.path.join(dst, folders[0], app_folders, f))
+					elif topfolder:
+						relpath = os.path.relpath(root, meteorpath)
+						paths = relpath.split("/", 1)
+						if len(paths) > 1:
+							frappe.create_folder(os.path.join(destpath, paths[1]))
+							os.symlink(os.path.join(root, f), os.path.join(destpath, paths[1], f))
+						else:
+							frappe.create_folder(os.path.join(destpath, paths[0]))
+							os.symlink(os.path.join(root, f), os.path.join(destpath, paths[0], f))
+					else:
+						frappe.create_folder(os.path.realpath(os.path.join(destpath, relpath)))
+						os.symlink(os.path.join(root, f), os.path.realpath(os.path.join(destpath, relpath, f)))
+
+
+
+def make_all_files_with_symlink2(dst, whatfor, ignore=None, custom_pattern=None):
+	_whatfor = ["meteor_app", "meteor_web", "meteor_frappe"]
+	folders_path = []
+	exclude = [""]
+	custom_pattern = custom_pattern or ('*.pyc', '.DS_Store', '*.py')
+
+	if isinstance(whatfor, basestring):
+		whatfor = [whatfor]
+
+	try:
+		for w in whatfor:
+			_whatfor.remove(w)
+		exclude = _whatfor
+	except:
+		pass
+
+	apps = frappe.get_installed_apps()[::-1]
+	for app in apps:
+		pathname = frappe.get_app_path(app)
+		startpath = os.path.join(pathname, "templates", "react", whatfor[0])
+		if os.path.exists(startpath):
+			folders_path.append(app)
+			app_folders = "/".join(folders_path)
+			destpath = os.path.join(dst, app_folders)
+			for root, dirs, files in os.walk(startpath):
+				pattern = ignore_patterns(*custom_pattern)
+				ign_names = pattern(startpath, files)
+				[dirs.remove(toexclude) for toexclude in exclude if toexclude in dirs]
+				for f in files:
+					if f in ign_names:
+						continue
+					relpath = os.path.relpath(root, startpath)
+					if relpath.startswith(("public", "private")):
+						folders = relpath.split("/",1)
+						if len(folders) > 1:
+							frappe.create_folder(os.path.join(dst, folders[0], app_folders, folders[1]))
+							os.symlink(os.path.join(root, f), os.path.join(dst, folders[0], app_folders, folders[1], f))
+						else:
+							frappe.create_folder(os.path.join(dst, folders[0], app_folders))
+							os.symlink(os.path.join(root, f), os.path.join(dst, folders[0], app_folders, f))
+					else:
+						frappe.create_folder(os.path.join(destpath, relpath))
+						os.symlink(os.path.join(root, f), os.path.join(destpath, relpath, f))
+
+
+def make_files_with_symlink(dst, whatfor, ignore=None):
+	ignore = ignore or ["public", "private"]
+	_whatfor = ["meteor_app", "meteor_web", "meteor_frappe"]
+	folders_path = []
+	exclude = [""]
+
+	if isinstance(whatfor, basestring):
+		whatfor = [whatfor]
+
+	try:
+		for w in whatfor:
+			_whatfor.remove(w)
+		exclude = _whatfor
+	except:
+		pass
+
+	apps = frappe.get_installed_apps()[::-1]
+	for app in apps:
+		pathname = frappe.get_app_path(app)
+		startpath = os.path.join(pathname, "templates", "react", whatfor[0])
+		if os.path.exists(startpath):
+			meteorpath = os.path.join(pathname, "templates", "react")
+			names = os.listdir(meteorpath)
+			pattern = ignore_patterns('*.pyc', '.*', '*.py')
+			ign_names = pattern(meteorpath, names)
+
+			folders_path.append(app)
+			app_folders = "/".join(folders_path)
+			destpath = os.path.join(dst, app_folders)
+			frappe.create_folder(destpath)
+			#only one whatfor or for app or for web
+			for l in names:
+				if l in exclude or l in ign_names:
+					continue
+
+				if l in ignore:
+					if l == "public":
+						dst_ign_path = os.path.join(dst, l, app)
+						ppath = os.path.join(meteorpath, "public")
+						process_pub_priv_folder(meteorpath, dst_ign_path, dst_ign_path, ppath, exclude)
+					elif l == "private":
+						dst_ign_path = os.path.join(dst, l, app_folders[:-len(app)-1])
+						linkpath = os.path.join(dst_ign_path, "private_" + app)
+						ppath = os.path.join(meteorpath, "private")
+						curr_app = app
+						process_pub_priv_folder(meteorpath, dst_ign_path, linkpath, ppath, exclude, curr_app)
+				else:
+					if l == whatfor[0]:
+						process_folder(os.path.join(meteorpath, l), destpath, exclude)
+					else:
+						os.symlink(os.path.join(meteorpath, l), os.path.join(destpath, l))
+
+
+
+def process_folder(src, dst, exclude, ignore=None):
+	names = os.listdir(src)
+	pattern = ignore_patterns('*.pyc', '.*', '*.py')
+	ign_names = pattern(src, names)
+	ignore = ignore or ["public", "private"]
+	for l in names:
+		if l in exclude or l in ignore or l in ign_names:
+			continue
+
+		print "process_folder src {} dst {}".format(os.path.join(src, l), os.path.join(dst, l))
+		os.symlink(os.path.join(src, l), os.path.join(dst, l))
+
+def process_pub_priv_folder(src, dst, linkpath, privpath, exclude, app=""):
+
+	names = os.listdir(privpath)
+	pattern = ignore_patterns('*.pyc', '.*', '*.py')
+	ign_names = pattern(src, names)
+
+	for l in names:
+		if l in exclude or l in ign_names:
+			continue
+
+		frappe.create_folder(os.path.join(dst, app))
+		if os.path.isdir(l):
+			os.symlink(os.path.join(src, l), linkpath)
+		else:
+			os.symlink(os.path.join(src, l), os.path.join(dst, app, l))
+"""
+"""
+def process_public_folder(src, dst, linkpath, privpath, exclude):
+
+	names = os.listdir(privpath)
+	pattern = ignore_patterns('*.pyc', '.*', '*.py')
+	ign_names = pattern(src, names)
+
+	for l in names:
+		if l in exclude or l in ign_names:
+			continue
+
+		frappe.create_folder(dst)
+		if os.path.isdir(l):
+			os.symlink(os.path.join(src, l), linkpath)
+		else:
+			os.symlink(os.path.join(src, l), os.path.join(dst, l))
+"""
 #TODO
+"""
 def copy_all_files(dst, whatfor, extension="js"):
 	from react_file_loader import copy_client_files, remove_directory
 	fluorine_dst_temp_path = os.path.join(frappe.get_app_path("fluorine"), "templates", "react", "temp")
@@ -243,7 +576,8 @@ def copy_all_files(dst, whatfor, extension="js"):
 			copytree(src, dst, whatfor)
 
 	remove_directory(fluorine_dst_temp_path)
-
+"""
+"""
 #patch copytree to support meteor_web and meteor_app folders
 def copytree(src, dst, whatfor, symlinks=False, ignore=None):
 	from shutil import copy2, copystat, Error, WindowsError
@@ -297,3 +631,4 @@ def copytree(src, dst, whatfor, symlinks=False, ignore=None):
 		errors.extend((src, dst, str(why)))
 	if errors:
 		raise Error(errors)
+"""

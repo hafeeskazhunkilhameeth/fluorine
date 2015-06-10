@@ -28,7 +28,25 @@ class FluorineReactivity(Document):
 			fhooks.save_custom_template(self.fluorine_base_template)
 
 		fhooks.change_base_template(page_default=page_default)
+		save_to_common_site_config(self)
 
+
+
+def save_to_common_site_config(doc):
+	import os
+	mgconf = {}
+	mtconf = {}
+	path_reactivity = file.get_path_reactivity()
+	config_path = os.path.join(path_reactivity, "common_site_config.json")
+	f = frappe.get_file_json(config_path)
+	mtconf["port"] = doc.fluor_meteor_port
+	mtconf["host"] = doc.fluor_meteor_host
+	mgconf["host"] = doc.fluor_mongo_host
+	mgconf["port"] = doc.fluor_mongo_port
+	mgconf["db"] = doc.fluor_mongo_database
+	f["meteor_dev"].update(mtconf)
+	f["meteor_mongo"].update(mgconf)
+	file.save_js_file(config_path, f)
 
 @frappe.whitelist()
 def make_meteor_file(devmode, mthost, mtport, mghost, mgport, mgdb):

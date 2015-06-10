@@ -41,16 +41,17 @@ def set_meteor_conetxt(context):
 	doc = frappe.get_doc("Fluorine Reactivity")
 
 	#Meteor
-	meteor_host = doc.fluor_meteor_host + ":" + str(doc.fluor_meteor_port)
-	context.meteorRelease = file.get_meteor_release()
-	context.meteor_root_url = meteor_host
+	fluorine.utils.build_meteor_context(context, devmode, "meteor_app")
+	"""
+	meteor_host = doc.fluor_meteor_host + ":" + str(doc.fluor_meteor_port + 80)
+	context.meteor_root_url = doc.fluor_meteor_host
+	context.meteor_root_url_port = meteor_host
 	context.meteor_url_path_prefix = fluorine.utils.meteor_url_path_prefix()
-	context.meteor_autoupdate_version = fluorine.utils.meteor_autoupdate_version()
-	context.meteor_autoupdate_version_freshable = fluorine.utils.meteor_autoupdate_version_freshable()
 	context.meteor_ddp_default_connection_url = meteor_host
+	"""
 
 	context.meteor_web = False
+	context.meteor_app = True
 	context.custom_template = doc.fluorine_base_template
-	context.whatfor = "common" if devmode else "app"
 
 	return fluorine_build_context(context, "meteor_app")
