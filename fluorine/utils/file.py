@@ -275,7 +275,7 @@ def make_all_files_with_symlink(dst, whatfor, ignore=None, custom_pattern=None):
 		pass
 
 	custom_pattern = set(custom_pattern)
-	custom_pattern.update(['*.pyc', '.DS_Store', '*.py'])
+	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp"])
 	pattern = ignore_patterns(*custom_pattern)
 
 	#first installed app first

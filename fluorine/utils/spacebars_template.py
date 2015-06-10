@@ -18,8 +18,9 @@ from collections import OrderedDict
 def fluorine_get_fenv():
 
 	from jinja2 import Environment, DebugUndefined
+	from fluorine.utils.fjinja import MyEnvironment
 
-	fenv = Environment(loader = fluorine_get_floader(),
+	fenv = MyEnvironment(loader = fluorine_get_floader(),
 		undefined=DebugUndefined)
 	set_filters(fenv)
 
@@ -32,6 +33,8 @@ def fluorine_get_fenv():
 
 def fluorine_get_floader():
 
+	from fluorine.utils.fjinja import MyChoiceLoader
+
 	if not frappe.local.floader:
 
 		path = os.path.normpath(os.path.join(os.getcwd(), "..")) + "/apps"
@@ -39,22 +42,60 @@ def fluorine_get_floader():
 		#first template to load is the last installed
 		#So, we can replace the oldest template by new one with the same name
 		apps = frappe.get_installed_apps()[::-1]
+		m = MyFileSystemLoader(apps, path)
+		fluor_loader = [m]
 
-		fluor_loader = [MyFileSystemLoader(apps, path)]
-
-		print "fluorine_get_floader {}".format(path)
-		frappe.local.floader = ChoiceLoader(fluor_loader)
+		frappe.local.floader = MyChoiceLoader(fluor_loader)
 
 	return frappe.local.floader
 
 
 def fluorine_get_template(path):
-	print "in get template {}".format(path)
-	return fluorine_get_fenv().get_template(path)
-
+	#return fluorine_get_fenv().get_template(path)
+	return fluorine_get_fenv().make_meteor_templates_list(path)
 
 def fluorine_render_blocks(context, whatfor):
 	"""returns a dict of block name and its rendered content"""
+	env = fluorine_get_fenv()
+
+	def _render_blocks(template_path):
+		#print "template_paths {}".format(template_path)
+		#get the first template. The last installed in this case
+		source = frappe.local.floader.get_source(frappe.local.fenv, template_path)[0]
+		for referenced_template_path in meta.find_referenced_templates(env.parse(source)):
+			if referenced_template_path:
+				_render_blocks(referenced_template_path)
+
+		#fluorine_get_template(template_path)
+	fluorine_get_template(context["spacebars_template"])
+	#_render_blocks(context["spacebars_template"])
+
+
+def compile_templates(mtl, context):
+	from file import save_file, remove_file
+
+	out = {}
+
+	for l in mtl:
+		template = l.get("template")
+		dstPath = template.filename[:-6] + ".html"
+		content = scrub_relative_urls(concat(template.render(template.new_context(context))))
+		if content:
+			save_file(dstPath, content)
+			items = template.blocks.items()
+			for block, render in items:
+				if block.startswith("spacebars"):
+					block = block[10:]
+					make_heritage(block, context)
+					out[block] = scrub_relative_urls(concat(render(template.new_context(context))))
+		else:
+			remove_file(dstPath)
+
+	return out
+
+
+"""
+def fluorine_render_blocks(context, whatfor):
 	#import inspect
 	#print 'I am f1 and was called by', inspect.currentframe().f_back.f_code.co_name
 	out = {}
@@ -80,14 +121,17 @@ def fluorine_render_blocks(context, whatfor):
 		#return
 			#copyfile(template.filename, dst)
 			#out[block] = scrub_relative_urls(concat(render(template.new_context(context))))
-		if whatfor in ("meteor_app", "meteor_frappe"):
-			for block, render in items:
+		#if whatfor in ("meteor_app", "meteor_frappe"):
+		for block, render in items:
+			if block.startswith("spacebars"):
+				block = block[10:]
 				make_heritage(block, context)
 				out[block] = scrub_relative_urls(concat(render(template.new_context(context))))
 
 	_render_blocks(context["spacebars_template"])
 
 	return out
+"""
 
 """
 def fluorine_build_context3(context, whatfor):
@@ -258,6 +302,55 @@ def fluorine_build_context(context, whatfor):
 def compile_spacebar_templates(context, whatfor):
 
 	from react_file_loader import read_client_files
+
+	#first installed app first
+	apps = frappe.get_installed_apps()#[::-1]
+
+	spacebars_templates = {}
+	spacebars_context = []
+
+	for app in apps:
+
+		pathname = frappe.get_app_path(app)
+		path = os.path.join(pathname, "templates", "react")
+		if os.path.exists(path):
+			files = read_client_files(path, whatfor, extension="xhtml")
+			for f in files:
+				for obj in reversed(f):
+					file_path = obj.get("path")
+					file_name = obj.get("name")
+					#render_spacebar_html(context, file_path, obj.get("name"), pathname, app, whatfor)
+					#fluorine_render_blocks(context, whatfor=whatfor)
+					#print "context[spacebars_template] {}".format(context["spacebars_template"])
+					root = file_path[:-len(file_name)]
+					spacebars_template = os.path.join(os.path.relpath(root, pathname), file_name)
+					if fluorine_get_fenv().make_meteor_templates_list(spacebars_template):
+						spacebars_context.append(frappe._dict({"file_path": file_path, "file_name": file_name, "app_path": pathname, "appname": app, "whatfor": whatfor }))
+					#if whatfor in ("meteor_app", "meteor_frappe"):
+					#	spacebars_templates.update(out)
+					#	context.update(out)
+					#dstPath = os.path.join(obj.get("filePath"), obj.get("fileName") + ".html")
+					#content = ""
+					#for k in out.keys():
+					#	content = content + out[k] + "\n"
+					#if content:
+					#	save_file(dstPath, content)
+
+	render_spacebar_html(context, spacebars_context)
+	mtl = fluorine_get_fenv().get_meteor_template_list()
+	out = compile_templates(mtl, context)
+	#only compile if meteor_app or meteor_frappe
+	if spacebars_templates and whatfor in ("meteor_app", "meteor_frappe"):
+		compiled_spacebars_js = compile_spacebars_templates(spacebars_templates)
+		arr = compiled_spacebars_js.split("__templates__\n")
+		arr.insert(0, "(function(){\n")
+		arr.append("})();\n")
+		context.compiled_spacebars_js = arr
+
+"""
+def compile_spacebar_templates(context, whatfor):
+
+	from react_file_loader import read_client_files
 	from file import save_file
 
 	#first installed app first
@@ -292,6 +385,7 @@ def compile_spacebar_templates(context, whatfor):
 		arr.insert(0, "(function(){\n")
 		arr.append("})();\n")
 		context.compiled_spacebars_js = arr
+"""
 
 def make_meteor_props(context, whatfor):
 	from file import get_path_reactivity, get_meteor_release
@@ -347,6 +441,28 @@ def get_page(url, context):
 
 	return scripts
 """
+
+def render_spacebar_html(context, spacebar_context):
+
+	for obj in spacebar_context:
+		py_path = obj.file_path[:-5]
+		root = obj.file_path[:-len(obj.file_name)]
+		context.spacebars_template = os.path.join(os.path.relpath(root, obj.app_path), obj.file_name)
+		if os.path.exists(os.path.join(root, py_path + ".py")):
+			controller_path = os.path.join(obj.appname, context.spacebars_template).replace(os.path.sep, ".")[:-5]
+			print "app_path 4 {} root {} context.spacebars_template {}".format(controller_path + ".py", root, context.spacebars_template)
+			module = frappe.get_module(controller_path)
+			if module:
+				if hasattr(module, "get_context"):
+					ret = module.get_context(context)
+					if ret:
+						context.update(ret)
+				if hasattr(module, "get_children"):
+					context.get_children = module.get_children
+
+	return
+
+"""
 def render_spacebar_html(context, file_path, file_name, app_path, appname, whatfor):
 
 	py_path = file_path[:-5]
@@ -367,6 +483,7 @@ def render_spacebar_html(context, file_path, file_name, app_path, appname, whatf
 	out = fluorine_render_blocks(context, whatfor=whatfor)
 
 	return out
+"""
 
 """
 def get_html_to_client(whatfor):
