@@ -11,10 +11,14 @@ app_version=["0.0.1"]
 base_template=["templates/fluorine_base.html"]
 app_email=["luisfmfernandes@gmail.com"]
 
+
 fluorine_files_templates = {
     "ekaiser":{
 		"remove": ["templates/react/meteor_web/client/body.xhtml"]
-    }
+    },
+	"jasper_erpnext_report":{
+		"remove": ["templates/react/meteor_web/client/body.xhtml"]
+	}
 }
 
 fluorine_meteor_templates = {

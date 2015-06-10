@@ -134,6 +134,8 @@ class MyFileSystemLoader(FileSystemLoader):
 		self.list_apps_remove = []
 		self.list_meteor_tplt_remove = frappe._dict({})
 		self.list_meteor_tplt_add = frappe._dict({})
+		self.list_meteor_files_remove = frappe._dict({})
+		self.list_meteor_files_add = frappe._dict({})
 		self.curr_app = ""
 		self.curr_template = ""
 		self.start_hook_lists()
@@ -141,9 +143,14 @@ class MyFileSystemLoader(FileSystemLoader):
 	#TODO make cache
 	def start_hook_lists(self):
 		self.list_apps_remove.extend(process_hooks_apps(self.apps))
-		list_meteor_tplt_add, list_meteor_tplt_remove = process_hooks_meteor_templates(self.apps)
+
+		list_meteor_tplt_add, list_meteor_tplt_remove = process_hooks_meteor_templates(self.apps, "fluorine_meteor_templates")
 		self.list_meteor_tplt_add.update(list_meteor_tplt_add)
 		self.list_meteor_tplt_remove.update(list_meteor_tplt_remove)
+
+		list_meteor_files_add, list_meteor_files_remove = process_hooks_meteor_templates(self.apps, "fluorine_files_templates")
+		self.list_meteor_files_add.update(list_meteor_files_add)
+		self.list_meteor_files_remove.update(list_meteor_files_remove)
 
 
 	@internalcode
@@ -159,8 +166,13 @@ class MyFileSystemLoader(FileSystemLoader):
 		#find the first template in revers order of installed apps and return
 
 		for app in self.apps:
+			#used in check_in_remove_list to know which template tag to remove
+			self.curr_app = app
+			#used in check_in_remove_list to know which template file to remove the tag template name
+			self.curr_template = template
 			if app in self.list_apps_remove:
 				continue
+
 			app_path = frappe.get_app_path(app)#get_package_path(app, "", "")
 			filepath = os.path.join(app_path, template)
 			relpath = os.path.relpath(filepath, os.path.normpath(os.path.join(os.path.join(os.getcwd(), ".."), "apps")))
@@ -169,10 +181,6 @@ class MyFileSystemLoader(FileSystemLoader):
 				contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
 				#contents = re.sub("<template name=['\"](.+?)['\"](.*?)>(.*?)</template>", jinjarepl, contents, flags=re.S)
 
-				#used in check_in_remove_list to know which template tag to remove
-				self.curr_app = app
-				#used in check_in_remove_list to know which template file to remove the tag template name
-				self.curr_template = template
 				contents = self.replace_for_templates(contents)
 				self.templates_found.append(template)
 				self.process_references(contents)
@@ -269,7 +277,7 @@ class MyFileSystemLoader(FileSystemLoader):
 		return source
 
 	def addBlockTemplate(self, m):
-		if m.group(1) in self.meteor_tag_templates_list or self.check_in_remove_list(m.group(1)):
+		if m.group(1) in self.meteor_tag_templates_list or self.check_in_tplt_remove_list(m.group(1)):
 			print "in_template_list {} tmpl_list {}".format(m.group(1), self.meteor_tag_templates_list)
 			self.remove_next_close = True
 			return ""
@@ -280,7 +288,7 @@ class MyFileSystemLoader(FileSystemLoader):
 	def get_meteor_template_list(self):
 		return self.jinja_xhtml_template_list
 
-	def check_in_remove_list(self, name):
+	def check_in_tplt_remove_list(self, name):
 		app = self.curr_app
 		template = self.curr_template
 
@@ -290,7 +298,17 @@ class MyFileSystemLoader(FileSystemLoader):
 
 		return False
 
-def process_hooks_meteor_templates(apps):
+	def check_in_files_remove_list(self):
+		app = self.curr_app
+		template = self.curr_template
+
+		for name in self.list_meteor_files_remove.get(app, []):
+			if name == template:
+				return True
+
+		return False
+
+def process_hooks_meteor_templates(apps, hook_name):
 	list_meteor_tplt_add = frappe._dict({})
 	list_meteor_tplt_remove = frappe._dict({})
 
@@ -338,7 +356,7 @@ def process_hooks_meteor_templates(apps):
 					ladd.append(a)
 
 	for app in apps:
-		hooks = frappe.get_hooks(hook="fluorine_meteor_templates", app_name=app)
+		hooks = frappe.get_hooks(hook=hook_name, app_name=app)
 		if hooks:
 			for k,v in hooks.items():
 				remove = v.get("remove") or []

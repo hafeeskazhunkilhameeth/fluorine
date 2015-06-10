@@ -296,13 +296,22 @@ def fluorine_build_context(context, whatfor):
 
 	return context
 
+def check_in_files_remove_list(app, template, list_meteor_files_remove):
+
+		for name in list_meteor_files_remove.get(app, []):
+			if name == template:
+				return True
+
+		return False
+
 def process_react_templates(context, whatfor):
 
 	from react_file_loader import read_client_files
-	from fjinja import process_hooks_apps
+	from fjinja import process_hooks_apps, process_hooks_meteor_templates
 	#first installed app first
 	apps = frappe.get_installed_apps()#[::-1]
 	list_apps_remove = process_hooks_apps(apps)
+	list_meteor_files_add, list_meteor_files_remove = process_hooks_meteor_templates(apps, "fluorine_files_templates")
 	spacebars_templates = {}
 	spacebars_context = []
 
@@ -319,8 +328,9 @@ def process_react_templates(context, whatfor):
 					file_name = obj.get("name")
 					root = file_path[:-len(file_name)]
 					spacebars_template_path = os.path.join(os.path.relpath(root, pathname), file_name)
-					if addto_meteor_templates_list(spacebars_template_path):
-						spacebars_context.append(frappe._dict({"file_path": file_path, "file_name": file_name, "app_path": pathname, "appname": app, "whatfor": whatfor }))
+					if not check_in_files_remove_list(app, spacebars_template_path, list_meteor_files_remove):
+						if addto_meteor_templates_list(spacebars_template_path):
+							spacebars_context.append(frappe._dict({"file_path": file_path, "file_name": file_name, "app_path": pathname, "appname": app, "whatfor": whatfor }))
 
 	#get the context from all the python files of templates
 	get_spacebars_context(context, spacebars_context)
