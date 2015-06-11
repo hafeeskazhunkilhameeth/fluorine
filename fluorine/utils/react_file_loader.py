@@ -242,8 +242,11 @@ def get_dirs_from_list(appname, list_files):
 
 	return dirs
 
-def read_client_files(start_folder, whatfor, appname, meteor_ignore=None, extension="js"):
+def read_client_files(start_folder, whatfor, appname, meteor_ignore=None, custom_pattern=None, extension="js"):
 	from fluorine.utils.file import meteor_ignore_files, meteor_ignore_folders
+	from shutil import ignore_patterns
+
+	custom_pattern = custom_pattern or []
 	files_to_read = []
 	files_in_lib = []
 	main_files = []
@@ -272,6 +275,10 @@ def read_client_files(start_folder, whatfor, appname, meteor_ignore=None, extens
 	except:
 		pass
 
+	custom_pattern = set(custom_pattern)
+	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp"])
+	pattern = ignore_patterns(*custom_pattern)
+
 	ignored_names_top.extend(exclude)
 	ignored_names_any.extend(exclude)
 
@@ -284,12 +291,18 @@ def read_client_files(start_folder, whatfor, appname, meteor_ignore=None, extens
 		meteor_relpath = os.path.relpath(root, frappe.get_app_path(appname))
 		meteor_ignore_folders(appname, meteor_relpath, dirs, meteor_ignore=meteor_ignore)
 
+		ign_names = pattern(start_folder, files)
+		ign_dirs = pattern(start_folder, dirs)
 		try:
 			if topfolder:
-				[dirs.remove(toexclude) for toexclude in ignored_names_top if toexclude in dirs]
+				ign_dirs.update(ignored_names_top)
+				#[dirs.remove(toexclude) for toexclude in ignored_names_top if toexclude in dirs]
+				[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
 				topfolder = False
 			else:
-				[dirs.remove(toexclude) for toexclude in ignored_names_any if toexclude in dirs]
+				ign_dirs.update(ignored_names_any)
+				#[dirs.remove(toexclude) for toexclude in ignored_names_any if toexclude in dirs]
+				[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
 
 		except:
 			print "remove exclude 3 {} no exclude in dirs ".format(ignored_names_top)
@@ -313,7 +326,7 @@ def read_client_files(start_folder, whatfor, appname, meteor_ignore=None, extens
 
 		#for f in sorted(files, reverse=True):
 		for f in files:
-			if meteor_ignore_files(appname, meteor_relpath, f, meteor_ignore=meteor_ignore):
+			if f in ign_names or meteor_ignore_files(appname, meteor_relpath, f, meteor_ignore=meteor_ignore):
 				continue
 			ext = f.rsplit(".", 1)
 			#if f.endswith("." + extension):

@@ -296,7 +296,9 @@ def make_meteor_ignor_files(apps):
 		#save_js_file(os.path.join(get_path_reactivity(), "teste_list_dump.json"), list_ignores)
 		frappe.local.meteor_ignores = list_ignores
 
-		#process this list from all. Last installed app process last
+		# Process list_ignores from all installed apps.
+		# Last installed app process last.
+		# In this way last installed app can remove or add what others added or removed
 		apps_last_last = apps
 		process_ignores_from_modules(apps_last_last, "proces_all_meteor_lists", frappe.local.meteor_ignores)
 
