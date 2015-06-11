@@ -5,13 +5,13 @@ __author__ = 'luissaguas'
 from frappe.website.utils import scrub_relative_urls
 #from frappe.website.template import render_blocks
 from jinja2.utils import concat
-from jinja2 import meta
+#from jinja2 import meta
 import frappe
 from frappe.utils.jinja import set_filters, get_allowed_functions_for_jenv
 #from frappe.website.context import get_context
 #from fluorine.utils.packages_path import get_package_path
 from fjinja import MyFileSystemLoader
-from jinja2 import ChoiceLoader
+#from jinja2 import ChoiceLoader
 import hashlib, json, os, re
 from collections import OrderedDict
 
@@ -268,31 +268,37 @@ def meteor_hash_version(manifest, runtimeCfg):
 
 def make_meteor_ignor_files(apps):
 	from fjinja import process_hooks_apps, process_hooks_meteor_templates
-	from file import process_ignores_from_files
+	from file import process_ignores_from_modules#, save_js_file, get_path_reactivity
 
-	list_apps_remove = process_hooks_apps(apps)
-	list_meteor_files_add, list_meteor_files_remove = process_hooks_meteor_templates(apps, "fluorine_files_templates")
-	list_meteor_files_folders_add, list_meteor_files_folders_remove = process_hooks_meteor_templates(apps, "fluorine_files_folders")
-	list_meteor_tplt_add, list_meteor_tplt_remove = process_hooks_meteor_templates(apps, "fluorine_meteor_templates")
+	if not frappe.local.meteor_ignores:
+		apps_last_first = apps[::-1]
+		list_apps_remove = process_hooks_apps(apps_last_first)
+		list_meteor_files_add, list_meteor_files_remove = process_hooks_meteor_templates(apps_last_first, "fluorine_files_templates")
+		list_meteor_files_folders_add, list_meteor_files_folders_remove = process_hooks_meteor_templates(apps_last_first, "fluorine_files_folders")
+		list_meteor_tplt_add, list_meteor_tplt_remove = process_hooks_meteor_templates(apps_last_first, "fluorine_meteor_templates")
 
-	list_ignores = frappe._dict({
-		"remove":{
-			"apps": list_apps_remove,
-			"files_folders": list_meteor_files_folders_remove,
-			"meteor_files_templates": list_meteor_files_remove,
-			"meteor_templates": list_meteor_tplt_remove
-		},
-		"add":{
-			"files_folders": list_meteor_files_folders_add,
-			"meteor_files": list_meteor_files_add,
-			"meteor_templates": list_meteor_tplt_add
-		}
+		list_ignores = frappe._dict({
+			"remove":{
+				"apps": list_apps_remove,
+				"files_folders": list_meteor_files_folders_remove,
+				"meteor_files_templates": list_meteor_files_remove,
+				"meteor_templates": list_meteor_tplt_remove
+			},
+			"add":{
+				"files_folders": list_meteor_files_folders_add,
+				"meteor_files": list_meteor_files_add,
+				"meteor_templates": list_meteor_tplt_add
+			}
 
-	})
+		})
 
-	frappe.local.meteor_ignores = list_ignores
+		#this is for teste how it will stay when cached
+		#save_js_file(os.path.join(get_path_reactivity(), "teste_list_dump.json"), list_ignores)
+		frappe.local.meteor_ignores = list_ignores
 
-	#process_ignores_from_files(apps, "proces_all_meteor_lists", frappe.local.meteor_ignores)
+		#process this list from all. Last installed app process last
+		apps_last_last = apps
+		process_ignores_from_modules(apps_last_last, "proces_all_meteor_lists", frappe.local.meteor_ignores)
 
 
 def fluorine_build_context(context, whatfor):

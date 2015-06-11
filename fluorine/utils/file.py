@@ -453,7 +453,7 @@ Here we can remove any app
 
 """
 
-def process_ignores_from_files(apps, func, list_ignores=None):
+def process_ignores_from_modules(apps, func, list_ignores=None):
 
 	all_list = []
 
