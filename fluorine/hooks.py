@@ -12,31 +12,30 @@ base_template=["templates/fluorine_base.html"]
 app_email=["luisfmfernandes@gmail.com"]
 
 
+
 fluorine_files_templates = {
-    "ekaiser":{
+	"ekaiser":{
 		"remove": ["templates/react/meteor_web/client/body.xhtml"]
-    },
+	},
 	"jasper_erpnext_report":{
 		"remove": ["templates/react/meteor_web/client/body.xhtml"]
 	}
 }
-
+#we can ignore templates or jinja blocks
 fluorine_meteor_templates = {
-    "fluorine":{
+	"fluorine":{
 		"remove": [{"name":"main", "file":"templates/react/meteor_web/client/teste_copy.xhtml"}]
-    }
+	}
 }
 
 fluorine_apps = {
-    "ekaiser":{
-		"remove": 1
-    }
+	"ekaiser":{
+		"remove": 0
+	}
 }
 
-"""
-fluorine_folders = {
-    "ekaiser":{
-		"remove": ["path"]
-    }
+fluorine_files_folders = {
+	"ekaiser":{
+		"remove": ["templates/react/meteor_web/public"]
+	}
 }
-"""

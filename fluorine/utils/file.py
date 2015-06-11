@@ -257,8 +257,27 @@ def copy_all_files_with_symlink(src, dst, whatfor, extension="js"):
 
 	#remove_directory(src)
 
+def check_in_files_remove_list(app, template, list_meteor_files_remove):
 
-def make_all_files_with_symlink(dst, whatfor, ignore=None, custom_pattern=None):
+	for name in list_meteor_files_remove.get(app, []):
+		if name == template:
+			return True
+
+	return False
+
+
+def check_dirs_in_files_remove_list(app, template, dirs, list_meteor_files_remove):
+	dirToRemove = []
+	for d in dirs:
+		template_name = os.path.join(template, d)
+		for name in list_meteor_files_remove.get(app, []):
+			if name == template_name:
+				dirToRemove.append(d)
+
+	return dirToRemove
+
+
+def make_all_files_with_symlink(dst, whatfor, meteor_ignore=None, custom_pattern=None):
 	_whatfor = ["meteor_app", "meteor_web", "meteor_frappe"]
 	folders_path = []
 	exclude = ["private", "public"]
@@ -290,11 +309,17 @@ def make_all_files_with_symlink(dst, whatfor, ignore=None, custom_pattern=None):
 			app_folders = "/".join(folders_path)
 			destpath = os.path.join(dst, app_folders)
 
-			process_top_folder(meteorpath, dst, app_folders, pattern)
-			process_pubpriv_folder(meteorpath, dst, app_folders, pattern)
-			process_pubpriv_folder(startpath, dst, app_folders, pattern)
+			process_top_folder(meteorpath, dst, app, app_folders, pattern, meteor_ignore=meteor_ignore)
+			process_pubpriv_folder(meteorpath, dst, app, app_folders, pattern, meteor_ignore=meteor_ignore)
+			process_pubpriv_folder(startpath, dst, app, app_folders, pattern, meteor_ignore=meteor_ignore)
 
 			for root, dirs, files in os.walk(startpath):
+
+				#start with templates/react
+				#meteor_relpath = os.path.relpath(root, os.path.join(meteorpath, "..", ".."))
+				meteor_relpath = os.path.relpath(root, frappe.get_app_path(app))
+				meteor_ignore_folders(app, meteor_relpath, dirs, meteor_ignore=meteor_ignore)
+
 				ign_names = pattern(meteorpath, files)
 				ign_dirs = pattern(meteorpath, dirs)
 				if top_folder:
@@ -305,21 +330,27 @@ def make_all_files_with_symlink(dst, whatfor, ignore=None, custom_pattern=None):
 					[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
 				relpath = os.path.relpath(root, startpath)
 				for f in files:
-					if f in ign_names:
+					if f in ign_names or meteor_ignore_files(app, meteor_relpath, f, meteor_ignore=meteor_ignore):
 						continue
+
 					frappe.create_folder(os.path.realpath(os.path.join(destpath, relpath)))
 					os.symlink(os.path.join(root, f), os.path.realpath(os.path.join(destpath, relpath, f)))
 
 
-def process_pubpriv_folder(meteorpath, dst, app_folders, pattern):
+def process_pubpriv_folder(meteorpath, dst, app, app_folders, pattern, meteor_ignore=None):
 	ign_top = ("meteor_app", "meteor_web", "meteor_frappe")
 	for root, dirs, files in os.walk(meteorpath):
+		#start with templates/react
+		#meteor_relpath = os.path.relpath(root, os.path.join(meteorpath, "..", "..", ".."))
+		meteor_relpath = os.path.relpath(root, frappe.get_app_path(app))
+		print "meteor_relpath in make all app 8 {} links {}".format(app, meteor_relpath)
+		meteor_ignore_folders(app, meteor_relpath, dirs, meteor_ignore=meteor_ignore)
 		ign_names = pattern(meteorpath, files)
 		meteor_relpath = os.path.relpath(root, meteorpath)
 		folders = meteor_relpath.split("/",1)
 		[dirs.remove(toexclude) for toexclude in ign_top if toexclude in dirs]
 		for f in files:
-			if f in ign_names:
+			if f in ign_names or meteor_ignore_files(app, meteor_relpath, f, meteor_ignore=meteor_ignore):
 				continue
 
 			if meteor_relpath.startswith(("public", "private")):
@@ -331,20 +362,141 @@ def process_pubpriv_folder(meteorpath, dst, app_folders, pattern):
 					os.symlink(os.path.join(root, f), os.path.join(dst, folders[0], app_folders, f))
 
 
-def process_top_folder(meteorpath, dst, app_folders, pattern):
+def process_top_folder(meteorpath, dst, app, app_folders, pattern, meteor_ignore=None):
 	ign_top = ("meteor_app", "meteor_web", "meteor_frappe", "public", "private")
 	destpath = os.path.join(dst, app_folders)
 	for root, dirs, files in os.walk(meteorpath):
+		meteor_relpath = os.path.relpath(root, frappe.get_app_path(app))
+		#print "meteor_relpath in make all app 8 {} links {}".format(app, meteor_relpath)
+		meteor_ignore_folders(app, meteor_relpath, dirs, meteor_ignore=meteor_ignore)
+
 		ign_names = pattern(meteorpath, files)
 		meteor_relpath = os.path.relpath(root, meteorpath)
 		folders = meteor_relpath.split("/",1)
 		[dirs.remove(toexclude) for toexclude in ign_top if toexclude in dirs]
 		for f in files:
-			if f in ign_names:
+			if f in ign_names or meteor_ignore_files(app, meteor_relpath, f, meteor_ignore=meteor_ignore):
 				continue
+
 			c = len(folders)
 			frappe.create_folder(os.path.join(destpath, folders[c]))
 			os.symlink(os.path.join(root, f), os.path.join(destpath, folders[c], f))
+
+
+def meteor_ignore_folders(app, meteor_relpath, dirs, meteor_ignore=None):
+	if meteor_ignore:
+		files_folders = meteor_ignore.get("remove").get("files_folders")
+		dirsToRemove = check_dirs_in_files_remove_list(app, meteor_relpath, dirs, files_folders)
+		for d in dirsToRemove:
+			dirs.remove(d)
+
+def meteor_ignore_files(app, meteor_relpath, file, meteor_ignore=None):
+
+	if meteor_ignore:
+		filePath = os.path.join(meteor_relpath, file)
+		templates = meteor_ignore.get("remove").get("meteor_files_templates")
+		files_folders = meteor_ignore.get("remove").get("files_folders")
+		for l in  (templates, files_folders):
+			if check_in_files_remove_list(app, filePath, l):
+				return True
+
+	return False
+
+"""
+This function is call before process the files of the app
+This function call reactignores.py module inside each app templates folder with the list of hook ignores
+This way we can from code change the list adding or removing
+
+The list of functions to call are: get_meteor_apps; get_meteor_files_folders; get_meteor_files_templates; get_meteor_templates;
+And one list that's get all the ignor list: proces_all_meteor_lists
+
+The list_ignores has the following structure:
+
+{
+	"remove":{
+		"apps": list_apps_remove,
+		"files_folders": list_meteor_files_folders_remove,
+		"meteor_files_templates": list_meteor_files_remove,
+		"meteor_templates": list_meteor_tplt_remove
+	},
+	"add":{
+		"files_folders": list_meteor_files_folders_add,
+		"meteor_files": list_meteor_files_add,
+		"meteor_templates": list_meteor_tplt_add
+	}
+
+}
+
+and the list in each key has the following structure:
+
+{
+	"appname1": [object or string],
+	"appname2": [object or string]
+}
+
+
+meteor_templates: list_meteor_tplt_remove is a list of dict with this structure:
+{"name":"template or block name", "file":"templates/react/meteor_web or meteor_app/.../a.xhtml"}
+Here we can remove any meteor template tag or jinja2 block tag with the given name from the gives file
+
+meteor_files_templates: list_meteor_files_remove is a list with this structure:
+"templates/react/meteor_web or meteor_app/.../a.xhtml"
+Here we can remove any meteor file with extension xhtml and all its blocks and templates
+
+files_folders: list_meteor_files_folders_remove is a list with this structure:
+"templates/react/meteor_web or meteor_app/.../" or "templates/react/meteor_web or meteor_app/.../any_file.any_ext"
+Here we can remove any folder or file
+
+list_apps_remove: list_apps_remove is a list.
+["appname1", "appname2"]
+Here we can remove any app
+
+"""
+
+def process_ignores_from_files(apps, func, list_ignores=None):
+
+	all_list = []
+
+	for app in apps:
+		pathname = frappe.get_app_path(app)
+		ignorpath = os.path.join(pathname, "templates")
+		controller_path = os.path.join(ignorpath, "reactignores.py")
+		if controller_path:
+			controller = app + "." + os.path.relpath(controller_path, pathname).replace(os.path.sep, ".")[:-3]
+			try:
+				module = frappe.get_module(controller)
+				if module:
+					if hasattr(module, func):
+						cfunc = getattr(module, func)
+						#add, remove = cfunc(currapp, list_ignores)
+						"""
+						Must return a dict:
+						{
+							"appname":{
+								"remove": [object or string]
+							}
+						}
+						"""
+						list_from_func = cfunc(list_ignores)
+						#list_files = frappe._dict({})
+						#a = frappe._dict({})
+						#a[currapp] = frappe._dict({
+						#	"remove":remove or [],
+						#	"add":add or []
+						#})
+						#all_list.append(a)
+						if list_from_func:
+							all_list.append(list_from_func)
+						#list_files[func[4:]] = a
+							#module.get_meteor_files_templates(list_ignores)
+					#if hasattr(module, "get_meteor_apps"):
+					#	apps = module.get_meteor_apps(list_ignores)
+					#if hasattr(module, "get_meteor_files_folders"):
+					#	ifolders = module.get_ignor_folders(list_ignores)
+			except:
+				pass
+
+	return all_list
 
 """
 def make_all_files_with_symlink3(dst, whatfor, ignore=None, custom_pattern=None):

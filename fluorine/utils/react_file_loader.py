@@ -211,7 +211,7 @@ def copy_client_files(fluorine_temp_path, whatfor, extension="js", with_wrapper=
 							copy_file(srcPath, dstPath)
 
 
-
+"""
 def copy_client_files2(fluorine_temp_path, extension="js"):
 	apps = frappe.get_installed_apps()#[::-1]
 	for app in apps:
@@ -230,9 +230,20 @@ def copy_client_files2(fluorine_temp_path, extension="js"):
 					for file in files:
 						if file.endswith("." + extension):
 							copy_file(os.path.join(root, file), os.path.join(destpath, app + "_" + file))
+"""
 
+def get_dirs_from_list(appname, list_files):
+	dirs = []
+	for l in list_files.get(appname, []):
+		if os.path.isdir(l):
+			dirname = l.split("/")
+			length = len(dirname) - 1
+			dirs.append(dirname[length])
 
-def read_client_files(temp_folder, whatfor, extension="js"):
+	return dirs
+
+def read_client_files(start_folder, whatfor, appname, meteor_ignore=None, extension="js"):
+	from fluorine.utils.file import meteor_ignore_files, meteor_ignore_folders
 	files_to_read = []
 	files_in_lib = []
 	main_files = []
@@ -266,12 +277,13 @@ def read_client_files(temp_folder, whatfor, extension="js"):
 
 	topfolder = True
 
-	for root, dirs, files in os.walk(temp_folder):
-		print "pathname: 3 {}".format(dirs)
-		#if root.endswith(exclude):
-		#	continue
-		#only works for topdown=True
-		#dirs[:] = [d for d in dirs if d not in exclude]
+	for root, dirs, files in os.walk(start_folder):
+
+		#start with templates/react
+		#meteor_relpath = os.path.relpath(root, os.path.join(start_folder, "..", ".."))
+		meteor_relpath = os.path.relpath(root, frappe.get_app_path(appname))
+		meteor_ignore_folders(appname, meteor_relpath, dirs, meteor_ignore=meteor_ignore)
+
 		try:
 			if topfolder:
 				[dirs.remove(toexclude) for toexclude in ignored_names_top if toexclude in dirs]
@@ -279,7 +291,6 @@ def read_client_files(temp_folder, whatfor, extension="js"):
 			else:
 				[dirs.remove(toexclude) for toexclude in ignored_names_any if toexclude in dirs]
 
-			print "remove exclude 3 {} dirs {}".format(ignored_names_top, dirs)
 		except:
 			print "remove exclude 3 {} no exclude in dirs ".format(ignored_names_top)
 			pass
@@ -291,6 +302,7 @@ def read_client_files(temp_folder, whatfor, extension="js"):
 
 		islib = False
 		iscompatibility = False
+		relpath = os.path.relpath(root, start_folder)
 
 		if re.search(r"\blib\b", root):
 			islib = True
@@ -299,22 +311,21 @@ def read_client_files(temp_folder, whatfor, extension="js"):
 
 		deeper = len(root.split("/"))
 
-		#for file in sorted(files, reverse=True):
-		for file in files:
-			print "files in read {}".format(files)
-			ext = file.rsplit(".", 1)
-			#if file.endswith("." + extension):
+		#for f in sorted(files, reverse=True):
+		for f in files:
+			if meteor_ignore_files(appname, meteor_relpath, f, meteor_ignore=meteor_ignore):
+				continue
+			ext = f.rsplit(".", 1)
+			#if f.endswith("." + extension):
 			if ext > 1 and ext[1] in extension:
-				#path = os.path.join(os.path.relpath(root, pathname), file)
-				path = os.path.join(root, file)
-				print "path read_client_files {}".format(path)
-				relpath = os.path.relpath(root, temp_folder)
-				obj = {"name":file, "path": path, "relpath": relpath, "filePath": root, "fileName": ext[0], "deep": deeper}
+				#path = os.path.join(os.path.relpath(root, pathname), f)
+				path = os.path.join(root, f)
+				obj = {"name":f, "path": path, "relpath": relpath, "filePath": root, "fileName": ext[0], "deep": deeper}
 				#if root.endswith("lib"):
 				if iscompatibility:
 					obj["compatibility"] = True
 					compatibility_files.append(obj)
-				elif re.search(r"main.*", file):
+				elif re.search(r"main.*", f):
 					if islib:
 						main_lib_files.append(obj)
 						continue

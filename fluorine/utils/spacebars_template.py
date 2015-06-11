@@ -266,6 +266,35 @@ def meteor_hash_version(manifest, runtimeCfg):
 	return sh1.hexdigest(), sh2.hexdigest(), frappe_manifest
 
 
+def make_meteor_ignor_files(apps):
+	from fjinja import process_hooks_apps, process_hooks_meteor_templates
+	from file import process_ignores_from_files
+
+	list_apps_remove = process_hooks_apps(apps)
+	list_meteor_files_add, list_meteor_files_remove = process_hooks_meteor_templates(apps, "fluorine_files_templates")
+	list_meteor_files_folders_add, list_meteor_files_folders_remove = process_hooks_meteor_templates(apps, "fluorine_files_folders")
+	list_meteor_tplt_add, list_meteor_tplt_remove = process_hooks_meteor_templates(apps, "fluorine_meteor_templates")
+
+	list_ignores = frappe._dict({
+		"remove":{
+			"apps": list_apps_remove,
+			"files_folders": list_meteor_files_folders_remove,
+			"meteor_files_templates": list_meteor_files_remove,
+			"meteor_templates": list_meteor_tplt_remove
+		},
+		"add":{
+			"files_folders": list_meteor_files_folders_add,
+			"meteor_files": list_meteor_files_add,
+			"meteor_templates": list_meteor_tplt_add
+		}
+
+	})
+
+	frappe.local.meteor_ignores = list_ignores
+
+	#process_ignores_from_files(apps, "proces_all_meteor_lists", frappe.local.meteor_ignores)
+
+
 def fluorine_build_context(context, whatfor):
 
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity#, save_js_file
@@ -274,7 +303,10 @@ def fluorine_build_context(context, whatfor):
 	devmode = context.developer_mode
 	refresh = False
 	space_compile = True
+	apps = frappe.get_installed_apps()#[::-1]
 
+	make_meteor_ignor_files(apps)
+	#process_ignores_from_files(apps)
 	if devmode:
 		frefresh = os.path.join(path_reactivity, "common_site_config.json")
 		refresh = True
@@ -285,35 +317,43 @@ def fluorine_build_context(context, whatfor):
 			space_compile = meteor.get("compile", True)
 
 	if refresh or space_compile or whatfor == "meteor_app":
-		process_react_templates(context, whatfor)
+		process_react_templates(context, apps, whatfor)
 
 	if refresh:
+		#list_meteor_files_add, list_meteor_files_remove = process_hooks_meteor_templates(apps, "fluorine_files_templates")
+		#list_meteor_files_folders_add, list_meteor_files_folders_remove = process_hooks_meteor_templates(apps, "fluorine_files_folders")
+		#ignore = {"templates":list_meteor_files_remove, "files_folders":list_meteor_files_folders_remove}
 		fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
 		empty_directory(fluorine_publicjs_dst_path, ignore=(".meteor",))
-		make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, ignore=None, custom_pattern=["*.xhtml"])
+		make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, meteor_ignore=frappe.local.meteor_ignores, custom_pattern=["*.xhtml"])
 
 	make_meteor_props(context, whatfor)
 
 	return context
 
+"""
 def check_in_files_remove_list(app, template, list_meteor_files_remove):
 
-		for name in list_meteor_files_remove.get(app, []):
-			if name == template:
-				return True
+	for name in list_meteor_files_remove.get(app, []):
+		if name == template:
+			return True
 
-		return False
+	return False
+"""
 
-def process_react_templates(context, whatfor):
+def process_react_templates(context, apps, whatfor):
 
 	from react_file_loader import read_client_files
-	from fjinja import process_hooks_apps, process_hooks_meteor_templates
+	#from fjinja import process_hooks_apps, process_hooks_meteor_templates
 	#first installed app first
-	apps = frappe.get_installed_apps()#[::-1]
-	list_apps_remove = process_hooks_apps(apps)
-	list_meteor_files_add, list_meteor_files_remove = process_hooks_meteor_templates(apps, "fluorine_files_templates")
+	#list_apps_remove = process_hooks_apps(apps)
+	#list_meteor_files_add, list_meteor_files_remove = process_hooks_meteor_templates(apps, "fluorine_files_templates")
+	#list_meteor_files_folders_add, list_meteor_files_folders_remove = process_hooks_meteor_templates(apps, "fluorine_files_folders")
 	spacebars_templates = {}
 	spacebars_context = []
+
+	#ignore = {"templates":list_meteor_files_remove, "files_folders":list_meteor_files_folders_remove}
+	list_apps_remove = frappe.local.meteor_ignores.get("remove").get("apps")
 
 	for app in apps:
 		if app in list_apps_remove:
@@ -321,16 +361,16 @@ def process_react_templates(context, whatfor):
 		pathname = frappe.get_app_path(app)
 		path = os.path.join(pathname, "templates", "react")
 		if os.path.exists(path):
-			files = read_client_files(path, whatfor, extension="xhtml")
+			files = read_client_files(path, whatfor, app, meteor_ignore=frappe.local.meteor_ignores, extension="xhtml")
 			for f in files:
 				for obj in reversed(f):
 					file_path = obj.get("path")
 					file_name = obj.get("name")
 					root = file_path[:-len(file_name)]
 					spacebars_template_path = os.path.join(os.path.relpath(root, pathname), file_name)
-					if not check_in_files_remove_list(app, spacebars_template_path, list_meteor_files_remove):
-						if addto_meteor_templates_list(spacebars_template_path):
-							spacebars_context.append(frappe._dict({"file_path": file_path, "file_name": file_name, "app_path": pathname, "appname": app, "whatfor": whatfor }))
+					#if not check_in_files_remove_list(app, spacebars_template_path, list_meteor_files_remove):
+					if addto_meteor_templates_list(spacebars_template_path):
+						spacebars_context.append(frappe._dict({"file_path": file_path, "file_name": file_name, "app_path": pathname, "appname": app, "whatfor": whatfor }))
 
 	#get the context from all the python files of templates
 	get_spacebars_context(context, spacebars_context)
@@ -448,6 +488,7 @@ def get_page(url, context):
 	return scripts
 """
 
+#TODO - ver file.py function get_ignores_from_files
 def get_spacebars_context(context, spacebar_context):
 
 	for obj in spacebar_context:

@@ -16,6 +16,7 @@ def get_context(context):
 	devmode = fluorine.utils.check_dev_mode()
 	frappe.local.fenv = None
 	frappe.local.floader = None
+	frappe.local.meteor_ignores = None
 	context.developer_mode = devmode
 	context.jquery_include = fluorine.utils.jquery_include()
 
