@@ -332,6 +332,7 @@ def read_client_files(start_folder, whatfor, appname, meteor_ignore=None, custom
 			#if f.endswith("." + extension):
 			if ext > 1 and ext[1] in extension:
 				#path = os.path.join(os.path.relpath(root, pathname), f)
+				print "first file processed {}".format(f)
 				path = os.path.join(root, f)
 				obj = {"name":f, "path": path, "relpath": relpath, "filePath": root, "fileName": ext[0], "deep": deeper}
 				#if root.endswith("lib"):

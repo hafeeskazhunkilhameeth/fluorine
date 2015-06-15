@@ -1,41 +1,16 @@
 app_url=["http://localhost"]
+fluorine_files_folders={"ekaiser": {"remove": ["templates/react/meteor_web/public"]}}
 app_name=["fluorines"]
 app_icon=["icon-beaker"]
 app_color=["#336600"]
+fluorine_apps={"ekaiser": {"remove": [0]}}
 app_description=["The most reactive app."]
 website_clear_cache=["fluorine.utils.fcache.clear_cache"]
 app_publisher=["Luis Fernandes"]
-app_title=["Fluorine"]
+fluorine_meteor_templates={"fluorine": {"remove": [{"name": "main", "file": "templates/react/meteor_web/client/teste_copy.xhtml"}]}}
 home_page=["fluorine_home"]
+app_title=["Fluorine"]
+fluorine_files_templates={"jasper_erpnext_report": {"remove": ["templates/react/meteor_web/client/body.xhtml"]}, "ekaiser": {"remove": ["templates/react/meteor_web/client/body.xhtml"]}}
 app_version=["0.0.1"]
 base_template=["templates/fluorine_base.html"]
 app_email=["luisfmfernandes@gmail.com"]
-
-
-
-fluorine_files_templates = {
-	"ekaiser":{
-		"remove": ["templates/react/meteor_web/client/body.xhtml"]
-	},
-	"jasper_erpnext_report":{
-		"remove": ["templates/react/meteor_web/client/body.xhtml"]
-	}
-}
-#we can ignore templates or jinja blocks
-fluorine_meteor_templates = {
-	"fluorine":{
-		"remove": [{"name":"main", "file":"templates/react/meteor_web/client/teste_copy.xhtml"}]
-	}
-}
-
-fluorine_apps = {
-	"ekaiser":{
-		"remove": 0
-	}
-}
-
-fluorine_files_folders = {
-	"ekaiser":{
-		"remove": ["templates/react/meteor_web/public"]
-	}
-}

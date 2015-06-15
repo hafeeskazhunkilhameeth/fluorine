@@ -21,13 +21,14 @@ def fluorine_get_fenv():
 	from jinja2 import DebugUndefined
 	from fluorine.utils.fjinja import MyEnvironment
 
-	fenv = MyEnvironment(loader = fluorine_get_floader(),
-		undefined=DebugUndefined)
-	set_filters(fenv)
+	if not frappe.local.fenv:
+		fenv = MyEnvironment(loader = fluorine_get_floader(),
+			undefined=DebugUndefined)
+		set_filters(fenv)
 
-	fenv.globals.update(get_allowed_functions_for_jenv())
+		fenv.globals.update(get_allowed_functions_for_jenv())
 
-	frappe.local.fenv = fenv
+		frappe.local.fenv = fenv
 
 	return frappe.local.fenv
 
@@ -39,7 +40,6 @@ def fluorine_get_floader():
 	if not frappe.local.floader:
 
 		path = os.path.normpath(os.path.join(os.getcwd(), "..")) + "/apps"
-
 		#first template to load is the last installed
 		#So, we can replace the oldest template by new one with the same name
 		apps = frappe.get_installed_apps()[::-1]
@@ -79,15 +79,18 @@ def compile_jinja_templates(mtl, context):
 	for l in mtl:
 		template = l.get("template")
 		dstPath = template.filename[:-6] + ".html"
+		print "template in compile jinja templates {} blocks {}".format(template, template.blocks)
 		content = scrub_relative_urls(concat(template.render(template.new_context(context))))
-		if content:
-			save_file(dstPath, content)
+		if content and template and template.blocks:
+			print "l.get save to file {}".format(l.get("save"))
+			if l.get("save"):
+				save_file(dstPath, content)
 			items = template.blocks.items()
 			for block, render in items:
 				if block.startswith("spacebars"):
-					block = block[10:]
+					nameblock = block[10:]
 					#make_heritage(block, context)
-					out[block] = scrub_relative_urls(concat(render(template.new_context(context))))
+					out[nameblock] = scrub_relative_urls(concat(render(template.new_context(context))))
 		else:
 			remove_file(dstPath)
 
@@ -325,7 +328,7 @@ def fluorine_build_context(context, whatfor):
 			space_compile = meteor.get("compile", True)
 
 	if refresh or space_compile or whatfor == "meteor_app":
-		process_react_templates(context, apps, whatfor)
+		process_react_templates(context, apps[::-1], whatfor)
 
 	if refresh:
 		#list_meteor_files_add, list_meteor_files_remove = process_hooks_meteor_templates(apps, "fluorine_files_templates")
@@ -372,6 +375,7 @@ def process_react_templates(context, apps, whatfor):
 			files = read_client_files(path, whatfor, app, meteor_ignore=frappe.local.meteor_ignores, extension="xhtml")
 			for f in files:
 				for obj in reversed(f):
+				#for obj in f:
 					file_path = obj.get("path")
 					file_name = obj.get("name")
 					root = file_path[:-len(file_name)]
@@ -399,7 +403,7 @@ def addto_meteor_templates_list(template_path):
 	fluorine_get_fenv().addto_meteor_templates_list(template_path)
 
 def get_meteor_template_list():
-	return fluorine_get_fenv().get_meteor_template_list()
+	return fluorine_get_fenv().get_meteor_template_list() or {}
 
 """
 def compile_spacebar_templates(context, whatfor):

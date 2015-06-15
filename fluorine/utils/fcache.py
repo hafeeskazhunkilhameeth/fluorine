@@ -16,7 +16,10 @@ def clear_cache(path):
 		path_reactivity = file.get_path_reactivity()
 		config_path = os.path.join(path_reactivity, "common_site_config.json")
 		f = frappe.get_file_json(config_path)
-		f["meteor_folder"].update({"folder_refresh": 1, "compile": 1})
+		if f.get("meteor_folder", None):
+			f["meteor_folder"].update({"folder_refresh": 1, "compile": 1})
+		else:
+			f["meteor_folder"] = {"folder_refresh": 1, "compile": 1}
 		file.save_js_file(config_path, f)
 
 def clear_frappe_caches():

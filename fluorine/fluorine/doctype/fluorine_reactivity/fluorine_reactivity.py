@@ -44,8 +44,15 @@ def save_to_common_site_config(doc):
 	mgconf["host"] = doc.fluor_mongo_host
 	mgconf["port"] = doc.fluor_mongo_port
 	mgconf["db"] = doc.fluor_mongo_database
-	f["meteor_dev"].update(mtconf)
-	f["meteor_mongo"].update(mgconf)
+	if f.get("meteor_dev", None):
+		f["meteor_dev"].update(mtconf)
+	else:
+		f["meteor_dev"] = mtconf
+	if f.get("meteor_mongo", None):
+		f["meteor_mongo"].update(mgconf)
+	else:
+		f["meteor_mongo"] = mgconf
+
 	file.save_js_file(config_path, f)
 
 @frappe.whitelist()
