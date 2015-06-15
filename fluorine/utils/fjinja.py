@@ -122,6 +122,95 @@ def jinjarepl(m):
 	return source
 """
 
+from Templates import Templates
+
+class MyFileSystemLoader(FileSystemLoader):
+	def __init__(self, apps, searchpath, encoding='utf-8'):
+		super(MyFileSystemLoader, self).__init__(searchpath, encoding=encoding)
+		self.apps = apps
+		#register the name of the jinja (xhtml files) templates founded
+		self.list_apps_remove = []
+		self.list_meteor_tplt_remove = frappe._dict({})
+		self.list_meteor_tplt_add = frappe._dict({})
+		self.list_meteor_files_remove = frappe._dict({})
+		self.list_meteor_files_add = frappe._dict({})
+		self.start_hook_lists()
+		self.templates = Templates(self.list_meteor_tplt_remove)
+
+
+
+	def start_hook_lists(self):
+
+		#self.list_apps_remove.extend(process_hooks_apps(self.apps))
+		#list_meteor_tplt_add, list_meteor_tplt_remove = process_hooks_meteor_templates(self.apps, "fluorine_meteor_templates")
+		list_ignores = frappe.local.meteor_ignores
+		remove = list_ignores.get("remove", {})
+		add = list_ignores.get("add", {})
+
+		self.list_apps_remove.extend(remove.get("apps", []))
+		list_meteor_tplt_add = add.get("meteor_templates", frappe._dict({}))
+		list_meteor_tplt_remove = remove.get("meteor_templates", frappe._dict({}))
+		self.list_meteor_tplt_add.update(list_meteor_tplt_add)
+		self.list_meteor_tplt_remove.update(list_meteor_tplt_remove)
+
+	@internalcode
+	def load(self, environment, name, globals=None):
+		if not self.templates.check_found_include(name):
+			return
+
+		template = super(MyFileSystemLoader, self).load(environment, name, globals=globals)
+		self.templates.process_include_excludes(name, template)
+		return template
+
+	def get_source(self, environment, template):
+		#find the first template in revers order of installed apps and return
+
+		for app in self.apps:
+			#used in check_in_remove_list to know which template tag to remove
+			self.templates.setCurrApp(app)
+			#used in check_in_remove_list to know which template file to remove the tag template name
+			self.templates.setCurrTemplate(template)
+			if app in self.list_apps_remove:
+				continue
+
+			app_path = frappe.get_app_path(app)#get_package_path(app, "", "")
+			filepath = os.path.join(app_path, template)
+			relpath = os.path.relpath(filepath, os.path.normpath(os.path.join(os.path.join(os.getcwd(), ".."), "apps")))
+			print "filepath in get_source {} template {}".format(relpath, template)#os.path.relpath("apps", app_path)
+			try:
+				contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
+
+				contents = self.templates.make_template(contents, template)
+
+				self.process_references(contents)
+
+				self.templates.check_include(template)
+
+				return contents, filename, uptodate
+			except TemplateNotFound, e:
+				print "Not Found {}".format(e)
+				continue
+
+		raise TemplateNotFound(template)
+
+	#Process dependencies in template.
+	#Finds all the referenced templates from the AST. This will return an iterator over all
+	#the hardcoded template extensions, inclusions and imports. If dynamic inheritance
+	#or inclusion is used, None will be yielded.
+	def process_references(self, source):
+		from jinja2 import meta
+		from fluorine.utils.spacebars_template import fluorine_get_fenv
+
+		env = fluorine_get_fenv()
+		for referenced_template_path in meta.find_referenced_templates(env.parse(source)):
+			if referenced_template_path:
+				#self.load(referenced_template_path)
+				fluorine_get_fenv().addto_meteor_templates_list(referenced_template_path)
+
+	def get_meteor_template_list(self):
+		return self.templates.get_meteor_template_list()
+
+"""
 class MyFileSystemLoader(FileSystemLoader):
 	def __init__(self, apps, searchpath, encoding='utf-8'):
 		super(MyFileSystemLoader, self).__init__(searchpath, encoding=encoding)
@@ -150,6 +239,7 @@ class MyFileSystemLoader(FileSystemLoader):
 		self.curr_app = ""
 		self.curr_template = ""
 		self.c = c = lambda t:re.compile(t, re.S)
+		#TODO add to cache? or add to initialization in develop mode
 		self.ENDTEMPLATE = c(r"</\s*template\s*>")
 		self.ENDBLOCK = c(r"{%\s+endblock\s+%}")
 		self.STARTTEMPLATE = c(r"<\s*template\s+")
@@ -427,6 +517,7 @@ class MyFileSystemLoader(FileSystemLoader):
 				return True
 
 		return False
+"""
 
 """
 The following list has this structure for remove and add:
