@@ -14,7 +14,10 @@ class DocumentTemplate(object):
 		self.templates_to_include = []
 		self.remove_next_close_template = False
 		self.remove_next_close_block = False
+		self.remove_curr_template = False
 		self.extends_found = False
+		self.found_super = {}
+		self.curr_meteor_template_name = None
 		self.include_found = 0
 		#register the name of templates tags founded
 		self.meteor_tag_templates_list = []
@@ -30,17 +33,23 @@ class DocumentTemplate(object):
 		self.ENDTEMPLATE = c(r"</\s*template\s*>")
 		self.ENDBLOCK = c(r"{%\s+endblock\s+%}")
 		self.STARTTEMPLATE = c(r"<\s*template\s+")
-		self.METEOR_TEMPLATE_CALL = c(r"{{>(.+?)}}")
-		self.METEOR_TEMPLATE_PERCENT_EXPR = c(r"{{%(.+?)}}")
-		self.METEOR_TEMPLATE_BANG_EXPR = c(r"{{!(.+?)}}")
+		self.METEOR_TEMPLATE_CALL = c(r"({{>)(.+?)}}")
+		self.METEOR_TEMPLATE_PERCENT_EXPR = c(r"({{%)(.+?)}}")
+		self.METEOR_TEMPLATE_BANG_EXPR = c(r"({{!)(.+?)}}")
 		self.BLOCKBEGIN = c(r"{%\s+block(.+?)%}")
 		self.STARTTEMPLATE_SUB = c(r"<\s*template\s+name=['\"](.+?)['\"](.*?)(remove|include)?\s*>")
 		self.EXTENDS = c(r"{%\s*extends(.+?) (.*?)%}")
 		self.INCLUDE = c(r"{%\s*include(.+?) (.*?)%}")
+		self.SUPER = c(r"{%\s*super\((.*?)\)\s*%}")
 
 
 	def replace_for_templates(self, contents):
 		new_content = []
+		super_templates_remove = []
+		self.remove_curr_template = False
+		self.remove_next_close_template = False
+		self.remove_next_close_block = False
+		start_line_template = 0
 		self.extends_found = False
 		#self.include_found = False
 		#print "start replace templ list is 5 {} content {}".format(self.meteor_tag_templates_list, contents)
@@ -67,9 +76,39 @@ class DocumentTemplate(object):
 			#if re.search(r"</\s*template\s*>", line):
 			if self.ENDTEMPLATE.search(line):
 				line = close_template(line)
+				template_with_super = self.found_super.get(self.curr_meteor_template_name, None)
+				content = None
+				end_line_template = None
+				if template_with_super:
+					end_line_template = len(new_content)
+					#start_line_template + 1 to skip block and template
+					content = "\n".join(new_content[start_line_template + 1:end_line_template])#"\n</template>\n{% endblock %}\n"
+					if content.replace("\n","").replace(" ","") == "":
+						content = content.replace("\n","").replace(" ","")
+					content = self.SUPER.sub(content, template_with_super)
+					if not self.extends_found:
+						del new_content[start_line_template + 1:end_line_template]
+						#insert the new content after tag template
+						new_content[start_line_template + 1:start_line_template + 1] = [content]
+						start_line_template = 0
+					#else:
+						#update the new content
+					#	self.found_super[self.curr_meteor_template_name] = content
+				#has and extends and super in template so remove the child template
+				if self.remove_curr_template:
+					end_line_template = end_line_template or len(new_content)
+					if not content:
+						content = "\n".join(new_content[start_line_template + 1:end_line_template])#"\n</template>\n{% endblock %}\n"
+						if content.replace("\n","").replace(" ","") == "":
+							content = content.replace("\n","").replace(" ","")
+					self.found_super[self.curr_meteor_template_name] = content
+					#super_templates_remove.append({"start":start_line_template, "end": end_line_template + 1})
+					start_line_template = 0
+					self.remove_curr_template = False
+					del new_content[start_line_template:end_line_template]
+					continue
 
-			#if re.search(r"{%\s+endblock\s+%}", line):
-			if self.ENDBLOCK.search(line):
+			elif self.ENDBLOCK.search(line):
 				line = close_jinja_block(line)
 
 			if self.remove_next_close_template or self.remove_next_close_block:
@@ -99,6 +138,7 @@ class DocumentTemplate(object):
 			if self.STARTTEMPLATE.search(line):
 				#line = re.sub(r"<\s*template\s+name=['\"](.+?)['\"](.*?)>", self.addBlockTemplate, line, flags=re.S)
 				line = self.STARTTEMPLATE_SUB.sub(self.addBlockTemplate, line)
+				start_line_template = len(new_content)
 
 			#if re.search(r"{{>(.+?)}}", line):
 			if self.METEOR_TEMPLATE_CALL.search(line):
@@ -122,8 +162,15 @@ class DocumentTemplate(object):
 				#line = re.sub(r"{%\s+block(.+?)%}", self.process_jinja_blocks, line, flags=re.S)
 				line = self.BLOCKBEGIN.sub(self.process_jinja_blocks, line)
 
+			if self.SUPER.search(line):
+				#line = re.sub(r"{%\s+block(.+?)%}", self.process_jinja_blocks, line, flags=re.S)
+				line = self.SUPER.sub(self.process_super, line)
+
 			new_content.append(line)
 
+		#for t in super_templates_remove:
+			#remove the templates that has super in it
+		#	del new_content[t.get("start"):t.get("end")]
 
 		if not self.extends_found:
 			includes = self.templates_to_include[:]
@@ -141,6 +188,13 @@ class DocumentTemplate(object):
 
 		return content
 
+	#TODO to remove and pass inside the search above
+	def process_super(self, m):
+		if self.extends_found and self.curr_meteor_template_name:
+			self.remove_curr_template = True
+		#probably should rise an error if has super but not extends!
+		return m.group(0)
+
 	def process_jinja_blocks(self, m):
 		if m.group(1) in self.jinja_tag_blocks_list or self.check_in_tplt_remove_list(m.group(1)):
 			self.remove_next_close_block = True
@@ -152,8 +206,13 @@ class DocumentTemplate(object):
 	def remove_template(self, name, content):
 		re.sub("<template name=['\"]"+ name + "['\"](.*?)>(.*?)</template>", "", content, flags=re.S)
 
-	def wrappeMeteorExpression(self, m):
+	def wrappeMeteorRawExpression(self, m):
 		source = self.openRaw() + m.group(0).replace("{{%", "{{").replace("{{!", "{{") + self.closeRaw()
+		return source
+
+	def wrappeMeteorExpression(self, m):
+		#source = m.group(0).replace("{{%", "{{ '{{' }}").replace("{{!", "{{ '{{' }}").replace("{{>", "{{ '{{>' }}").replace("}}", "{{ '}}' }}")
+		source = "{{ '%s%s' }} {{ '}}' }}" % (m.group(1).replace("{{%","{{").replace("{{!","{{"), m.group(2))
 		return source
 
 	def wrappeRaw(self, m):
@@ -181,10 +240,11 @@ class DocumentTemplate(object):
 		return source
 
 	def openBlock(self, m, name=None):
-		source = '\n{% block ' + '{}'.format(name or m.group(1)) + " %}"#+ ' %}\n{% raw %}\n'
+		source = '\n{% block ' + '{}'.format(name or m.group(1)) + " %}\n"#+ ' %}\n{% raw %}\n'
 		return source
 
 	def addBlockTemplate(self, m):
+		self.curr_meteor_template_name = m.group(1)
 		print "in block template template 5 {} remove? {}".format(m.group(1), m.group(3)=="remove")
 		if m.group(3) == "remove":
 			self.remove_next_close_template = True
@@ -199,6 +259,7 @@ class DocumentTemplate(object):
 		#TODO
 		if not self.extends_found:
 			self.meteor_tag_templates_list.append(m.group(1))
+
 		source = self.openBlock(m, name="spacebars_" + m.group(1)) + "<template name='{0}'{1}>".format(m.group(1), m.group(2))
 		return source
 
@@ -208,6 +269,7 @@ class DocumentTemplate(object):
 
 		for obj in self.list_meteor_tplt_remove.get(app, []):
 			if obj.get("name") == name and obj.get("file") == template:
+				print "in teplate remove list is: {}".format(name)
 				return True
 
 		return False

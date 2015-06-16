@@ -7,7 +7,7 @@ from jinja2 import FileSystemLoader, TemplateNotFound, ChoiceLoader
 from jinja2.utils import internalcode
 from jinja2.environment import Environment
 
-import re, os, frappe
+import os, frappe
 
 
 class MyChoiceLoader(ChoiceLoader):

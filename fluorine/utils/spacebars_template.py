@@ -79,12 +79,12 @@ def compile_jinja_templates(mtl, context):
 	for l in mtl:
 		template = l.get("template")
 		dstPath = template.filename[:-6] + ".html"
-		print "template in compile jinja templates {} blocks {}".format(template, template.blocks)
 		content = scrub_relative_urls(concat(template.render(template.new_context(context))))
+		print "template in compile jinja templates {} blocks {} content {}".format(template, template.blocks, content)
 		if content and template and template.blocks:
-			print "l.get save to file {}".format(l.get("save"))
-			if l.get("save"):
-				save_file(dstPath, content)
+			#print "l.get save to file {}".format(l.get("save"))
+			#if l.get("save"):
+			save_file(dstPath, content)
 			items = template.blocks.items()
 			for block, render in items:
 				if block.startswith("spacebars"):
@@ -500,7 +500,7 @@ def get_page(url, context):
 	return scripts
 """
 
-#TODO - ver file.py function get_ignores_from_files
+#TODO - ver file.py function process_ignores_from_files
 def get_spacebars_context(context, spacebar_context):
 
 	for obj in spacebar_context:
