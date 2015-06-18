@@ -3,6 +3,21 @@ __author__ = 'saguas'
 import re
 
 
+c = lambda t:re.compile(t, re.S)
+ENDTEMPLATE = c(r"</\s*template\s*>")
+ENDBLOCK = c(r"{%\s+endblock\s+%}")
+STARTTEMPLATE = c(r"<\s*template\s+")
+METEOR_TEMPLATE_CALL = c(r"({{>)(.+?)}}")
+METEOR_TEMPLATE_PERCENT_EXPR = c(r"({{%)(.+?)}}")
+METEOR_TEMPLATE_BANG_EXPR = c(r"({{!)(.+?)}}")
+BLOCKBEGIN = c(r"{%\s+block(.+?)%}")
+STARTTEMPLATE_SUB = c(r"<\s*template\s+name=['\"](.+?)['\"](.*?)(remove|include)?\s*>")
+EXTENDS = c(r"{%\s*extends(.+?) (.*?)%}")
+INCLUDE = c(r"{%\s*include(.+?) (.*?)%}")
+SUPER = c(r"{%\s*super\((.*?)\)\s*%}")
+
+
+
 class DocumentTemplate(object):
 
 	def __init__(self, list_meteor_tplt_remove):
@@ -28,19 +43,6 @@ class DocumentTemplate(object):
 		#register the founded templates
 		self.templates_found = []
 		self.list_meteor_tplt_remove = list_meteor_tplt_remove
-		self.c = c = lambda t:re.compile(t, re.S)
-		#TODO add to cache? or add to initialization in develop mode
-		self.ENDTEMPLATE = c(r"</\s*template\s*>")
-		self.ENDBLOCK = c(r"{%\s+endblock\s+%}")
-		self.STARTTEMPLATE = c(r"<\s*template\s+")
-		self.METEOR_TEMPLATE_CALL = c(r"({{>)(.+?)}}")
-		self.METEOR_TEMPLATE_PERCENT_EXPR = c(r"({{%)(.+?)}}")
-		self.METEOR_TEMPLATE_BANG_EXPR = c(r"({{!)(.+?)}}")
-		self.BLOCKBEGIN = c(r"{%\s+block(.+?)%}")
-		self.STARTTEMPLATE_SUB = c(r"<\s*template\s+name=['\"](.+?)['\"](.*?)(remove|include)?\s*>")
-		self.EXTENDS = c(r"{%\s*extends(.+?) (.*?)%}")
-		self.INCLUDE = c(r"{%\s*include(.+?) (.*?)%}")
-		self.SUPER = c(r"{%\s*super\((.*?)\)\s*%}")
 
 
 	def replace_for_templates(self, contents):
@@ -56,11 +58,11 @@ class DocumentTemplate(object):
 		def close_template(line):
 			if self.remove_next_close_template:
 				#line = re.sub(r"</\s*template\s*>", '', line, 1, flags=re.S)
-				line = self.ENDTEMPLATE.sub('', line, 1)
+				line = ENDTEMPLATE.sub('', line, 1)
 				self.remove_next_close_template = False
 			else:
 				#line = re.sub(r"</\s*template\s*>", '\n</template>\n{% endblock %}\n', line, flags=re.S)
-				line = self.ENDTEMPLATE.sub('\n</template>\n{% endblock %}\n', line)
+				line = ENDTEMPLATE.sub('\n</template>\n{% endblock %}\n', line)
 
 			return line
 
@@ -68,13 +70,13 @@ class DocumentTemplate(object):
 			if self.remove_next_close_block:
 				self.remove_next_close_block = False
 				#line = re.sub(r"{%\s+endblock\s+%}", '', line, 1, flags=re.S)
-				line = self.ENDBLOCK.sub('', line, 1)
+				line = ENDBLOCK.sub('', line, 1)
 
 			return line
 
 		for line in contents.splitlines():
 			#if re.search(r"</\s*template\s*>", line):
-			if self.ENDTEMPLATE.search(line):
+			if ENDTEMPLATE.search(line):
 				line = close_template(line)
 				template_with_super = self.found_super.get(self.curr_meteor_template_name, None)
 				content = None
@@ -85,7 +87,7 @@ class DocumentTemplate(object):
 					content = "\n".join(new_content[start_line_template + 1:end_line_template])#"\n</template>\n{% endblock %}\n"
 					if content.replace("\n","").replace(" ","") == "":
 						content = content.replace("\n","").replace(" ","")
-					content = self.SUPER.sub(content, template_with_super)
+					content = SUPER.sub(content, template_with_super)
 					if not self.extends_found:
 						del new_content[start_line_template + 1:end_line_template]
 						#insert the new content after tag template
@@ -108,13 +110,13 @@ class DocumentTemplate(object):
 					del new_content[start_line_template:end_line_template]
 					continue
 
-			elif self.ENDBLOCK.search(line):
+			elif ENDBLOCK.search(line):
 				line = close_jinja_block(line)
 
 			if self.remove_next_close_template or self.remove_next_close_block:
 				continue
 
-			include = self.INCLUDE.search(line)
+			include = INCLUDE.search(line)
 			if include:
 				self.include_found += 1
 				for n in self.jinja_xhtml_template_list:
@@ -126,7 +128,7 @@ class DocumentTemplate(object):
 						break
 				#self.includs_path.append(include.group(1).replace(" ","").replace("\'",""))
 
-			extends = self.EXTENDS.search(line)
+			extends = EXTENDS.search(line)
 			if extends:
 				#import ast
 				self.extends_found = True
@@ -135,36 +137,36 @@ class DocumentTemplate(object):
 				self.extends_path.append(extends.group(1).replace(" ","").replace("\'",""))
 
 			#if re.search(r"<\s*template\s+", line):
-			if self.STARTTEMPLATE.search(line):
+			if STARTTEMPLATE.search(line):
 				#line = re.sub(r"<\s*template\s+name=['\"](.+?)['\"](.*?)>", self.addBlockTemplate, line, flags=re.S)
-				line = self.STARTTEMPLATE_SUB.sub(self.addBlockTemplate, line)
+				line = STARTTEMPLATE_SUB.sub(self.addBlockTemplate, line)
 				start_line_template = len(new_content)
 
 			#if re.search(r"{{>(.+?)}}", line):
-			if self.METEOR_TEMPLATE_CALL.search(line):
+			if METEOR_TEMPLATE_CALL.search(line):
 				#line = re.sub(r"{{>(.+?)}}", self.wrappeMeteorExpression, line, flags=re.S)
-				line = self.METEOR_TEMPLATE_CALL.sub(self.wrappeMeteorExpression, line)
+				line = METEOR_TEMPLATE_CALL.sub(self.wrappeMeteorExpression, line)
 
 			#expression of meteor must be preceded with % or !
 			#if re.search(r"{{%(.+?)}}", line):
-			if self.METEOR_TEMPLATE_PERCENT_EXPR.search(line):
+			if METEOR_TEMPLATE_PERCENT_EXPR.search(line):
 				#line = re.sub(r"{{%(.+?)}}", self.wrappeMeteorExpression, line, flags=re.S)
-				line = self.METEOR_TEMPLATE_PERCENT_EXPR.sub(self.wrappeMeteorExpression, line)
+				line = METEOR_TEMPLATE_PERCENT_EXPR.sub(self.wrappeMeteorExpression, line)
 
 			#expression of meteor must be preceded with % or !
 			#if re.search(r"{{!(.+?)}}", line):
-			if self.METEOR_TEMPLATE_BANG_EXPR.search(line):
+			if METEOR_TEMPLATE_BANG_EXPR.search(line):
 				#line = re.sub(r"{{!(.+?)}}", self.wrappeMeteorExpression, line, flags=re.S)
-				line = self.METEOR_TEMPLATE_BANG_EXPR.sub(self.wrappeMeteorExpression, line)
+				line = METEOR_TEMPLATE_BANG_EXPR.sub(self.wrappeMeteorExpression, line)
 
 			#if re.search(r"{%\s+block(.+?)%}", line):
-			if self.BLOCKBEGIN.search(line):
+			if BLOCKBEGIN.search(line):
 				#line = re.sub(r"{%\s+block(.+?)%}", self.process_jinja_blocks, line, flags=re.S)
-				line = self.BLOCKBEGIN.sub(self.process_jinja_blocks, line)
+				line = BLOCKBEGIN.sub(self.process_jinja_blocks, line)
 
-			if self.SUPER.search(line):
+			if SUPER.search(line):
 				#line = re.sub(r"{%\s+block(.+?)%}", self.process_jinja_blocks, line, flags=re.S)
-				line = self.SUPER.sub(self.process_super, line)
+				line = SUPER.sub(self.process_super, line)
 
 			new_content.append(line)
 
