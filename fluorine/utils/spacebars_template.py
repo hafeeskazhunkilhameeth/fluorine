@@ -1,3 +1,4 @@
+# encoding: utf-8
 from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
@@ -16,13 +17,17 @@ import hashlib, json, os, re
 from collections import OrderedDict
 
 
+def get_encoding():
+	return "utf-8"
+
 def fluorine_get_fenv():
 
 	from jinja2 import DebugUndefined
 	from fluorine.utils.fjinja import MyEnvironment
 
 	if not frappe.local.fenv:
-		fenv = MyEnvironment(loader = fluorine_get_floader(),
+		encoding = get_encoding()
+		fenv = MyEnvironment(loader = fluorine_get_floader(encoding=encoding),
 			undefined=DebugUndefined)
 		set_filters(fenv)
 
@@ -33,7 +38,7 @@ def fluorine_get_fenv():
 	return frappe.local.fenv
 
 
-def fluorine_get_floader():
+def fluorine_get_floader(encoding="utf-8"):
 
 	from fluorine.utils.fjinja import MyChoiceLoader
 
@@ -43,7 +48,11 @@ def fluorine_get_floader():
 		#first template to load is the last installed
 		#So, we can replace the oldest template by new one with the same name
 		apps = frappe.get_installed_apps()[::-1]
-		m = MyFileSystemLoader(apps, path)
+		app_fluorine = frappe.get_app_path("fluorine")
+		dbname = os.path.join(app_fluorine, "templates/react/temp", "fluorinedb")
+		db_dirpath = os.path.dirname(os.path.join(dbname))
+		frappe.create_folder(db_dirpath)
+		m = MyFileSystemLoader(apps, path, dbpath=dbname, encoding=encoding)
 		fluor_loader = [m]
 
 		frappe.local.floader = MyChoiceLoader(fluor_loader)
@@ -71,28 +80,54 @@ def fluorine_render_blocks(context, whatfor):
 	#_render_blocks(context["spacebars_template"])
 """
 
-def compile_jinja_templates(mtl, context):
-	from file import save_file, remove_file
+def compile_jinja_templates(mtl, context, whatfor):
+
+	from file import save_file
+	from Templates import STARTTEMPLATE_SUB_ALL
 
 	out = {}
 
 	for l in mtl:
 		template = l.get("template")
-		dstPath = template.filename[:-6] + ".html"
-		content = scrub_relative_urls(concat(template.render(template.new_context(context))))
-		print "template in compile jinja templates {} blocks {} content {}".format(template, template.blocks, content)
-		if content and template and template.blocks:
-			#print "l.get save to file {}".format(l.get("save"))
-			#if l.get("save"):
-			save_file(dstPath, content)
-			items = template.blocks.items()
-			for block, render in items:
-				if block.startswith("spacebars"):
-					nameblock = block[10:]
-					#make_heritage(block, context)
-					out[nameblock] = scrub_relative_urls(concat(render(template.new_context(context))))
-		else:
-			remove_file(dstPath)
+		doc = l.get("doc")
+		dstPath = doc.realpath[:-6] + ".html"
+		print "dstPath in compile jinja2 {}".format(dstPath)
+		#dstPath = frappe.local.meteor_map_path[l.get("tpath")].get("realpath")[:-6] + ".html"
+		#dstPath = template.filename[:-6].replace("templates/react/temp","templates/react",1) + ".html"
+		try:
+			content = scrub_relative_urls(concat(template.render(template.new_context(context))))
+			print "template in compile jinja templates 4 {} blocks {} content {}".format(template, template.blocks, content)
+			if content and template and template.blocks:
+				#print "l.get save to file {}".format(l.get("save"))
+				if doc.save:
+					content = "\n\n".join([s for s in content.splitlines() if s])
+					save_file(dstPath, content.encode(get_encoding()))
+					if whatfor in ("meteor_app", "meteor_frappe"):
+						for m in STARTTEMPLATE_SUB_ALL.finditer(content):
+							name = m.group(2)
+							out[name] = m.group(0)
+							#print "templates teste with finditer template name 9 {} template is {}".format(m.group(2), m.group(0))
+
+				"""
+				items = template.blocks.items()
+				for block, render in items:
+					if block.startswith("spacebars"):
+						nameblock = block[10:]
+						#make_heritage(block, context)
+						block = scrub_relative_urls(concat(render(template.new_context(context))))
+						out[nameblock] = block
+						print "templates teste with finditer template name 5 {} template is {}".format(nameblock, block)
+				"""
+			else:
+				os.remove(dstPath)
+		except Exception as e:
+			file_temp_path = doc.file_temp_path
+			print "an error occurr removing file {} error {}".format(file_temp_path, e)
+			os.remove(file_temp_path)
+
+		#file_temp_path = doc.file_temp_path
+		#frappe.create_folder(os.path.dirname(file_temp_path))
+		#write(file_temp_path, contents)
 
 	return out
 
@@ -291,7 +326,8 @@ def make_meteor_ignor_files(apps):
 				"files_folders": list_meteor_files_folders_add,
 				"meteor_files": list_meteor_files_add,
 				"meteor_templates": list_meteor_tplt_add
-			}
+			},
+		    "templates_to_remove": frappe.local.templates_found_remove
 
 		})
 
@@ -309,6 +345,17 @@ def make_meteor_ignor_files(apps):
 def fluorine_build_context(context, whatfor):
 
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity#, save_js_file
+	#import fnmatch
+
+	c = lambda t:re.compile(t, re.S|re.M)
+
+	frappe.local.fenv = None
+	frappe.local.floader = None
+	frappe.local.meteor_map_path = None
+	frappe.local.meteor_Templates = None
+	frappe.local.meteor_ignores = None
+	frappe.local.templates_found_add = set([])
+	frappe.local.templates_found_remove = set([])
 
 	path_reactivity = get_path_reactivity()
 	devmode = context.developer_mode
@@ -336,6 +383,9 @@ def fluorine_build_context(context, whatfor):
 		#ignore = {"templates":list_meteor_files_remove, "files_folders":list_meteor_files_folders_remove}
 		fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
 		empty_directory(fluorine_publicjs_dst_path, ignore=(".meteor",))
+		#pattern = fnmatch.translate("*.xhtml")
+		#frappe.local.templates_found_remove.add(c(pattern))
+		#frappe.local.meteor_ignores["templates_remove"] = frappe.local.templates_found_remove
 		make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, meteor_ignore=frappe.local.meteor_ignores, custom_pattern=["*.xhtml"])
 
 	make_meteor_props(context, whatfor)
@@ -389,9 +439,10 @@ def process_react_templates(context, apps, whatfor):
 	#get all the templates to use
 	mtl = get_meteor_template_list()
 	#and compile them all
-	out = compile_jinja_templates(mtl, context)
+	out = compile_jinja_templates(mtl, context, whatfor)
+	spacebars_templates.update(out)
 	#only compile if meteor_app or meteor_frappe
-	if spacebars_templates and whatfor in ("meteor_app", "meteor_frappe"):
+	if spacebars_templates:# and whatfor in ("meteor_app", "meteor_frappe"):
 		compiled_spacebars_js = compile_spacebars_templates(spacebars_templates)
 		arr = compiled_spacebars_js.split("__templates__\n")
 		arr.insert(0, "(function(){\n")

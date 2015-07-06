@@ -33,9 +33,9 @@ def set_meteor_conetxt(context):
 
 	print "fluorine get_context called again app !!!"
 	devmode = fluorine.utils.check_dev_mode()
-	frappe.local.fenv = None
-	frappe.local.floader = None
-	frappe.local.meteor_ignores = None
+	#frappe.local.fenv = None
+	#frappe.local.floader = None
+	#frappe.local.meteor_ignores = None
 	context.developer_mode = devmode
 	context.jquery_include = fluorine.utils.jquery_include()
 

@@ -1,3 +1,4 @@
+# encoding: utf-8
 from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
@@ -109,8 +110,12 @@ def remove_folder_content(folder):
 
 
 def write(file_path, content):
+	import codecs
+	#print "contens to write to file file_path 5 {} content {}".format(file_path, content.decode("utf-8"))
 	with open(file_path, "w") as f:
+	#with codecs.open(file_path, "w", encoding='utf-8') as f:
 		f.write(content)
+		#print "writing files in order file_temp_path 2 {}".format(file_path)
 
 
 def read(file_path):
@@ -277,6 +282,33 @@ def check_dirs_in_files_remove_list(app, template, dirs, list_meteor_files_remov
 	return dirToRemove
 
 
+def match_path(startpath, excludes, includes):
+	import fnmatch
+	import re
+
+	#includes = ['*.doc', '*.odt'] # for files only
+	#excludes = ['/home/paulo-freitas/Documents'] # for dirs and files
+
+	# transform glob patterns to regular expressions
+	includes = r'|'.join([fnmatch.translate(x) for x in includes])
+	excludes = r'|'.join([fnmatch.translate(x) for x in excludes]) or r'$.'
+
+	for root, dirs, files in os.walk(startpath):
+
+		# exclude dirs
+		dirs[:] = [os.path.join(root, d) for d in dirs]
+		dirs[:] = [d for d in dirs if not re.match(excludes, d)]
+
+		# exclude/include files
+		files = [os.path.join(root, f) for f in files]
+		files = [f for f in files if not re.match(excludes, f)]
+		files = [f for f in files if re.match(includes, f)]
+
+		for fname in files:
+			print fname
+
+
+
 def make_all_files_with_symlink(dst, whatfor, meteor_ignore=None, custom_pattern=None):
 	_whatfor = ["meteor_app", "meteor_web", "meteor_frappe"]
 	folders_path = []
@@ -294,7 +326,7 @@ def make_all_files_with_symlink(dst, whatfor, meteor_ignore=None, custom_pattern
 		pass
 
 	custom_pattern = set(custom_pattern)
-	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp"])
+	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp"])
 	pattern = ignore_patterns(*custom_pattern)
 
 	#first installed app first
@@ -318,7 +350,7 @@ def make_all_files_with_symlink(dst, whatfor, meteor_ignore=None, custom_pattern
 				#start with templates/react
 				#meteor_relpath = os.path.relpath(root, os.path.join(meteorpath, "..", ".."))
 				meteor_relpath = os.path.relpath(root, frappe.get_app_path(app))
-				meteor_ignore_folders(app, meteor_relpath, dirs, meteor_ignore=meteor_ignore)
+				meteor_ignore_folders(app, meteor_relpath, root, dirs, meteor_ignore=meteor_ignore)
 
 				ign_names = pattern(meteorpath, files)
 				ign_dirs = pattern(meteorpath, dirs)
@@ -330,7 +362,7 @@ def make_all_files_with_symlink(dst, whatfor, meteor_ignore=None, custom_pattern
 					[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
 				relpath = os.path.relpath(root, startpath)
 				for f in files:
-					if f in ign_names or meteor_ignore_files(app, meteor_relpath, f, meteor_ignore=meteor_ignore):
+					if f in ign_names or meteor_ignore_files(app, meteor_relpath, root, f, meteor_ignore=meteor_ignore):
 						continue
 
 					frappe.create_folder(os.path.realpath(os.path.join(destpath, relpath)))
@@ -338,19 +370,19 @@ def make_all_files_with_symlink(dst, whatfor, meteor_ignore=None, custom_pattern
 
 
 def process_pubpriv_folder(meteorpath, dst, app, app_folders, pattern, meteor_ignore=None):
-	ign_top = ("meteor_app", "meteor_web", "meteor_frappe")
+	ign_top = ("meteor_app", "meteor_web", "meteor_frappe", "temp")
 	for root, dirs, files in os.walk(meteorpath):
 		#start with templates/react
 		#meteor_relpath = os.path.relpath(root, os.path.join(meteorpath, "..", "..", ".."))
 		meteor_relpath = os.path.relpath(root, frappe.get_app_path(app))
 		print "meteor_relpath in make all app 8 {} links {}".format(app, meteor_relpath)
-		meteor_ignore_folders(app, meteor_relpath, dirs, meteor_ignore=meteor_ignore)
+		meteor_ignore_folders(app, meteor_relpath, root, dirs, meteor_ignore=meteor_ignore)
 		ign_names = pattern(meteorpath, files)
 		meteor_relpath = os.path.relpath(root, meteorpath)
 		folders = meteor_relpath.split("/",1)
 		[dirs.remove(toexclude) for toexclude in ign_top if toexclude in dirs]
 		for f in files:
-			if f in ign_names or meteor_ignore_files(app, meteor_relpath, f, meteor_ignore=meteor_ignore):
+			if f in ign_names or meteor_ignore_files(app, meteor_relpath, root, f, meteor_ignore=meteor_ignore):
 				continue
 
 			if meteor_relpath.startswith(("public", "private")):
@@ -363,19 +395,19 @@ def process_pubpriv_folder(meteorpath, dst, app, app_folders, pattern, meteor_ig
 
 
 def process_top_folder(meteorpath, dst, app, app_folders, pattern, meteor_ignore=None):
-	ign_top = ("meteor_app", "meteor_web", "meteor_frappe", "public", "private")
+	ign_top = ("meteor_app", "meteor_web", "meteor_frappe", "public", "private", "temp")
 	destpath = os.path.join(dst, app_folders)
 	for root, dirs, files in os.walk(meteorpath):
 		meteor_relpath = os.path.relpath(root, frappe.get_app_path(app))
 		#print "meteor_relpath in make all app 8 {} links {}".format(app, meteor_relpath)
-		meteor_ignore_folders(app, meteor_relpath, dirs, meteor_ignore=meteor_ignore)
+		meteor_ignore_folders(app, meteor_relpath, root, dirs, meteor_ignore=meteor_ignore)
 
 		ign_names = pattern(meteorpath, files)
 		meteor_relpath = os.path.relpath(root, meteorpath)
 		folders = meteor_relpath.split("/",1)
 		[dirs.remove(toexclude) for toexclude in ign_top if toexclude in dirs]
 		for f in files:
-			if f in ign_names or meteor_ignore_files(app, meteor_relpath, f, meteor_ignore=meteor_ignore):
+			if f in ign_names or meteor_ignore_files(app, meteor_relpath, root, f, meteor_ignore=meteor_ignore):
 				continue
 
 			c = len(folders)
@@ -383,14 +415,24 @@ def process_top_folder(meteorpath, dst, app, app_folders, pattern, meteor_ignore
 			os.symlink(os.path.join(root, f), os.path.join(destpath, folders[c], f))
 
 
-def meteor_ignore_folders(app, meteor_relpath, dirs, meteor_ignore=None):
+def meteor_ignore_folders(app, meteor_relpath, root, dirs, meteor_ignore=None):
 	if meteor_ignore:
 		files_folders = meteor_ignore.get("remove").get("files_folders")
 		dirsToRemove = check_dirs_in_files_remove_list(app, meteor_relpath, dirs, files_folders)
 		for d in dirsToRemove:
 			dirs.remove(d)
 
-def meteor_ignore_files(app, meteor_relpath, file, meteor_ignore=None):
+	templates_to_remove = meteor_ignore.get("templates_to_remove")
+	for d in dirs:
+		dirpath = os.path.join(root, d)
+		for c in templates_to_remove:
+			if c.match(dirpath):
+				try:
+					dirs.remove(d)
+				except:
+					pass
+
+def meteor_ignore_files(app, meteor_relpath, root, file, meteor_ignore=None):
 
 	if meteor_ignore:
 		filePath = os.path.join(meteor_relpath, file)
@@ -399,6 +441,12 @@ def meteor_ignore_files(app, meteor_relpath, file, meteor_ignore=None):
 		for l in  (templates, files_folders):
 			if check_in_files_remove_list(app, filePath, l):
 				return True
+
+	templates_to_remove = meteor_ignore.get("templates_to_remove")
+	filepath = os.path.join(root, file)
+	for c in templates_to_remove:
+		if c.match(filepath):
+			return True
 
 	return False
 

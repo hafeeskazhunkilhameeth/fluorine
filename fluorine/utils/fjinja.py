@@ -1,13 +1,26 @@
+# encoding: utf-8
+from __future__ import unicode_literals
 __author__ = 'luissaguas'
-
-
 
 #from fluorine.utils.packages_path import get_package_path
 from jinja2 import FileSystemLoader, TemplateNotFound, ChoiceLoader
 from jinja2.utils import internalcode
 from jinja2.environment import Environment
 
-import os, frappe
+try:
+	from cStringIO import StringIO
+except ImportError:
+	from StringIO import StringIO
+
+"""
+try:
+	import cPickle as pickle
+except:
+	import pickle
+"""
+
+import shelve
+import os, re, frappe
 
 
 class MyChoiceLoader(ChoiceLoader):
@@ -24,6 +37,19 @@ class MyChoiceLoader(ChoiceLoader):
 			except TemplateNotFound:
 				pass
 		raise TemplateNotFound(template)
+
+
+	def get_meteor_source(self, environment, template, force=False):
+
+		for loader in self.loaders:
+			try:
+				l = loader.get_meteor_source(environment, template, force=force)
+				self.curr_loader = loader
+				return l
+			except TemplateNotFound:
+				pass
+		raise TemplateNotFound(template)
+
 
 	@internalcode
 	def load(self, environment, name, globals=None):
@@ -91,8 +117,9 @@ class MyEnvironment(Environment):
 			bytecode_cache=bytecode_cache
 		)
 	"""
-	def addto_meteor_templates_list(self, path):
-		return self.get_template(path)
+	def addto_meteor_templates_list(self, path, force=False):
+		#return self.get_template(path)
+		return self.loader.get_meteor_source(self, path, force=force)
 
 	def get_meteor_template_list(self):
 		floader = self.loader.get_curr_loader()
@@ -123,20 +150,28 @@ def jinjarepl(m):
 """
 
 from Templates import Templates
+from collections import OrderedDict
 
 class MyFileSystemLoader(FileSystemLoader):
-	def __init__(self, apps, searchpath, encoding='utf-8'):
+	def __init__(self, apps, searchpath, dbpath=None, encoding='utf-8'):
 		super(MyFileSystemLoader, self).__init__(searchpath, encoding=encoding)
 		self.apps = apps
+		self.db = shelve.open(dbpath, protocol=-1)
 		#register the name of the jinja (xhtml files) templates founded
 		self.list_apps_remove = []
 		self.list_meteor_tplt_remove = frappe._dict({})
 		self.list_meteor_tplt_add = frappe._dict({})
 		self.list_meteor_files_remove = frappe._dict({})
 		self.list_meteor_files_add = frappe._dict({})
-		self.start_hook_lists()
-		self.templates = Templates(self.list_meteor_tplt_remove)
+		#self.docs = []
+		if not frappe.local.meteor_map_path:
+			#self.meteor_map_path = frappe._dict({})
+			#self.meteor_map_path = frappe.local.meteor_map_path = frappe._dict({})
+			#keep the loaded order
+			self.meteor_map_path = frappe.local.meteor_map_path = OrderedDict()#frappe._dict(OrderedDict())
 
+		self.start_hook_lists()
+		self.templates = Templates(self.list_meteor_tplt_remove, apps=self.apps)
 
 
 	def start_hook_lists(self):
@@ -155,61 +190,271 @@ class MyFileSystemLoader(FileSystemLoader):
 
 	@internalcode
 	def load(self, environment, name, globals=None):
-		if not self.templates.check_found_include(name):
-			return
+		#if not self.templates.check_found_include(name):
+		#	return
 
 		template = super(MyFileSystemLoader, self).load(environment, name, globals=globals)
-		self.templates.process_include_excludes(name, template)
+		#self.templates.process_include_excludes(name, template)
 		return template
 
-	def get_source(self, environment, template):
-		#find the first template in revers order of installed apps and return
+
+	def get_meteor_source(self, environment, template, force=False):
+		from file import write
+
+		if self.meteor_map_path.get(template):
+			#print "template already processed 4 {} doc {}".format(template, self.meteor_map_path.get(template).doc)
+			return self.meteor_map_path.get(template).doc
+
+		#app_fluorine = frappe.get_app_path("fluorine")
+		#temp_path = re.sub(r"(.*)templates(?:/react)?(.*)",r"\1templates/react/temp\2", template, re.S)
+		#file_temp_path = os.path.join(app_fluorine, temp_path)
+		#relpath_temp = os.path.relpath(file_temp_path, os.path.normpath(os.path.join(os.path.join(os.getcwd(), ".."), "apps")))
+
+		basename = os.path.basename(template)
+		dirname = os.path.dirname(template)
+		app_fluorine = frappe.get_app_path("fluorine")
+		temp_path = re.sub(r"(.*)templates(?:/react)?(.*)",r"\1templates/react/temp\2", dirname, re.S|re.I)
 
 		for app in self.apps:
+
+			file_temp_path = os.path.join(app_fluorine, temp_path, app, basename)
+			relpath_temp = os.path.relpath(file_temp_path, os.path.normpath(os.path.join(os.path.join(os.getcwd(), ".."), "apps")))
 			#used in check_in_remove_list to know which template tag to remove
-			self.templates.setCurrApp(app)
+			#self.templates.setCurrApp(app)
 			#used in check_in_remove_list to know which template file to remove the tag template name
-			self.templates.setCurrTemplate(template)
+			#self.templates.setCurrTemplate(template)
 			if app in self.list_apps_remove:
 				continue
 
 			app_path = frappe.get_app_path(app)#get_package_path(app, "", "")
 			filepath = os.path.join(app_path, template)
 			relpath = os.path.relpath(filepath, os.path.normpath(os.path.join(os.path.join(os.getcwd(), ".."), "apps")))
-			print "filepath in get_source {} template {}".format(relpath, template)#os.path.relpath("apps", app_path)
+			#print "filepath in get_source 2 {} template {}".format(relpath, template)#os.path.relpath("apps", app_path)
 			try:
-				contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
+				#TODO must check timestamp
+				#temp_path = template.replace("templates/react","templates/react/temp",1)
 
-				contents = self.templates.make_template(contents, template)
+				if not os.path.exists(file_temp_path) or not self.check_uptodate(file_temp_path, filepath):# or force==True:
 
-				self.process_references(contents)
+					#contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
+					contents, filename, uptodate = self.get_source(environment, relpath)
 
-				self.templates.check_include(template)
+					#print "content from get source template {} content {}".format(template, contents)
+					doc, contents = self.templates.make_template(contents, appname=app, template=template, relpath_temp=relpath_temp, realpath=filepath,
+																file_temp_path=file_temp_path, encoding=self.encoding)
 
-				return contents, filename, uptodate
+					self.meteor_map_path[template] = frappe._dict({"doc": doc, "from_disk": False})
+					#self.meteor_map_path[template] = frappe._dict({"make_template": doc.make_template, "relpath": relpath_temp, "realpath": filepath, "file_temp_path": file_temp_path,
+					#												"template": template, "appname": app, "doc":doc, "from_disk":False})
+
+					try:
+						encoded_contents = contents.encode(self.encoding)
+						frappe.create_folder(os.path.dirname(file_temp_path))
+						#print "writing files in order template {} file_temp_path {}".format(doc.template, file_temp_path)
+						write(file_temp_path, encoded_contents)
+					except Exception as e:
+						print "exception when save error is {}".format(e)
+
+				else:
+					#anotate in map of path that we will use this template
+					#if os.path.exists(file_temp_path[:-6] + ".pickle"):
+					#with FluorDb(os.path.join(app_fluorine, "templates/react/temp", "fluorinedb")) as db:
+					#with shelve.open(os.path.join(app_fluorine, "templates/react/temp", "fluorinedb")) as db:
+					#with open(file_temp_path[:-6] + ".pickle", "rb") as f:
+						#doc = pickle.load(f)
+					key = str("fluorine:" + app + ":" + template)
+					doc = frappe.cache().get_value(key)
+					if not doc:
+						doc = self.db[key]
+					#else:
+					#	print "from cache !!!!!"
+						#self.meteor_map_path[template] = frappe._dict({"make_template": doc.make_template, "relpath": relpath_temp, "realpath": filepath, "file_temp_path": file_temp_path,
+						#										"template": template, "appname": app, "doc":doc, "from_disk":True})
+					self.get_jinja_dependencies(doc)
+					self.meteor_map_path[template] = frappe._dict({"doc": doc, "from_disk": True})
+
+				#self.docs.append(doc)
+
+				#docs = self.process_references(content, force=True)
+				#self.docs.extend(docs)
+				#print "filepath in get_source 3 template {}".format(template)#os.path.relpath("apps", app_path)
+
+				return doc
+					#return contents, filename, uptodate
+				#here file template exists and is uptodate
 			except TemplateNotFound, e:
 				print "Not Found {}".format(e)
 				continue
 
 		raise TemplateNotFound(template)
 
-	#Process dependencies in template.
-	#Finds all the referenced templates from the AST. This will return an iterator over all
-	#the hardcoded template extensions, inclusions and imports. If dynamic inheritance
-	#or inclusion is used, None will be yielded.
-	def process_references(self, source):
-		from jinja2 import meta
-		from fluorine.utils.spacebars_template import fluorine_get_fenv
+	def get_jinja_dependencies(self, doc):
+		from spacebars_template import fluorine_get_fenv
 
-		env = fluorine_get_fenv()
-		for referenced_template_path in meta.find_referenced_templates(env.parse(source)):
-			if referenced_template_path:
-				#self.load(referenced_template_path)
-				fluorine_get_fenv().addto_meteor_templates_list(referenced_template_path)
+		docs = []
+		#if not doc.extends_path:
+		#	return
+		#extends_path = doc.extends_path[0]
+		for extends_path in doc.extends_path:
+			#print "dependencies template 2 excludes {} has dependecies {} docs {}".format(doc.template, extends_path, doc.docs[0].relpath_temp)
+			if extends_path not in self.meteor_map_path.keys():
+				edoc = fluorine_get_fenv().addto_meteor_templates_list(extends_path)
+				docs.append(edoc)
+
+		for include_path in doc.includes_path:
+			#print "dependencies template 2 includes {} has dependecies {} docs {}".format(doc.template, include_path, doc.docs[0].relpath_temp)
+			if include_path not in self.meteor_map_path.keys():
+				idoc = fluorine_get_fenv().addto_meteor_templates_list(include_path)
+				docs.append(idoc)
+
+		doc.docs.extend(docs)
+
+	def get_source(self, environment, template):
+		#find the first template in revers order of installed apps and return
+		#must look in map to get the path for template
+		relpath = template
+		contents = None
+
+		if relpath in self.meteor_map_path.keys():
+			t = self.meteor_map_path.get(relpath)
+			doc = t.get("doc")
+			#app_path = frappe.get_app_path(app)
+			uptodate = lambda : True
+			#temp_path = template.replace("templates/react","templates/react/temp",1)
+			#file_temp_path = os.path.join(app_path, temp_path)
+			#get the source from temp folder
+			#relpath = os.path.relpath(file_temp_path, os.path.normpath(os.path.join(os.path.join(os.getcwd(), ".."), "apps")))
+			relpath = doc.relpath_temp
+			contents = doc.content or None
+			filename = doc.file_temp_path
+
+		if not contents:
+			contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
+
+		return contents, filename, uptodate
+
+	def check_uptodate(self, file_temp_path, filepath):
+		try:
+			return os.path.getmtime(file_temp_path) >= os.path.getmtime(filepath)
+		except OSError:
+			return False
 
 	def get_meteor_template_list(self):
-		return self.templates.get_meteor_template_list()
+		from spacebars_template import fluorine_get_fenv
 
+		#app_fluorine = frappe.get_app_path("fluorine")
+		templates_list = []
+		self.compile_templates()
+
+		for template, value in self.meteor_map_path.iteritems():
+			doc = value.doc
+			if doc.make_template:
+				t = fluorine_get_fenv().get_template(template)
+				templates_list.append(frappe._dict({"template":t, "tpath":template, "doc": doc}))
+				#print "inside get_meteor_template_list compilling .... tname 1 template {} doc content {}".format(doc.template, doc.content)
+			if not value.from_disk:
+				#with FluorDb(os.path.join(app_fluorine, "templates/react/temp", "fluorinedb")) as db:
+				#with shelve.open(os.path.join(app_fluorine, "templates/react/temp", "fluorinedb")) as db:
+					#if db[str(template)] == doc:
+				#no need to save content we have to make it always
+				content = doc.content
+				doc._content = None
+				del doc.docs[:]
+				key = str("fluorine:" + doc.appname + ":" + template)
+				self.db[key] = doc
+				frappe.cache().set_value(key, self.db.get(key))
+				#doc._content = content
+					#with open(doc.file_temp_path[:-6] + ".pickle", "wb") as f:
+					#	pickle.dump(doc, f)
+		self.db.close()
+
+		return templates_list
+
+	def cache(self, key):
+		doc = self.db.get(key)
+		return doc
+
+	def compile_templates(self):
+
+		"""
+		def flat_and_remove_docs(doc):
+
+			flat = []
+
+			for d in doc.docs:
+				d._save = False
+				#print "inside flat compilling .... tname 1 template {} doc content {}".format(d.template, d.content)
+				if d.docs:
+					flat.extend(flat_and_remove_docs(d))
+				flat.append(d)
+
+			return flat
+		"""
+
+		#for doc in self.docs:#reversed(self.docs):
+		#extends and includes first
+		for key, value in self.meteor_map_path.iteritems():
+			doc = value.doc
+			doc.make_template_remove_regexp()
+			if not doc.extends_found:
+				doc.make_path_add(doc)
+			print "order of templates to make final {}".format(doc.template)
+			doc.make_final_list_of_templates()
+
+		#for key, value in self.meteor_map_path.iteritems():
+		#	doc = value.doc
+		#	flat_and_remove_docs(doc)
+			#print "compilling .... tname 16 template {} doc content {}".format(doc.template, doc.content)
+
+	"""
+	def make_final_list_of_templates(self, doc):
+
+		flat = self.flat_and_remove_docs(doc)
+
+		if doc.extends_found:
+			lastdoc = flat[0]
+			#if self.templates_to_remove:
+			#	from file import read
+			#	content = read(doc.file_temp_path)
+			#	doc._content = self.change_doc_content_remove(doc, content)
+			if doc.templates_to_include: #and doc.template not in self.includes_path:
+				#if doc.template not in self.includes_path:
+				lastdoc._content = doc.change_doc_content_include(lastdoc)
+				lastdoc._save_to_temp = False
+
+		#put here to let extends and include same meteor template name from different sources
+		for tname in doc.meteor_tag_templates_list.keys():
+
+			if tname in frappe.local.meteor_Templates.keys():
+				t = frappe.local.meteor_Templates.get(tname)
+				doc.insere_template_to_remove_path(t.appname, tname)
+			elif doc.extends_found:
+				#if name of template not in any template yet then as we are extending the template will be removed by jinja so remove is folder
+				#last = flat[0]
+				#if tname in last.meteor_tag_templates_list:
+				doc.insere_template_to_remove_path(doc.appname, tname)
+				continue
+
+			frappe.local.meteor_Templates[tname] = doc.meteor_tag_templates_list.get(tname)
+
+	def flat_and_remove_docs(self, doc):
+
+		flat = []
+
+		for d in doc.docs:
+			d._save = False
+			doc.make_path_remove(d)
+			#for tname in self.templates_to_remove:
+			#	if tname in d.meteor_tag_templates_list:
+					#self.insere_template_to_remove_path(d.appname, tname)
+			d._content = doc.change_doc_content_remove(d)
+			if d.docs:
+				flat.extend(doc.flat_and_remove_docs(d))
+
+			flat.append(d)
+
+		return flat
+	"""
 """
 class MyFileSystemLoader(FileSystemLoader):
 	def __init__(self, apps, searchpath, encoding='utf-8'):

@@ -8,8 +8,9 @@
         {{ meta or "" }}
     {% endblock %}
 
-    {% include "templates/includes/meteor_web.html" %}
-
+    {% block includes %}
+        {{ includes or "" }}
+    {% endblock %}
 
 </head>
 <body>

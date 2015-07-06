@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
 import frappe, os, re
@@ -276,7 +277,7 @@ def read_client_files(start_folder, whatfor, appname, meteor_ignore=None, custom
 		pass
 
 	custom_pattern = set(custom_pattern)
-	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp"])
+	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp"])
 	pattern = ignore_patterns(*custom_pattern)
 
 	ignored_names_top.extend(exclude)
@@ -289,7 +290,7 @@ def read_client_files(start_folder, whatfor, appname, meteor_ignore=None, custom
 		#start with templates/react
 		#meteor_relpath = os.path.relpath(root, os.path.join(start_folder, "..", ".."))
 		meteor_relpath = os.path.relpath(root, frappe.get_app_path(appname))
-		meteor_ignore_folders(appname, meteor_relpath, dirs, meteor_ignore=meteor_ignore)
+		meteor_ignore_folders(appname, meteor_relpath, root, dirs, meteor_ignore=meteor_ignore)
 
 		ign_names = pattern(start_folder, files)
 		ign_dirs = pattern(start_folder, dirs)
@@ -326,7 +327,7 @@ def read_client_files(start_folder, whatfor, appname, meteor_ignore=None, custom
 
 		#for f in sorted(files, reverse=True):
 		for f in files:
-			if f in ign_names or meteor_ignore_files(appname, meteor_relpath, f, meteor_ignore=meteor_ignore):
+			if f in ign_names or meteor_ignore_files(appname, meteor_relpath, root, f, meteor_ignore=meteor_ignore):
 				continue
 			ext = f.rsplit(".", 1)
 			#if f.endswith("." + extension):
