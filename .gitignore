@@ -6,6 +6,7 @@
 tags
 react/
 reactivity/
+meteor_web_temp/
 meteor.devel.js
 meteor_web.js
 meteor_app.js

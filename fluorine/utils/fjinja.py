@@ -241,7 +241,7 @@ class MyFileSystemLoader(FileSystemLoader):
 
 					#print "content from get source template {} content {}".format(template, contents)
 					doc, contents = self.templates.make_template(contents, appname=app, template=template, relpath_temp=relpath_temp, realpath=filepath,
-																file_temp_path=file_temp_path, encoding=self.encoding)
+																relpath=relpath, file_temp_path=file_temp_path, encoding=self.encoding)
 
 					self.meteor_map_path[template] = frappe._dict({"doc": doc, "from_disk": False})
 					#self.meteor_map_path[template] = frappe._dict({"make_template": doc.make_template, "relpath": relpath_temp, "realpath": filepath, "file_temp_path": file_temp_path,
@@ -262,10 +262,11 @@ class MyFileSystemLoader(FileSystemLoader):
 					#with shelve.open(os.path.join(app_fluorine, "templates/react/temp", "fluorinedb")) as db:
 					#with open(file_temp_path[:-6] + ".pickle", "rb") as f:
 						#doc = pickle.load(f)
+
 					key = str("fluorine:" + app + ":" + template)
-					doc = frappe.cache().get_value(key)
-					if not doc:
-						doc = self.db[key]
+					#doc = frappe.cache().get_value(key)
+					#if not doc:
+					doc = self.db[key]
 					#else:
 					#	print "from cache !!!!!"
 						#self.meteor_map_path[template] = frappe._dict({"make_template": doc.make_template, "relpath": relpath_temp, "realpath": filepath, "file_temp_path": file_temp_path,
@@ -327,11 +328,31 @@ class MyFileSystemLoader(FileSystemLoader):
 			relpath = doc.relpath_temp
 			contents = doc.content or None
 			filename = doc.file_temp_path
-
-		if not contents:
+			if not contents:
+				contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
+			contents = self.remove_dynamic_templates(template, contents, doc)
+		else:
 			contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
 
 		return contents, filename, uptodate
+
+
+	def remove_dynamic_templates(self, template, contents, doc):
+		c = lambda t:re.compile(t, re.S|re.M)
+		t = frappe.local.meteor_dynamic_templates_remove.get(template)
+		print "templates in frappe.local.meteor_dynamic_templates_remove template 2 {} obj {}".format(template, t)
+		if t:
+			tname = t.name
+			if tname in doc.meteor_tag_templates_list:
+				print "found a template in remove dynamic templates 2 {}".format(tname)
+				if t.type == "template":
+					tname = "spacebars_" + tname
+				block_txt = r"{%\s+block\s+" + tname + r"\s+%}(.*?){%\s*endblock\s*%}"
+				block = c(block_txt)
+				contents = block.sub("", contents)
+
+		return contents
+
 
 	def check_uptodate(self, file_temp_path, filepath):
 		try:
@@ -357,12 +378,21 @@ class MyFileSystemLoader(FileSystemLoader):
 				#with shelve.open(os.path.join(app_fluorine, "templates/react/temp", "fluorinedb")) as db:
 					#if db[str(template)] == doc:
 				#no need to save content we have to make it always
-				content = doc.content
+				#content = doc.content
 				doc._content = None
 				del doc.docs[:]
+				"""
+				tremove = []
+				for k, t in doc.meteor_tag_templates_list.iteritems():
+					if t.addedafter:
+						tremove.append(k)
+
+				for k in tremove:
+					del doc.meteor_tag_templates_list[k]
+				"""
 				key = str("fluorine:" + doc.appname + ":" + template)
 				self.db[key] = doc
-				frappe.cache().set_value(key, self.db.get(key))
+				#frappe.cache().set_value(key, self.db.get(key))
 				#doc._content = content
 					#with open(doc.file_temp_path[:-6] + ".pickle", "wb") as f:
 					#	pickle.dump(doc, f)

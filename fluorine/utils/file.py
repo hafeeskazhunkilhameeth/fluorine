@@ -308,7 +308,9 @@ def match_path(startpath, excludes, includes):
 			print fname
 
 
+from profilehooks import profile, timecall, coverage
 
+@profile
 def make_all_files_with_symlink(dst, whatfor, meteor_ignore=None, custom_pattern=None):
 	_whatfor = ["meteor_app", "meteor_web", "meteor_frappe"]
 	folders_path = []
@@ -423,14 +425,18 @@ def meteor_ignore_folders(app, meteor_relpath, root, dirs, meteor_ignore=None):
 			dirs.remove(d)
 
 	templates_to_remove = meteor_ignore.get("templates_to_remove")
-	for d in dirs:
-		dirpath = os.path.join(root, d)
-		for c in templates_to_remove:
-			if c.match(dirpath):
-				try:
-					dirs.remove(d)
-				except:
-					pass
+	app_remove = templates_to_remove.get(app, None)
+	if app_remove:
+		for d in dirs:
+			dirpath = os.path.join(root, d)
+			for k,v in app_remove.iteritems():
+				c = v.get("compiled")
+				if c.match(dirpath):
+					if not has_valid_add_templates(app, v.get("order"), dirpath, meteor_ignore=meteor_ignore):
+						try:
+							dirs.remove(d)
+						except:
+							pass
 
 def meteor_ignore_files(app, meteor_relpath, root, file, meteor_ignore=None):
 
@@ -443,11 +449,31 @@ def meteor_ignore_files(app, meteor_relpath, root, file, meteor_ignore=None):
 				return True
 
 	templates_to_remove = meteor_ignore.get("templates_to_remove")
-	filepath = os.path.join(root, file)
-	for c in templates_to_remove:
-		if c.match(filepath):
-			return True
+	app_remove = templates_to_remove.get(app, None)
+	if app_remove:
+		filepath = os.path.join(root, file)
+		for k,v in app_remove.iteritems():
+			c = v.get("compiled")
+			if c.match(filepath):
+				if not has_valid_add_templates(app, v.get("order"), filepath, meteor_ignore=meteor_ignore):
+					return True
+				else:
+					return False
 
+	return False
+
+def has_valid_add_templates(app, order, path, meteor_ignore=None):
+	templates_to_add = meteor_ignore.get("templates_to_add")
+	app_add = templates_to_add.get(app, None)
+	if app_add:
+		for k,v in app_add.iteritems():
+			c = v.get("compiled")
+			if c.match(path):
+				dorder = v.get("order")
+				if dorder >= order:
+					return False
+				else:
+					return True
 	return False
 
 """

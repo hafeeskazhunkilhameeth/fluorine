@@ -49,6 +49,7 @@ class Template(object):
 		self.name = name
 		self.path = None
 		self.realpath = None
+		self.relpath = None
 		self.content = None
 		self.extends = False
 		self.include = False
@@ -59,12 +60,17 @@ class Template(object):
 		self.endline = -1
 		self.templates_keep = []
 		self.appname = None
+		self.type = ""
+		self.template = None
+		self.parent = None
+		self.addedafter = False
+
 
 
 
 class DocumentTemplate(object):
 
-	def __init__(self, list_meteor_tplt_remove, apps=None, appname=None, template=None, relpath_temp=None, realpath=None, file_temp_path=None, encoding="utf-8"):
+	def __init__(self, list_meteor_tplt_remove, apps=None, appname=None, template=None, relpath_temp=None, realpath=None, relpath=None, file_temp_path=None, encoding="utf-8"):
 
 		self.encoding = encoding
 		self.apps = apps
@@ -87,7 +93,7 @@ class DocumentTemplate(object):
 		self.extends_path = []
 		self.includes_path = []
 		#register the name of jinja2 blocks tags founded
-		self.jinja_tag_blocks_list = []
+		#self.jinja_tag_blocks_list = []
 		self.list_meteor_tplt_remove = list_meteor_tplt_remove
 		self._make_template = False
 		self.docs = []
@@ -98,10 +104,13 @@ class DocumentTemplate(object):
 		self._relpath_temp = relpath_temp
 		self._file_temp_path = file_temp_path
 		self._realpath = realpath
-
+		self.relpath = relpath
 		self.template_keep_name = []
 		self.pathtag_remove = []
 		self.pathtag_add = []
+
+		self.parent = self
+		self.origin = "self"
 		#self.templates_found_add = frappe.local("templates_found_add")
 		#self.templates_found_remove = frappe.local("templates_found_remove")
 
@@ -189,11 +198,17 @@ class DocumentTemplate(object):
 					#super_templates_remove.append({"start":start_line_template, "end": end_line_template + 1})
 					start_line_template = 0
 					self.remove_curr_template = False
+					self.curr_meteor_template_name = None
 					del new_content[start_line_template:end_line_template]
 					continue
 
+				self.curr_meteor_template_name = None
+
 			elif ENDBLOCK.search(line):
 				line = close_jinja_block(line)
+				self.make_template_list(new_content, start_line_template, count_line, line, type="block")
+				start_line_template = 0
+				self.curr_meteor_template_name = None
 
 			if self.remove_next_close_template or self.remove_next_close_block:
 				continue
@@ -252,9 +267,10 @@ class DocumentTemplate(object):
 				line = METEOR_TEMPLATE_BANG_EXPR.sub(self.wrappeMeteorExpression, line)
 
 			#if re.search(r"{%\s+block(.+?)%}", line):
-			if BLOCKBEGIN.search(line):
+			if BLOCKBEGIN.search(line) and not self.curr_meteor_template_name:
 				#line = re.sub(r"{%\s+block(.+?)%}", self.process_jinja_blocks, line, flags=re.S)
 				line = BLOCKBEGIN.sub(self.process_jinja_blocks, line)
+				start_line_template = count_line
 
 			if SUPER.search(line):
 				#line = re.sub(r"{%\s+block(.+?)%}", self.process_jinja_blocks, line, flags=re.S)
@@ -307,6 +323,18 @@ class DocumentTemplate(object):
 		#this template is for get_template function
 		self._make_template = True
 
+		#adoc = self.flat_and_remove_docs(self)
+		#ldoc = adoc[0] if adoc else self
+		#for d in self.docs:
+		#	if not d.extends_found:
+		#		d._content = self.change_doc_content_remove(d)
+
+		#we are in last doc. If not extend and was not include it is the last doc
+		#ldoc = self.lastDoc(self)
+		#if self.templates_to_include:
+		#	ldoc._content = self.change_doc_content_include(ldoc)
+			#print "templates to include 2 {} and last doc is {} from {} lista {} content {}".format(self.templates_to_include, ldoc.template, self.template, ldoc.meteor_tag_templates_list, ldoc.content)
+
 		#self.make_final_list_of_templates()
 
 		#self.make_template_remove_regexp()
@@ -315,8 +343,20 @@ class DocumentTemplate(object):
 
 		return content
 
+	def lastDoc(self, doc):
+		if doc.extends_found:
+			ext = doc.extends_path[0]
+			for d in doc.docs:
+				if d.template == ext:
+					return self.lastDoc(d)
+		return doc
+
 	def make_final_list_of_templates(self):
 
+		#remove self templates
+		#for tname in self.templates_to_remove:
+		#	if tname in self.meteor_tag_templates_list:
+		#		self.insere_template_to_remove_path(tname, self.appname, self.appname, self.realpath)
 		#flat = self.flat_and_remove_docs(self)
 		self.flat_and_remove_docs(self)
 
@@ -341,74 +381,172 @@ class DocumentTemplate(object):
 		#		if i == d.template:
 		#			d._content = self.change_doc_content_remove(d)
 
+		"""
+		def make_template(doc, tname, ttype):
+			tt = Template(tname)
+			tt.appname = doc.appname
+			tt.templates_keep.extend(doc.template_keep_name)
+			tt.realpath = doc.realpath
+			tt.type = ttype
+			tt.relpath = doc.relpath
+			tt.template = doc.template
+			tt.extends = doc.extends_found
+			tt.parent = doc
+			return tt
+		"""
+		"""
+		def check_lastdoc_includes(doc, tname):
+			includes = []
+			for d in doc.docs:
+				if tname in d.meteor_tag_templates_list:
+					includes.append(d)
+			return includes
+		"""
+		def is_in_extend_path(doc, template):
+			for d in doc.docs:
+				if d.template == template:
+					return True
+				found = is_in_extend_path(d, template)
+				if found:
+					return True
+			return False
+
+		#ldoc = lastDoc(self)
 		#put here to let extends and include same meteor template name from different sources
 		for tname in self.meteor_tag_templates_list.keys():
-
+			#print "tname in meteor tag templates list 3 {} keys {}".format(tname, frappe.local.meteor_Templates.keys())
+			#the template must exist in the last template in case of extends to be valid template
 			if tname in frappe.local.meteor_Templates.keys():
+				#inc = check_lastdoc_includes(ldoc, tname)
+				#if tname in ldoc.meteor_tag_templates_list or len(inc) > 0:
 				t = frappe.local.meteor_Templates.get(tname)
-				self.insere_template_to_remove_path(tname, t.realpath)
-			elif self.extends_found:
+				self.insere_template_to_remove_path(tname, self.appname, t.appname, t.realpath)
+				#if remove a template and not extend anything then that template must be removed
+				if not self.extends_found:
+					if self.template not in self.parent.includes_path and t.template not in self.includes_path: #and not self.parent:
+						frappe.msgprint("Duplicated Template {} in app {} file {} from app {} in file {}. \nTIP: There is another template with the same name in another extend path. If you want to replace him then extend {}.".format(tname, t.appname, t.template, self.appname, self.template, self.template), raise_exception=1)
+					"""
+					doc = self.lastDoc(t.parent)
+					if tname in doc.meteor_tag_templates_list:
+						tt = make_template(doc, t.name, t.type)
+						frappe.local.meteor_dynamic_templates_remove[t.template] = tt
+						doc.insere_template_to_remove_path(tname, doc.appname, tt.appname, tt.realpath)
+
+					inc = check_lastdoc_includes(doc, tname)
+					for d in inc:
+						if tname in d.meteor_tag_templates_list:
+							tt = make_template(d, t.name, t.type)
+							frappe.local.meteor_dynamic_templates_remove[t.template] = tt
+							d.insere_template_to_remove_path(tname, d.appname, tt.appname, tt.realpath)
+					"""
+
+				else:
+					#found = False
+					#for d in self.docs:
+					#	if d.template == t.template:
+					#		found = True
+					#		break
+
+					#if not found:
+					#Here we are in the case where a template does not exist in the extend path but exist in another extend path
+					if not is_in_extend_path(self, t.template):
+						frappe.msgprint("Duplicated Template {} in app {} file {} from app {} in file {}. \nTIP: There is another template with the same name in another extend path. If you want to replace him then extend {}.".format(tname, t.appname, t.template, self.appname, self.template, self.template), raise_exception=1)
+						#self.insere_template_to_remove_path(tname, self.appname, self.appname, self.realpath)
+
+				#	inc = check_lastdoc_includes(ldoc, tname)
+				#	if tname in ldoc.meteor_tag_templates_list or len(inc) > 0:
+				#		continue
+					#in this case we extend but there is no template from the doc (or the includes) we extend so exclude him
+					#self.insere_template_to_remove_path(tname, self.appname, self.appname, self.realpath)
+				#print "found tname in meteor tag templates list will remove 4 {} who_appname {} where_appname {} realpath {}".format(tname, self.appname, t.appname, t.template)
+			elif self.extends_found and tname not in self.templates_to_include:
 				#if name of template not in any template yet then as we are extending the template will be removed by jinja so remove is folder
 				#last = flat[0]
 				#if tname in last.meteor_tag_templates_list:
-				self.insere_template_to_remove_path(tname, self.realpath)
+				self.insere_template_to_remove_path(tname, self.appname, self.appname, self.realpath)
 				continue
 
+			#if self.template == "templates/includes/teste2.xhtml":
+			#	print "lastdoc list tname 2 {} list {}".format(tname, self.meteor_tag_templates_list)
 			frappe.local.meteor_Templates[tname] = self.meteor_tag_templates_list.get(tname)
 
 	def flat_and_remove_docs(self, doc):
 
 		flat = []
 
+		for tname in self.templates_to_remove:
+			if tname in doc.meteor_tag_templates_list:
+				self.insere_template_to_remove_path(tname, self.appname, doc.appname, doc.realpath)
+				try:
+					del frappe.local.meteor_Templates[tname]
+				except:
+					pass
+
 		for d in doc.docs:
 			d._save = False
 			self.make_path_remove(d)
 			# from his include tags remove any template in the list of templates to remove. If include has extends then remove only in the last one.
 			# or is the last document and remove from there
-			if (d.template in doc.includes_path and not d.extends_found) or (d.template not in doc.includes_path and not d.extends_found):
+			#if (d.template in doc.includes_path and not d.extends_found) or (d.template not in doc.includes_path and not d.extends_found):
+			if not d.extends_found:# and d.template not in doc.includes_path:
 				d._content = self.change_doc_content_remove(d)
+				#print "last doc template name {} and content {}".format(d.template, d.content)
+				#we are in last doc. If not extend and was not include it is the last doc
 				if self.templates_to_include and d.template not in doc.includes_path:
 					d._content = self.change_doc_content_include(d)
 			#if the templates to remove is in the list of doc templates then remove is path
-			for tname in self.templates_to_remove:
-				if tname in d.meteor_tag_templates_list:
-					self.insere_template_to_remove_path(tname, d.realpath)
-					try:
-						del frappe.local.meteor_Templates[tname]
-					except:
-						pass
+			#for tname in self.templates_to_remove:
+			#	if tname in d.meteor_tag_templates_list:
+			#		self.insere_template_to_remove_path(tname, self.appname, d.appname, d.realpath)
+					#try:
+						##del d.meteor_tag_templates_list[tname]
+					#	del frappe.local.meteor_Templates[tname]
+					#except:
+					#	pass
 			#for tname in self.templates_to_remove:
 			#	if tname in d.meteor_tag_templates_list:
 					#self.insere_template_to_remove_path(d.appname, tname)
 			#d._content = self.change_doc_content_remove(d)
-			if d.docs:
-				flat.extend(self.flat_and_remove_docs(d))
+			#if d.docs:
+			flat.extend(self.flat_and_remove_docs(d))
 
 			flat.append(d)
 
 		return flat
 
+	#not used
 	def process_tag_path(self, doc):
 		self.make_path_remove(doc)
 
+	#not used
 	def make_template_remove_regexp(self):
 		basename = os.path.basename(self.template)[:-6]
 		dirname = os.path.dirname(self.template)
 		idx = self.apps.index(self.appname) + 1
 		apps = self.apps[idx:]
+		order = self.apps.index(self.appname)
 		for app in apps:
 			app_path = frappe.get_app_path(app)
 			pattern = fnmatch.translate(os.path.join(app_path, dirname, basename + "*"))
-			frappe.local.templates_found_remove.add(c(pattern))
+			#frappe.local.templates_found_remove.add(c(pattern))
+			if not frappe.local.templates_found_remove.get(app, None):
+				frappe.local.templates_found_remove[app] = frappe._dict({})
+			frappe.local.templates_found_remove.get(app)[pattern] = frappe._dict({"compiled": c(pattern), "order": order})
 
+	#not used
 	def make_template_add_regexp(self):
 		basename = os.path.basename(self.template)[:-6]
 		dirname = os.path.dirname(self.template)
 		app_path = frappe.get_app_path(self.appname)
 		pattern = fnmatch.translate(os.path.join(app_path, dirname, basename, "*"))
-		frappe.local.templates_found_add.add(c(pattern))
+		#frappe.local.templates_found_add.add(c(pattern))
+		order = self.apps.index(self.appname)
+		if not frappe.local.templates_found_remove.get(self.appname, None):
+			frappe.local.templates_found_remove[self.appname] = frappe._dict({})
+		frappe.local.templates_found_add.get(self.appname)[pattern] = frappe._dict({"compiled": c(pattern), "order": order})
 
 	def make_path_remove(self, doc):
+		order = self.apps.index(self.appname)
 		for r in self.pathtag_remove:
 			if r.template == doc.template:
 				#basename = os.path.basename(r.template)[:-6]
@@ -419,9 +557,14 @@ class DocumentTemplate(object):
 				app_path = frappe.get_app_path(doc.appname)
 				rmpath = os.path.join(app_path, dirname, path, r.pattern)
 				pattern = fnmatch.translate(rmpath)
-				frappe.local.templates_found_remove.add(c(pattern))
+				#frappe.local.templates_found_remove.add(c(pattern))
+				if not frappe.local.templates_found_remove.get(doc.appname, None):
+					frappe.local.templates_found_remove[doc.appname] = frappe._dict({})
+				frappe.local.templates_found_remove.get(doc.appname)[pattern] = frappe._dict({"compiled": c(pattern), "order": order})
 
+	#not used
 	def make_path_add(self, doc):
+		order = self.apps.index(self.appname)
 		for a in self.pathtag_add:
 			if a.template == doc.template:
 				#basename = os.path.basename(r.template)[:-6]
@@ -432,8 +575,12 @@ class DocumentTemplate(object):
 				app_path = frappe.get_app_path(a.appname)
 				adpath = os.path.join(app_path, dirname, path, a.pattern)
 				pattern = fnmatch.translate(adpath)
-				frappe.local.templates_found_remove.add(c(pattern))
+				#frappe.local.templates_found_remove.add(c(pattern))
+				if not frappe.local.templates_found_remove.get(doc.appname, None):
+					frappe.local.templates_found_remove[doc.appname] = frappe._dict({})
+				frappe.local.templates_found_add.get(doc.appname)[pattern] = frappe._dict({"compiled": c(pattern), "order": order})
 
+	#not used
 	def make_template_remove_path(self, doc, name):
 
 		def check_others(doc, name):
@@ -458,7 +605,7 @@ class DocumentTemplate(object):
 			if not res:
 				self.add_template_to_remove_path(self, name)
 
-	def insere_template_to_remove_path(self, name, realpath):
+	def insere_template_to_remove_path(self, name, appname_who, appname_where, realpath):
 
 		#app_path = frappe.get_app_path(appname)
 		#path = os.path.join(app_path, name)
@@ -468,11 +615,18 @@ class DocumentTemplate(object):
 		path = os.path.join(dirpath, basename[:-6])
 		#pattern = path + r"/(?:[^\s]+/)?(?:(?:%s)/.*|(?:%s$))" % (name, name)
 		pattern = path + r"/(?:[^\s]+/)?(?:(?:%s)/[^\s/]+|(?:%s/?$))" % (name, name)
+		if not frappe.local.templates_found_remove.get(appname_where, None):
+			frappe.local.templates_found_remove[appname_where] = frappe._dict({})
+
+		# less order bigger priority
+		order = self.apps.index(appname_who)
+		frappe.local.templates_found_remove.get(appname_where)[pattern] = frappe._dict({"compiled": c(pattern), "order":order})
 		#pattern = fnmatch.translate(path)
 		print "listing templates to remove path 8 {} pattern {}".format(path, pattern)
 		#self.templates_found_remove.add(c(pattern))
-		frappe.local.templates_found_remove.add(c(pattern))
+		#frappe.local.templates_found_remove.add(c(pattern))
 
+	#not used
 	def add_template_to_remove_path(self, doc, name):
 		appname = None
 		realpath = None
@@ -480,16 +634,16 @@ class DocumentTemplate(object):
 			name = name.replace("/", "", 1)
 		#tdirname = os.path.dirname(name)
 		if name in doc.meteor_tag_templates_list:
-			#appname = doc.appname
+			appname = doc.appname
 			realpath = doc.realpath
 		else:
 			for d in doc.docs:
 				if d.template in doc.includes_path:
 					if name in d.meteor_tag_templates_list:
-						#appname = d.appname
+						appname = d.appname
 						realpath = d.realpath
 
-		self.insere_template_to_remove_path(name, realpath)
+		self.insere_template_to_remove_path(name, doc.appname, appname, realpath)
 
 	"""
 	def process_docs_references(self, docs, meteor_tag_templates_list):
@@ -548,6 +702,11 @@ class DocumentTemplate(object):
 					#print "content before remove in template 3 {} template {} content {}".format(doc.template, tname, content)
 					content = block.sub("", content)
 
+					#self.insere_template_to_remove_path(tname, self.appname, doc.appname, doc.realpath)
+					#try:
+					#	del frappe.local.meteor_Templates[tname]
+					#except:
+					#	pass
 				#for d in doc.docs:#if last doc has include process
 				#	d._content = self.change_doc_content_remove(d)
 					#print "\n\n\nself template name 6 {} doc template name {} templates to remove {} doc.meteor_tag_templates_list {} block to remove {} \n\ncontent after remove {}\n\n\n".format(self.template, doc.template, self.templates_to_remove, doc.meteor_tag_templates_list, block_txt, content)
@@ -574,19 +733,30 @@ class DocumentTemplate(object):
 
 			for name in self.templates_to_include:
 				t = self.meteor_tag_templates_list.get(name)
-				tt = frappe.local.meteor_Templates.get(name)
-				if tt:
-					self.insere_template_to_remove_path(name, tt.realpath)
-				ttt = Template(name)
-				ttt.appname = doc.appname
-				ttt.templates_keep.extend(doc.template_keep_name)
-				ttt.realpath = doc.realpath
 
-				frappe.local.meteor_Templates[name] = ttt
+				#tt = frappe.local.meteor_Templates.get(name)
+				#if tt:
+				#	self.insere_template_to_remove_path(name, self.appname, tt.appname, tt.realpath)
 
 				template = r"<\s*template\s+name\s*=\s*(['\"])"+ name + r"\1(.*?)\s*>"
 				if re.search(template, content, re.S|re.I|re.M):
 					continue
+
+				"""
+				ttt = Template(name)
+				ttt.appname = doc.appname
+				ttt.templates_keep.extend(doc.template_keep_name)
+				ttt.realpath = doc.realpath
+				ttt.relpath = doc.relpath
+				ttt.parent = doc
+				ttt.type = t.type
+				ttt.extends = doc.extends_found
+				ttt.template = doc.template
+				ttt.addedafter = True
+
+				#frappe.local.meteor_Templates[name] = ttt
+				doc.meteor_tag_templates_list[name] = ttt
+				"""
 				#Only change content if not there yet. No need to replace if it already there one template
 				content = content + '\n' + t.content
 				#doc._save_to_temp = False
@@ -594,11 +764,11 @@ class DocumentTemplate(object):
 		print "docs to include 4 {} content {}".format(doc.template, content)
 		return content
 
-	def make_template_list(self, contents, startline, endline, lastline):
+	def make_template_list(self, contents, startline, endline, lastline, type="template"):
 
 		if self.remove_next_close_template:
-			#self.add_template_to_remove_path(self, self.curr_meteor_template_name)
-			self.insere_template_to_remove_path(self.curr_meteor_template_name, self.realpath)
+			##self.add_template_to_remove_path(self, self.curr_meteor_template_name)
+		#	self.insere_template_to_remove_path(self.curr_meteor_template_name, self.appname, self.appname, self.realpath)
 			return
 		t = Template(self.curr_meteor_template_name)
 		t.appname = self.appname
@@ -611,10 +781,16 @@ class DocumentTemplate(object):
 		t.startline = startline
 		t.endline = endline
 		t.realpath = self.realpath
+		t.type = type
+		t.relpath = self.relpath
+		t.template = self.template
+		t.extends = self.extends_found
+		t.parent = self
 
 		if self.include_template_found:
 			t.include = True
 			t.content = contents[startline] + "\n" + lastline
+			self.include_template_found = False
 
 		self.meteor_tag_templates_list[self.curr_meteor_template_name] = t
 
@@ -661,7 +837,9 @@ class DocumentTemplate(object):
 
 	def process_jinja_blocks(self, m):
 		name = m.group(1).strip()
-		if name in self.jinja_tag_blocks_list or self.check_in_tplt_remove_list(name):
+		self.curr_meteor_template_name = name
+		#if name in frappe.local.jinja_blocks or self.check_in_tplt_remove_list(name):
+		if self.check_in_tplt_remove_list(name):
 			self.remove_next_close_block = True
 			return ""
 
@@ -732,10 +910,16 @@ class DocumentTemplate(object):
 					self.include_template_found = True
 					self.templates_to_include.append(template_name)
 
-		if template_name in frappe.local.meteor_Templates.keys() or self.check_in_tplt_remove_list(template_name) or template_name in self.templates_to_remove:
+		#if template_name in frappe.local.meteor_Templates.keys() or self.check_in_tplt_remove_list(template_name) or template_name in self.templates_to_remove:
+		if self.check_in_tplt_remove_list(template_name) or template_name in self.templates_to_remove:
 			self.remove_next_close_template = True
+			self.include_template_found = False
+			try:
+				self.templates_to_include.remove(template_name)
+			except:
+				pass
 			return ""
-		#TODO
+		#TODO give error if inside a block tag
 		#if not self.extends_found:
 		#	t = Template(m.group(1))
 		#	self.meteor_tag_templates_list[m.group(1)] = t
@@ -770,7 +954,13 @@ class DocumentTemplate(object):
 				#self.load(referenced_template_path)
 				doc = fluorine_get_fenv().addto_meteor_templates_list(referenced_template_path, force=force)
 				if doc:
-					print "referenced docs for template name 5 {} reference template path {} doc {}".format(self.template, referenced_template_path, doc.template)
+					print "referenced docs for template name 6 {} reference template path {} doc {}".format(self.template, referenced_template_path, doc.template)
+					doc.parent = self
+					if doc.template in self.includes_path:
+						doc.origin = "include"
+					elif doc.template in self.extends_path:
+						doc.origin = "extend"
+
 					docs.append(doc)
 
 		return docs
@@ -813,6 +1003,7 @@ class Templates(object):
 		self.apps = apps
 		#self.templates_found = []
 		frappe.local.meteor_Templates = frappe._dict({})
+		frappe.local.jinja_blocks = frappe._dict({})
 		#super(Templates, self).__init__(list_meteor_tplt_remove)
 
 	"""
@@ -844,8 +1035,8 @@ class Templates(object):
 		return True
 	"""
 
-	def make_template(self, contents, appname=None, template=None, relpath_temp=None, realpath=None, file_temp_path=None, encoding="utf-8"):
-		doc = DocumentTemplate(self.list_meteor_tplt_remove, apps=self.apps, appname=appname, template=template, relpath_temp=relpath_temp, realpath=realpath, file_temp_path=file_temp_path, encoding=encoding)
+	def make_template(self, contents, appname=None, template=None, relpath_temp=None, realpath=None, relpath=None, file_temp_path=None, encoding="utf-8"):
+		doc = DocumentTemplate(self.list_meteor_tplt_remove, apps=self.apps, appname=appname, template=template, relpath_temp=relpath_temp, realpath=realpath, relpath=relpath, file_temp_path=file_temp_path, encoding=encoding)
 		contents = doc.replace_for_templates(contents)
 		#self.process_references(contents)
 		#self.check_include(template)

@@ -23,6 +23,8 @@ def clear_cache(path):
 			f["meteor_folder"] = {"folder_refresh": 1, "compile": 1}
 		file.save_js_file(config_path, f)
 
+
+
 def clear_frappe_caches():
 	frappe.clear_cache()
 	frappe.website.render.clear_cache()

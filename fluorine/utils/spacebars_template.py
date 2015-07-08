@@ -327,7 +327,8 @@ def make_meteor_ignor_files(apps):
 				"meteor_files": list_meteor_files_add,
 				"meteor_templates": list_meteor_tplt_add
 			},
-		    "templates_to_remove": frappe.local.templates_found_remove
+		    "templates_to_remove": frappe.local.templates_found_remove,
+			"templates_to_add": frappe.local.templates_found_add
 
 		})
 
@@ -353,9 +354,13 @@ def fluorine_build_context(context, whatfor):
 	frappe.local.floader = None
 	frappe.local.meteor_map_path = None
 	frappe.local.meteor_Templates = None
+	frappe.local.meteor_dynamic_templates_remove = frappe._dict({})
+	frappe.local.jinja_blocks = None
 	frappe.local.meteor_ignores = None
-	frappe.local.templates_found_add = set([])
-	frappe.local.templates_found_remove = set([])
+	#frappe.local.templates_found_add = set([])
+	frappe.local.templates_found_add = frappe._dict({})
+	#frappe.local.templates_found_remove = set([])
+	frappe.local.templates_found_remove = frappe._dict({})
 
 	path_reactivity = get_path_reactivity()
 	devmode = context.developer_mode
