@@ -26,7 +26,13 @@ STARTTEMPLATE_KEEP=c(r"((?<=\s)|(?<=^))keep\s*=\s*(['\"])(.+?)\2")
 
 EXTENDS = c(r"{%\s*extends(.+?) (.*?)%}")
 INCLUDE = c(r"{%\s*include(.+?) (.*?)%}")
-SUPER = c(r"{%\s*super\((.*?)\)\s*%}")
+
+MSUPER = c(r"{{\s*msuper\((.*?)\)\s*}}")
+MSUPERNAME=c(r"name\s*=\s*(['\"])(.+?)\1")
+MSUPERFROM=c(r"from\s*=\s*(['\"])(.+?)\1")
+MSUPERDEEP=c(r"deep\s*=\s*(.+?)")
+
+
 COMMENTS = c(r"(?:{#)+(.*)?(?:#})*|{#*(.*)?(?:#})+")
 STARTCOMMENTS = c(r"(?:{#)+(.*)")
 ENDCOMMENTS = c(r"(.*)(?:#})+")
@@ -177,7 +183,7 @@ class DocumentTemplate(object):
 					content = "\n".join(new_content[start_line_template + 1:end_line_template])#"\n</template>\n{% endblock %}\n"
 					if content.replace("\n","").strip() == "":#.replace(" ","") == "":
 						content = content.replace("\n","").strip()#.replace(" ","")
-					content = SUPER.sub(content, template_with_super)
+					content = MSUPER.sub(content, template_with_super)
 					if not self.extends_found:
 						del new_content[start_line_template + 1:end_line_template]
 						#insert the new content after tag template
@@ -272,9 +278,9 @@ class DocumentTemplate(object):
 				line = BLOCKBEGIN.sub(self.process_jinja_blocks, line)
 				start_line_template = count_line
 
-			if SUPER.search(line):
+			if MSUPER.search(line):
 				#line = re.sub(r"{%\s+block(.+?)%}", self.process_jinja_blocks, line, flags=re.S)
-				line = SUPER.sub(self.process_super, line)
+				line = MSUPER.sub(self.process_super, line)
 
 			#if PATHTAG.search(line):
 			line = PATHSTAG.sub(self.process_pathtag, line)
@@ -405,11 +411,14 @@ class DocumentTemplate(object):
 		def is_in_extend_path(doc, template):
 			for d in doc.docs:
 				if d.template == template:
-					return True
+					#return True
+					return d
 				found = is_in_extend_path(d, template)
 				if found:
-					return True
-			return False
+					#return True
+					return found
+			#return False
+			return None
 
 		#ldoc = lastDoc(self)
 		#put here to let extends and include same meteor template name from different sources
@@ -830,10 +839,32 @@ class DocumentTemplate(object):
 
 	#TODO to remove and pass inside the search above
 	def process_super(self, m):
-		if self.extends_found and self.curr_meteor_template_name:
-			self.remove_curr_template = True
+		#if self.extends_found and self.curr_meteor_template_name:
+		#	self.remove_curr_template = True
 		#probably should rise an error if has super but not extends!
-		return m.group(0)
+		args = m.group(1)
+		if args:
+			n = MSUPERNAME.search(args)
+			if n:
+				name = n.group(2).strip()
+			else:
+				name = self.curr_meteor_template_name
+			f = MSUPERFROM.search(args)
+			if f:
+				ffrom = f.group(2).strip()
+			else:
+				ffrom = ""
+			d = MSUPERDEEP.search(args)
+			if d:
+				deep = d.group(1)
+			else:
+				deep = 1
+		else:
+			ffrom = ""
+			name = self.curr_meteor_template_name
+			deep = 1
+
+		return "{{ msuper(curr_tplt='%s', deep=%s, name='%s', ffrom='%s') }}" % (self.template, deep, name, ffrom)
 
 	def process_jinja_blocks(self, m):
 		name = m.group(1).strip()
@@ -960,7 +991,7 @@ class DocumentTemplate(object):
 						doc.origin = "include"
 					elif doc.template in self.extends_path:
 						doc.origin = "extend"
-
+					doc._make_template = False
 					docs.append(doc)
 
 		return docs

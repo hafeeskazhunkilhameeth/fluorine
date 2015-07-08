@@ -20,6 +20,84 @@ from collections import OrderedDict
 def get_encoding():
 	return "utf-8"
 
+
+#from jinja2 import contextfunction, environmentfunction
+
+def is_in_extend_path(doc, template):
+	for d in doc.docs:
+		if d.template == template:
+			print "one template found in is:in 5 {}".format(d.template)
+			return d
+		found = is_in_extend_path(d, template)
+		if found:
+			return found
+	return None
+
+def get_template_from_doc(doc, tname, encoding="utf-8"):
+	from file import read
+
+	content = doc.content
+	if not content:
+		content = read(doc.file_temp_path).decode(encoding)
+	template = r"<\s*template\s+name\s*=\s*(['\"])%s\1(.*?)\s*>(.*?)<\s*/\s*template\s*>" % tname
+	g = re.search(template, content, re.S|re.I|re.M)
+	t = ""
+	if g:
+		t = g.group(3)
+
+	return t
+
+def get_doc_from_template(template):
+		doc = None
+		obj = frappe.local.meteor_map_path.get(template)
+		if obj:
+			doc = obj.get("doc")
+		return doc
+
+def get_doc_from_deep(template, deep=1):
+
+	obj = frappe.local.meteor_map_path.get(template)
+	if obj:
+		doc = obj.get("doc")
+		if doc.extends_found and deep > 0:
+			return get_doc_from_deep(doc.extends_path[0], deep-1)
+		return doc, deep
+	return None, 1
+	#frappe.msgprint("The is no doc with xhtml template {} for deep {}.".format(template, deep), raise_exception=1)
+
+
+#@contextfunction
+#@environmentfunction
+def msuper(curr_tplt=None, name=None, ffrom=None, deep=1, encoding="utf-8"):
+
+	tplt = None
+	print "msuper was called!!! 6"
+	if ffrom:
+		doc = get_doc_from_template(ffrom)
+		#doc = get_doc_from_template(curr_tplt)
+		if doc:
+			#TODO: verify if doc is in extends path? Or include templates from any path?
+			d = get_doc_from_template(curr_tplt)
+			dc = is_in_extend_path(d, ffrom)
+			print "found template for doc template 1 {} template {}".format(d.template, dc)
+			#if doc:
+			deep = 0
+	else:
+		doc, deep = get_doc_from_deep(curr_tplt, deep=deep)
+
+	print "in msuper t is 22 curr_tplt {} name {} ffrom {} deep {} doc {}".format(curr_tplt, name, ffrom, deep, doc.file_temp_path)
+	if deep == 0 and doc:
+		tplt = get_template_from_doc(doc, name, encoding)
+		print "result template from doc {}".format(tplt)
+
+	if not tplt or deep > 0:
+		msg = "ERROR: There is no meteor template {} in xhtml template file {}".format(name, doc.template)
+		#frappe.msgprint(msg, raise_exception=1)
+		return msg
+
+	return tplt
+
+
 def fluorine_get_fenv():
 
 	from jinja2 import DebugUndefined
@@ -32,6 +110,7 @@ def fluorine_get_fenv():
 		set_filters(fenv)
 
 		fenv.globals.update(get_allowed_functions_for_jenv())
+		fenv.globals.update({"msuper":msuper})
 
 		frappe.local.fenv = fenv
 
@@ -91,11 +170,12 @@ def compile_jinja_templates(mtl, context, whatfor):
 		template = l.get("template")
 		doc = l.get("doc")
 		dstPath = doc.realpath[:-6] + ".html"
-		print "dstPath in compile jinja2 {}".format(dstPath)
+		print "dstPath in compile jinja2 2 {} template {}".format(dstPath, doc.template)
 		#dstPath = frappe.local.meteor_map_path[l.get("tpath")].get("realpath")[:-6] + ".html"
 		#dstPath = template.filename[:-6].replace("templates/react/temp","templates/react",1) + ".html"
 		try:
 			content = scrub_relative_urls(concat(template.render(template.new_context(context))))
+			#content = ""
 			print "template in compile jinja templates 4 {} blocks {} content {}".format(template, template.blocks, content)
 			if content and template and template.blocks:
 				#print "l.get save to file {}".format(l.get("save"))

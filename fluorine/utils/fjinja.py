@@ -370,6 +370,7 @@ class MyFileSystemLoader(FileSystemLoader):
 		for template, value in self.meteor_map_path.iteritems():
 			doc = value.doc
 			if doc.make_template:
+				print "templates com make == True 4 {}".format(doc.template)
 				t = fluorine_get_fenv().get_template(template)
 				templates_list.append(frappe._dict({"template":t, "tpath":template, "doc": doc}))
 				#print "inside get_meteor_template_list compilling .... tname 1 template {} doc content {}".format(doc.template, doc.content)
@@ -378,8 +379,9 @@ class MyFileSystemLoader(FileSystemLoader):
 				#with shelve.open(os.path.join(app_fluorine, "templates/react/temp", "fluorinedb")) as db:
 					#if db[str(template)] == doc:
 				#no need to save content we have to make it always
-				#content = doc.content
+				content = doc.content
 				doc._content = None
+				tmp_docs = doc.docs[:]
 				del doc.docs[:]
 				"""
 				tremove = []
@@ -392,8 +394,9 @@ class MyFileSystemLoader(FileSystemLoader):
 				"""
 				key = str("fluorine:" + doc.appname + ":" + template)
 				self.db[key] = doc
+				doc.docs = tmp_docs
 				#frappe.cache().set_value(key, self.db.get(key))
-				#doc._content = content
+				doc._content = content
 					#with open(doc.file_temp_path[:-6] + ".pickle", "wb") as f:
 					#	pickle.dump(doc, f)
 		self.db.close()
@@ -435,6 +438,7 @@ class MyFileSystemLoader(FileSystemLoader):
 		#	doc = value.doc
 		#	flat_and_remove_docs(doc)
 			#print "compilling .... tname 16 template {} doc content {}".format(doc.template, doc.content)
+
 
 	"""
 	def make_final_list_of_templates(self, doc):
