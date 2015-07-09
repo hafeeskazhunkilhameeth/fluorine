@@ -39,11 +39,11 @@ class MyChoiceLoader(ChoiceLoader):
 		raise TemplateNotFound(template)
 
 
-	def get_meteor_source(self, environment, template, force=False):
+	def get_meteor_source(self, environment, template, appname, force=False):
 
 		for loader in self.loaders:
 			try:
-				l = loader.get_meteor_source(environment, template, force=force)
+				l = loader.get_meteor_source(environment, template, appname, force=force)
 				self.curr_loader = loader
 				return l
 			except TemplateNotFound:
@@ -117,9 +117,9 @@ class MyEnvironment(Environment):
 			bytecode_cache=bytecode_cache
 		)
 	"""
-	def addto_meteor_templates_list(self, path, force=False):
+	def addto_meteor_templates_list(self, path, appname, force=False):
 		#return self.get_template(path)
-		return self.loader.get_meteor_source(self, path, force=force)
+		return self.loader.get_meteor_source(self, path, appname, force=force)
 
 	def get_meteor_template_list(self):
 		floader = self.loader.get_curr_loader()
@@ -198,7 +198,7 @@ class MyFileSystemLoader(FileSystemLoader):
 		return template
 
 
-	def get_meteor_source(self, environment, template, force=False):
+	def get_meteor_source(self, environment, template, appname, force=False):
 		from file import write
 
 		if self.meteor_map_path.get(template):

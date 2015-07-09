@@ -528,7 +528,6 @@ class DocumentTemplate(object):
 	def process_tag_path(self, doc):
 		self.make_path_remove(doc)
 
-	#not used
 	def make_template_remove_regexp(self):
 		basename = os.path.basename(self.template)[:-6]
 		dirname = os.path.dirname(self.template)
@@ -542,6 +541,10 @@ class DocumentTemplate(object):
 			if not frappe.local.templates_found_remove.get(app, None):
 				frappe.local.templates_found_remove[app] = frappe._dict({})
 			frappe.local.templates_found_remove.get(app)[pattern] = frappe._dict({"compiled": c(pattern), "order": order})
+
+		if not frappe.local.templates_found_remove.get(app, None):
+			frappe.local.templates_found_remove[app] = frappe._dict({})
+		frappe.local.templates_found_remove.get(app)[pattern] = frappe._dict({"compiled": c(pattern), "order": order})
 
 	#not used
 	def make_template_add_regexp(self):

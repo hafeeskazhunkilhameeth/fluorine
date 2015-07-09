@@ -489,7 +489,7 @@ def check_in_files_remove_list(app, template, list_meteor_files_remove):
 
 def process_react_templates(context, apps, whatfor):
 
-	from react_file_loader import read_client_files
+	from react_file_loader import read_client_xhtml_files, get_custom_pattern
 	#from fjinja import process_hooks_apps, process_hooks_meteor_templates
 	#first installed app first
 	#list_apps_remove = process_hooks_apps(apps)
@@ -501,13 +501,15 @@ def process_react_templates(context, apps, whatfor):
 	#ignore = {"templates":list_meteor_files_remove, "files_folders":list_meteor_files_folders_remove}
 	list_apps_remove = frappe.local.meteor_ignores.get("remove").get("apps")
 
+	custom_pattern = get_custom_pattern(whatfor, custom_pattern=None)
+	print "apps order {}".format(apps)
 	for app in apps:
 		if app in list_apps_remove:
 			continue
 		pathname = frappe.get_app_path(app)
 		path = os.path.join(pathname, "templates", "react")
 		if os.path.exists(path):
-			files = read_client_files(path, whatfor, app, meteor_ignore=frappe.local.meteor_ignores, extension="xhtml")
+			files = read_client_xhtml_files(path, whatfor, app, meteor_ignore=frappe.local.meteor_ignores, custom_pattern=custom_pattern)
 			for f in files:
 				for obj in reversed(f):
 				#for obj in f:
@@ -516,7 +518,7 @@ def process_react_templates(context, apps, whatfor):
 					root = file_path[:-len(file_name)]
 					spacebars_template_path = os.path.join(os.path.relpath(root, pathname), file_name)
 					#if not check_in_files_remove_list(app, spacebars_template_path, list_meteor_files_remove):
-					if addto_meteor_templates_list(spacebars_template_path):
+					if addto_meteor_templates_list(spacebars_template_path, app):
 						spacebars_context.append(frappe._dict({"file_path": file_path, "file_name": file_name, "app_path": pathname, "appname": app, "whatfor": whatfor }))
 
 	#get the context from all the python files of templates
@@ -535,8 +537,8 @@ def process_react_templates(context, apps, whatfor):
 		context.compiled_spacebars_js = arr
 
 
-def addto_meteor_templates_list(template_path):
-	fluorine_get_fenv().addto_meteor_templates_list(template_path)
+def addto_meteor_templates_list(template_path, appname):
+	fluorine_get_fenv().addto_meteor_templates_list(template_path, appname)
 
 def get_meteor_template_list():
 	return fluorine_get_fenv().get_meteor_template_list() or {}

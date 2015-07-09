@@ -18,6 +18,13 @@ other folders deepest first
 files with main.* (start with main) are load last
 """
 
+c = lambda t:re.compile(t, re.S|re.M)
+
+
+RE_MFRAPPE = c(r"\bmeteor_frappe\b")
+RE_LIB = c(r"\blib\b")
+RE_MAIN = c(r"main.*")
+
 
 def copy_file(src, dst):
 	import shutil
@@ -27,7 +34,7 @@ def remove_directory(path):
 	import shutil
 	shutil.rmtree(path)
 
-
+"""
 def get_js_to_client(fluorine_publicjs_dst_path, whatfor):
 	#fluorine_temp_path = os.path.join(frappe.get_app_path("fluorine"), "templates", "react", "temp")
 	#frappe.create_folder(fluorine_temp_path)
@@ -44,7 +51,7 @@ def get_js_to_client(fluorine_publicjs_dst_path, whatfor):
 	#remove_directory(fluorine_temp_path)
 
 	return hooks_js
-
+"""
 #def move_to_public(files_in_lib, files_to_read, main_files, main_lib_files, compatibility_files, whatfor):
 def move_to_public(files, whatfor):
 	#{"name":file, "path": path}
@@ -129,7 +136,7 @@ def wrapper(content):
 
 	return w % content
 
-
+"""
 def copy_client_files(fluorine_temp_path, whatfor, extension="js", with_wrapper=True, exclude_top=None, exclude_any=None):
 	apps = frappe.get_installed_apps()[::-1]
 
@@ -210,7 +217,7 @@ def copy_client_files(fluorine_temp_path, whatfor, extension="js", with_wrapper=
 							copy_with_wrapper(srcPath, dstPath)
 						else:
 							copy_file(srcPath, dstPath)
-
+"""
 
 """
 def copy_client_files2(fluorine_temp_path, extension="js"):
@@ -243,6 +250,103 @@ def get_dirs_from_list(appname, list_files):
 
 	return dirs
 
+def get_custom_pattern(whatfor, custom_pattern=None):
+	from shutil import ignore_patterns
+
+	_whatfor = ["meteor_app", "meteor_web", "meteor_frappe"]
+	exclude = [""]
+	custom_pattern = custom_pattern or []
+	ignored_names_top = ["public","tests","server","temp","private"]
+	ignored_names_any = ["tests","server","temp"]
+	if isinstance(whatfor, basestring):
+		whatfor = [whatfor]
+
+	is_for_meteor_frappe = "meteor_frappe" in whatfor
+	if is_for_meteor_frappe:
+		ignored_names_top.extend(["meteor_app", "meteor_web"])
+
+	try:
+		for w in whatfor:
+			_whatfor.remove(w)
+		exclude = _whatfor
+	except:
+		pass
+
+	custom_pattern = set(custom_pattern)
+	pattern = ignore_patterns(*custom_pattern)
+
+	ignored_names_top.extend(exclude)
+	ignored_names_any.extend(exclude)
+
+	return pattern, ignored_names_any, ignored_names_top
+
+def read_client_xhtml_files(start_folder, whatfor, appname, meteor_ignore=None, custom_pattern=None):
+	from fluorine.utils.file import meteor_ignore_files, meteor_ignore_folders
+	import fnmatch
+
+	files_to_read = []
+	files_in_lib = []
+	main_files = []
+	main_lib_files = []
+
+	is_for_meteor_frappe = "meteor_frappe" in whatfor
+	pattern, ignored_names_any, ignored_names_top  = custom_pattern
+
+	topfolder = True
+
+	for root, dirs, files in os.walk(start_folder):
+
+		#start with templates/react
+		meteor_relpath = os.path.relpath(root, frappe.get_app_path(appname))
+		meteor_ignore_folders(appname, meteor_relpath, root, dirs, meteor_ignore=meteor_ignore)
+
+		ign_dirs = pattern(start_folder, dirs)
+		try:
+			if topfolder:
+				ign_dirs.update(ignored_names_top)
+				[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
+				topfolder = False
+			else:
+				ign_dirs.update(ignored_names_any)
+				[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
+		except:
+			print "remove exclude 3 {} no exclude in dirs ".format(ignored_names_top)
+			pass
+
+		#only read files within meteor_frappe folder
+		if is_for_meteor_frappe:
+			if not RE_MFRAPPE.search(root):
+				continue
+
+		islib = False
+		relpath = os.path.relpath(root, start_folder)
+
+		if RE_LIB.search(root):
+			islib = True
+
+		deeper = len(root.split("/"))
+
+		files = [toinclude for toinclude in files if fnmatch.fnmatch(toinclude, "*xhtml")]
+
+		for f in files:
+			if meteor_ignore_files(appname, meteor_relpath, root, f, meteor_ignore=meteor_ignore):
+				continue
+			ext = f.rsplit(".", 1)
+			path = os.path.join(root, f)
+			obj = {"name":f, "path": path, "relpath": relpath, "filePath": root, "fileName": ext[0], "deep": deeper}
+			if RE_MAIN.search(str(f)):
+				if islib:
+					main_lib_files.append(obj)
+					continue
+				main_files.append(obj)
+			elif islib:
+				files_in_lib.append(obj)
+			else:
+				files_to_read.append(obj)
+
+	return (files_in_lib, files_to_read, main_lib_files, main_files)
+
+"""
 def read_client_files(start_folder, whatfor, appname, meteor_ignore=None, custom_pattern=None, extension="js"):
 	from fluorine.utils.file import meteor_ignore_files, meteor_ignore_folders
 	from shutil import ignore_patterns
@@ -351,7 +455,7 @@ def read_client_files(start_folder, whatfor, appname, meteor_ignore=None, custom
 					files_to_read.append(obj)
 
 	return (compatibility_files, files_in_lib, files_to_read, main_lib_files, main_files)
-
+"""
 
 """
 def read_client_files2(temp_folder, whatfor):
