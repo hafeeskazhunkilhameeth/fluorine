@@ -300,12 +300,14 @@ class MyFileSystemLoader(FileSystemLoader):
 			#print "dependencies template 2 excludes {} has dependecies {} docs {}".format(doc.template, extends_path, doc.docs[0].relpath_temp)
 			if extends_path not in self.meteor_map_path.keys():
 				edoc = fluorine_get_fenv().addto_meteor_templates_list(extends_path)
+				edoc.parent = doc
 				docs.append(edoc)
 
 		for include_path in doc.includes_path:
 			#print "dependencies template 2 includes {} has dependecies {} docs {}".format(doc.template, include_path, doc.docs[0].relpath_temp)
 			if include_path not in self.meteor_map_path.keys():
 				idoc = fluorine_get_fenv().addto_meteor_templates_list(include_path)
+				idoc.parent = doc
 				docs.append(idoc)
 
 		doc.docs.extend(docs)
@@ -381,8 +383,12 @@ class MyFileSystemLoader(FileSystemLoader):
 				#no need to save content we have to make it always
 				content = doc.content
 				doc._content = None
+
 				tmp_docs = doc.docs[:]
 				del doc.docs[:]
+
+				parent = doc.parent
+				doc.parent = None
 				"""
 				tremove = []
 				for k, t in doc.meteor_tag_templates_list.iteritems():
@@ -394,11 +400,12 @@ class MyFileSystemLoader(FileSystemLoader):
 				"""
 				key = str("fluorine:" + doc.appname + ":" + template)
 				self.db[key] = doc
-				doc.docs = tmp_docs
 				#frappe.cache().set_value(key, self.db.get(key))
+
+				doc.docs = tmp_docs
 				doc._content = content
-					#with open(doc.file_temp_path[:-6] + ".pickle", "wb") as f:
-					#	pickle.dump(doc, f)
+				doc.parent = parent
+
 		self.db.close()
 
 		return templates_list

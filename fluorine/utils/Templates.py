@@ -497,6 +497,7 @@ class DocumentTemplate(object):
 			# from his include tags remove any template in the list of templates to remove. If include has extends then remove only in the last one.
 			# or is the last document and remove from there
 			#if (d.template in doc.includes_path and not d.extends_found) or (d.template not in doc.includes_path and not d.extends_found):
+			#we have to remove the includes too or else it will include the removed templates
 			if not d.extends_found:# and d.template not in doc.includes_path:
 				d._content = self.change_doc_content_remove(d)
 				#print "last doc template name {} and content {}".format(d.template, d.content)
