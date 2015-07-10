@@ -438,6 +438,7 @@ def meteor_ignore_folders(app, meteor_relpath, root, dirs, meteor_ignore=None):
 						except:
 							pass
 
+
 def meteor_ignore_files(app, meteor_relpath, root, file, meteor_ignore=None):
 
 	if meteor_ignore:
@@ -474,6 +475,14 @@ def has_valid_add_templates(app, order, path, meteor_ignore=None):
 					return False
 				else:
 					return True
+			elif os.path.isdir(path):
+				#in this case if the template teste10/ is in folder /.../test10/ or this folder /.../teste10/.../ we don't exclude this folders
+				#in this way we can remove every thing in the folder but the added files and folders
+				tname = v.get("tname")
+				npath = path + "/"
+				if tname in npath:
+					return True
+				return False
 	return False
 
 """

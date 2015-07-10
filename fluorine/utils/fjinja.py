@@ -39,11 +39,11 @@ class MyChoiceLoader(ChoiceLoader):
 		raise TemplateNotFound(template)
 
 
-	def get_meteor_source(self, environment, template, appname, force=False):
+	def get_meteor_source(self, environment, template, force=False):
 
 		for loader in self.loaders:
 			try:
-				l = loader.get_meteor_source(environment, template, appname, force=force)
+				l = loader.get_meteor_source(environment, template, force=force)
 				self.curr_loader = loader
 				return l
 			except TemplateNotFound:
@@ -117,9 +117,9 @@ class MyEnvironment(Environment):
 			bytecode_cache=bytecode_cache
 		)
 	"""
-	def addto_meteor_templates_list(self, path, appname, force=False):
+	def addto_meteor_templates_list(self, path, force=False):
 		#return self.get_template(path)
-		return self.loader.get_meteor_source(self, path, appname, force=force)
+		return self.loader.get_meteor_source(self, path, force=force)
 
 	def get_meteor_template_list(self):
 		floader = self.loader.get_curr_loader()
@@ -164,6 +164,7 @@ class MyFileSystemLoader(FileSystemLoader):
 		self.list_meteor_files_remove = frappe._dict({})
 		self.list_meteor_files_add = frappe._dict({})
 		#self.docs = []
+		self.duplicated_templates_to_remove = frappe._dict({})
 		if not frappe.local.meteor_map_path:
 			#self.meteor_map_path = frappe._dict({})
 			#self.meteor_map_path = frappe.local.meteor_map_path = frappe._dict({})
@@ -198,12 +199,15 @@ class MyFileSystemLoader(FileSystemLoader):
 		return template
 
 
-	def get_meteor_source(self, environment, template, appname, force=False):
+	def get_meteor_source(self, environment, template, force=False):
 		from file import write
 
 		if self.meteor_map_path.get(template):
 			#print "template already processed 4 {} doc {}".format(template, self.meteor_map_path.get(template).doc)
-			return self.meteor_map_path.get(template).doc
+			doc = self.meteor_map_path.get(template).doc
+			if template not in self.duplicated_templates_to_remove.keys():
+				self.duplicated_templates_to_remove[template] = doc
+			return doc
 
 		#app_fluorine = frappe.get_app_path("fluorine")
 		#temp_path = re.sub(r"(.*)templates(?:/react)?(.*)",r"\1templates/react/temp\2", template, re.S)
@@ -301,6 +305,7 @@ class MyFileSystemLoader(FileSystemLoader):
 			if extends_path not in self.meteor_map_path.keys():
 				edoc = fluorine_get_fenv().addto_meteor_templates_list(extends_path)
 				edoc.parent = doc
+				edoc.origin = "extend"
 				docs.append(edoc)
 
 		for include_path in doc.includes_path:
@@ -308,6 +313,7 @@ class MyFileSystemLoader(FileSystemLoader):
 			if include_path not in self.meteor_map_path.keys():
 				idoc = fluorine_get_fenv().addto_meteor_templates_list(include_path)
 				idoc.parent = doc
+				idoc.origin = "include"
 				docs.append(idoc)
 
 		doc.docs.extend(docs)
@@ -431,14 +437,17 @@ class MyFileSystemLoader(FileSystemLoader):
 			return flat
 		"""
 
+		#remove only files xhtml and is folders for xhtml that was replaced
+		for d in self.duplicated_templates_to_remove.values():
+			d.make_template_remove_regexp()
 		#for doc in self.docs:#reversed(self.docs):
 		#extends and includes first
 		for key, value in self.meteor_map_path.iteritems():
 			doc = value.doc
-			doc.make_template_remove_regexp()
+			#doc.make_template_remove_regexp()
 			if not doc.extends_found:
 				doc.make_path_add(doc)
-			print "order of templates to make final {}".format(doc.template)
+			print "order of templates to make final 2 {}".format(doc.template)
 			doc.make_final_list_of_templates()
 
 		#for key, value in self.meteor_map_path.iteritems():
