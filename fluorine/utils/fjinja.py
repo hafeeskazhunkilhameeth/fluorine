@@ -39,11 +39,11 @@ class MyChoiceLoader(ChoiceLoader):
 		raise TemplateNotFound(template)
 
 
-	def get_meteor_source(self, environment, template, force=False):
+	def get_meteor_source(self, environment, template):
 
 		for loader in self.loaders:
 			try:
-				l = loader.get_meteor_source(environment, template, force=force)
+				l = loader.get_meteor_source(environment, template)
 				self.curr_loader = loader
 				return l
 			except TemplateNotFound:
@@ -117,9 +117,9 @@ class MyEnvironment(Environment):
 			bytecode_cache=bytecode_cache
 		)
 	"""
-	def addto_meteor_templates_list(self, path, force=False):
+	def addto_meteor_templates_list(self, path):
 		#return self.get_template(path)
-		return self.loader.get_meteor_source(self, path, force=force)
+		return self.loader.get_meteor_source(self, path)
 
 	def get_meteor_template_list(self):
 		floader = self.loader.get_curr_loader()
@@ -156,7 +156,7 @@ class MyFileSystemLoader(FileSystemLoader):
 	def __init__(self, apps, searchpath, dbpath=None, encoding='utf-8'):
 		super(MyFileSystemLoader, self).__init__(searchpath, encoding=encoding)
 		self.apps = apps
-		self.db = shelve.open(dbpath, protocol=-1)
+		#self.db = shelve.open(dbpath, protocol=-1)
 		#register the name of the jinja (xhtml files) templates founded
 		self.list_apps_remove = []
 		self.list_meteor_tplt_remove = frappe._dict({})
@@ -164,7 +164,9 @@ class MyFileSystemLoader(FileSystemLoader):
 		self.list_meteor_files_remove = frappe._dict({})
 		self.list_meteor_files_add = frappe._dict({})
 		#self.docs = []
+		self.templates_referenced = []
 		self.duplicated_templates_to_remove = frappe._dict({})
+
 		if not frappe.local.meteor_map_path:
 			#self.meteor_map_path = frappe._dict({})
 			#self.meteor_map_path = frappe.local.meteor_map_path = frappe._dict({})
@@ -199,15 +201,13 @@ class MyFileSystemLoader(FileSystemLoader):
 		return template
 
 
-	def get_meteor_source(self, environment, template, force=False):
-		from file import write
+	def get_source(self, environment, template):
+		#from file import write
 
-		if self.meteor_map_path.get(template):
+		print "finding template {}".format(template)
+		#if frappe.local.meteor_map_templates[template]:
 			#print "template already processed 4 {} doc {}".format(template, self.meteor_map_path.get(template).doc)
-			doc = self.meteor_map_path.get(template).doc
-			if template not in self.duplicated_templates_to_remove.keys():
-				self.duplicated_templates_to_remove[template] = doc
-			return doc
+		#	return False
 
 		#app_fluorine = frappe.get_app_path("fluorine")
 		#temp_path = re.sub(r"(.*)templates(?:/react)?(.*)",r"\1templates/react/temp\2", template, re.S)
@@ -238,27 +238,33 @@ class MyFileSystemLoader(FileSystemLoader):
 				#TODO must check timestamp
 				#temp_path = template.replace("templates/react","templates/react/temp",1)
 
-				if not os.path.exists(file_temp_path) or not self.check_uptodate(file_temp_path, filepath):# or force==True:
+				#if not os.path.exists(file_temp_path) or not self.check_uptodate(file_temp_path, filepath):# or force==True:
 
-					#contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
-					contents, filename, uptodate = self.get_source(environment, relpath)
+				#contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
+				#contents, filename, uptodate = self.get_source(environment, relpath)
+				contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
+				print "find template 6 {} appname {}".format(template, app)
+				#print "content from get source template {} content {}".format(template, contents)
+				#doc, contents = self.templates.make_template(contents, appname=app, template=template, relpath_temp=relpath_temp, realpath=filepath,
+															#relpath=relpath, file_temp_path=file_temp_path, encoding=self.encoding)
 
-					#print "content from get source template {} content {}".format(template, contents)
-					doc, contents = self.templates.make_template(contents, appname=app, template=template, relpath_temp=relpath_temp, realpath=filepath,
-																relpath=relpath, file_temp_path=file_temp_path, encoding=self.encoding)
+				#self.meteor_map_path[template] = frappe._dict({"doc": doc, "from_disk": False})
+				#self.meteor_map_path[template] = frappe._dict({"template":template, "relpath": relpath, "realpath": filepath, "file_temp_path": file_temp_path})
+				frappe.local.meteor_map_templates[template] = frappe._dict({"appname": app, "template":template, "relpath": relpath, "realpath": filepath, "file_temp_path": file_temp_path, "refs":[]})
+				self.process_references(template, contents)
 
-					self.meteor_map_path[template] = frappe._dict({"doc": doc, "from_disk": False})
-					#self.meteor_map_path[template] = frappe._dict({"make_template": doc.make_template, "relpath": relpath_temp, "realpath": filepath, "file_temp_path": file_temp_path,
-					#												"template": template, "appname": app, "doc":doc, "from_disk":False})
-
-					try:
-						encoded_contents = contents.encode(self.encoding)
-						frappe.create_folder(os.path.dirname(file_temp_path))
-						#print "writing files in order template {} file_temp_path {}".format(doc.template, file_temp_path)
-						write(file_temp_path, encoded_contents)
-					except Exception as e:
-						print "exception when save error is {}".format(e)
-
+				#self.meteor_map_path[template] = frappe._dict({"make_template": doc.make_template, "relpath": relpath_temp, "realpath": filepath, "file_temp_path": file_temp_path,
+				#												"template": template, "appname": app, "doc":doc, "from_disk":False})
+				"""
+				try:
+					encoded_contents = contents.encode(self.encoding)
+					frappe.create_folder(os.path.dirname(file_temp_path))
+					#print "writing files in order template {} file_temp_path {}".format(doc.template, file_temp_path)
+					write(file_temp_path, encoded_contents)
+				except Exception as e:
+					print "exception when save error is {}".format(e)
+				"""
+				"""
 				else:
 					#anotate in map of path that we will use this template
 					#if os.path.exists(file_temp_path[:-6] + ".pickle"):
@@ -277,14 +283,14 @@ class MyFileSystemLoader(FileSystemLoader):
 						#										"template": template, "appname": app, "doc":doc, "from_disk":True})
 					self.get_jinja_dependencies(doc)
 					self.meteor_map_path[template] = frappe._dict({"doc": doc, "from_disk": True})
-
+				"""
 				#self.docs.append(doc)
 
 				#docs = self.process_references(content, force=True)
 				#self.docs.extend(docs)
 				#print "filepath in get_source 3 template {}".format(template)#os.path.relpath("apps", app_path)
 
-				return doc
+				return contents, filename, uptodate
 					#return contents, filename, uptodate
 				#here file template exists and is uptodate
 			except TemplateNotFound, e:
@@ -292,6 +298,20 @@ class MyFileSystemLoader(FileSystemLoader):
 				continue
 
 		raise TemplateNotFound(template)
+
+
+	def process_references(self, template, source):
+		from jinja2 import meta
+		from fluorine.utils.spacebars_template import fluorine_get_fenv
+
+		env = fluorine_get_fenv()
+		for referenced_template_path in meta.find_referenced_templates(env.parse(source)):
+			if referenced_template_path:
+				if referenced_template_path not in frappe.local.templates_referenced:
+					frappe.local.templates_referenced.append(referenced_template_path)
+				refs = frappe.local.meteor_map_templates.get(template).get("refs")
+				refs.append(referenced_template_path)
+
 
 	def get_jinja_dependencies(self, doc):
 		from spacebars_template import fluorine_get_fenv
@@ -318,29 +338,8 @@ class MyFileSystemLoader(FileSystemLoader):
 
 		doc.docs.extend(docs)
 
-	def get_source(self, environment, template):
-		#find the first template in revers order of installed apps and return
-		#must look in map to get the path for template
-		relpath = template
-		contents = None
-
-		if relpath in self.meteor_map_path.keys():
-			t = self.meteor_map_path.get(relpath)
-			doc = t.get("doc")
-			#app_path = frappe.get_app_path(app)
-			uptodate = lambda : True
-			#temp_path = template.replace("templates/react","templates/react/temp",1)
-			#file_temp_path = os.path.join(app_path, temp_path)
-			#get the source from temp folder
-			#relpath = os.path.relpath(file_temp_path, os.path.normpath(os.path.join(os.path.join(os.getcwd(), ".."), "apps")))
-			relpath = doc.relpath_temp
-			contents = doc.content or None
-			filename = doc.file_temp_path
-			if not contents:
-				contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
-			contents = self.remove_dynamic_templates(template, contents, doc)
-		else:
-			contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
+	def get_source_old(self, environment, template):
+		contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, template)
 
 		return contents, filename, uptodate
 
@@ -373,46 +372,13 @@ class MyFileSystemLoader(FileSystemLoader):
 
 		#app_fluorine = frappe.get_app_path("fluorine")
 		templates_list = []
-		self.compile_templates()
 
 		for template, value in self.meteor_map_path.iteritems():
-			doc = value.doc
-			if doc.make_template:
-				print "templates com make == True 4 {}".format(doc.template)
-				t = fluorine_get_fenv().get_template(template)
-				templates_list.append(frappe._dict({"template":t, "tpath":template, "doc": doc}))
-				#print "inside get_meteor_template_list compilling .... tname 1 template {} doc content {}".format(doc.template, doc.content)
-			if not value.from_disk:
-				#with FluorDb(os.path.join(app_fluorine, "templates/react/temp", "fluorinedb")) as db:
-				#with shelve.open(os.path.join(app_fluorine, "templates/react/temp", "fluorinedb")) as db:
-					#if db[str(template)] == doc:
-				#no need to save content we have to make it always
-				content = doc.content
-				doc._content = None
-
-				tmp_docs = doc.docs[:]
-				del doc.docs[:]
-
-				parent = doc.parent
-				doc.parent = None
-				"""
-				tremove = []
-				for k, t in doc.meteor_tag_templates_list.iteritems():
-					if t.addedafter:
-						tremove.append(k)
-
-				for k in tremove:
-					del doc.meteor_tag_templates_list[k]
-				"""
-				key = str("fluorine:" + doc.appname + ":" + template)
-				self.db[key] = doc
-				#frappe.cache().set_value(key, self.db.get(key))
-
-				doc.docs = tmp_docs
-				doc._content = content
-				doc.parent = parent
-
-		self.db.close()
+			if template not in self.templates_referenced:
+				doc = value
+				print "templates com make == True template {} relpath {}".format(doc.template, doc.relpath)
+				t = fluorine_get_fenv().get_template(doc.relpath)
+				templates_list.append(frappe._dict({"template":t, "tpath":template, "doc": value}))
 
 		return templates_list
 
@@ -421,21 +387,6 @@ class MyFileSystemLoader(FileSystemLoader):
 		return doc
 
 	def compile_templates(self):
-
-		"""
-		def flat_and_remove_docs(doc):
-
-			flat = []
-
-			for d in doc.docs:
-				d._save = False
-				#print "inside flat compilling .... tname 1 template {} doc content {}".format(d.template, d.content)
-				if d.docs:
-					flat.extend(flat_and_remove_docs(d))
-				flat.append(d)
-
-			return flat
-		"""
 
 		#remove only files xhtml and is folders for xhtml that was replaced
 		for d in self.duplicated_templates_to_remove.values():

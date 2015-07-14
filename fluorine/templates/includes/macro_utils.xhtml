@@ -1,0 +1,13 @@
+{% macro template(tname) -%}
+
+<template name="{{ tname }}">
+    {{ caller() }}
+</template>
+{%- endmacro %}
+
+
+{% macro m_call(tname) %}
+
+    {{ '{{>' }} {{ tname }} {{ '}}' }}
+
+{% endmacro %}

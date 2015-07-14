@@ -51,5 +51,9 @@ class MeteorTemplate(Extension):
 
 	def _cache_support(self, name, caller=None):
 		"""Helper callback."""
-		template = """<template name='%s'> %s </template>""" % (name, caller())
+		template = """{%% block %s %%}
+			<template name='%s'>
+				%s
+			</template>
+		{%% endblock %%}""" % (name, name, caller())
 		return template
