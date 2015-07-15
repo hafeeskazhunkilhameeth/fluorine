@@ -303,6 +303,7 @@ class MyFileSystemLoader(FileSystemLoader):
 	def process_references(self, template, source):
 		from jinja2 import meta
 		from fluorine.utils.spacebars_template import fluorine_get_fenv
+		from spacebars_template import addto_meteor_templates_list
 
 		env = fluorine_get_fenv()
 		for referenced_template_path in meta.find_referenced_templates(env.parse(source)):
@@ -311,6 +312,7 @@ class MyFileSystemLoader(FileSystemLoader):
 					frappe.local.templates_referenced.append(referenced_template_path)
 				refs = frappe.local.meteor_map_templates.get(template).get("refs")
 				refs.append(referenced_template_path)
+				addto_meteor_templates_list(referenced_template_path)
 
 
 	def get_jinja_dependencies(self, doc):

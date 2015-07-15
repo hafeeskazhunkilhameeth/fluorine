@@ -219,12 +219,20 @@ def start_meteor():
 	mgport = mongo.get("port") or 27017
 	mgdb = mongo.get("db") or "fluorine"
 
+	#TODO get hook fluorine_extra_context_method
+	extras_context_methods.update(get_extras_context_method())
 	for app in ("meteor_app", "meteor_web"):
 		meteor_path = os.path.join(path_reactivity, app)
 		path_meteor = os.path.join(meteor_path, ".meteor")
 		mtport = mtport_web if app == "meteor_web" else mtport_app
 		if os.path.exists(path_meteor):
 			run_meteor(meteor_path, mtport=mtport, mthost=mthost, mghost=mghost, mgport=mgport, mgdb=mgdb)
+
+extras_context_methods = set([])
+
+def get_extras_context_method():
+	hooks = frappe.get_hooks("fluorine_extras_context_method")
+	return hooks
 
 """
 def start_reactivity():
