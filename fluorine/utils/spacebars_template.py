@@ -6,7 +6,7 @@ __author__ = 'luissaguas'
 from frappe.website.utils import scrub_relative_urls
 #from frappe.website.template import render_blocks
 from jinja2.utils import concat
-from jinja2 import contextfunction, environmentfunction
+from jinja2 import contextfunction, contextfilter
 import frappe
 from frappe.utils.jinja import set_filters, get_allowed_functions_for_jenv
 #from frappe.website.context import get_context
@@ -155,36 +155,118 @@ def files_to_add(ctx, tname, appname, page):
 	"""
 	return ""
 
+STARTTEMPLATE_SUB_ALL = c(r"<\s*template\s+name\s*=\s*(['\"])(\w+)\1(.*?)\s*>(.*?)<\s*/\s*template\s*>")
 
-#@environmentfunction
-def msuper(curr_tplt=None, name=None, ffrom=None, deep=1, encoding="utf-8"):
+def get_msuper_inner_content(source):
+	s = STARTTEMPLATE_SUB_ALL.search(source)
+	if s:
+		source = s.group(4)
+	return source
 
-	tplt = None
-	print "msuper was called!!! 6"
-	if ffrom:
-		doc = get_doc_from_template(ffrom)
-		#doc = get_doc_from_template(curr_tplt)
-		if doc:
-			#TODO: verify if doc is in extends path? Or include templates from any path?
-			d = get_doc_from_template(curr_tplt)
-			dc = is_in_extend_path(d, ffrom)
-			print "found template for doc template 1 {} template {}".format(d.template, dc)
-			#if doc:
-			deep = 0
-	else:
-		doc, deep = get_doc_from_deep(curr_tplt, deep=deep)
+@contextfunction
+def msuper(ctx, tname, deep=1):
+	#encoding = get_encoding()
+	#tp = tPages(ctx.name)
+	#for r in tp:
+	code = ""
+	page = ctx.name
+	obj = frappe.local.meteor_map_templates.get(page)
+	refs = obj.get("refs")
 
-	print "in msuper t is 22 curr_tplt {} name {} ffrom {} deep {} doc {}".format(curr_tplt, name, ffrom, deep, doc.file_temp_path)
-	if deep == 0 and doc:
-		tplt = get_template_from_doc(doc, name, encoding)
-		print "result template from doc {}".format(tplt)
+	if deep >= 1:
+		page = get_deep_refs(refs, tname, deep)
 
-	if not tplt or deep > 0:
-		msg = "ERROR: There is no meteor template {} in xhtml template file {}".format(name, doc.template)
-		#frappe.msgprint(msg, raise_exception=1)
-		return msg
+	if page:
+		sobj = frappe.local.meteor_map_templates.get(page)
+		template = sobj.get("template_obj")
+		render = template.blocks.get(tname)
+		code = scrub_relative_urls(concat(render(template.new_context(ctx))))
+		code = get_msuper_inner_content(code)
 
-	return tplt
+	return code
+
+@contextfunction
+def mself(ctx, tname):
+	return msuper(ctx, tname, deep=0)
+
+class tPages:
+	def __init__(self, template_path):
+		self.template_path = template_path
+		self.cdeep = 1
+		self.i = 0
+		obj = frappe.local.meteor_map_templates.get(self.template_path)
+		self.refs = obj.get("refs")
+
+	def __iter__(self):
+		return self
+
+	def next(self):
+		ref = None
+
+		if not self.refs:
+			raise StopIteration()
+
+		if self.i < len(self.refs):
+			ref = self.refs[self.i]
+			self.i += 1
+		else:
+			self.cdeep += 1
+			self.refs = self.get_deep_refs(self.refs, self.cdeep)
+			if self.refs:
+				self.i = 1
+				ref = self.refs[0]
+
+		if ref:
+			return ref
+		else:
+			raise StopIteration()
+
+	def get_deep_refs(self, refs, deep):
+
+		if deep == 1:
+			return refs
+
+		nrefs = None
+		#first is the extends so only this count for deep
+		if refs:
+			obj = frappe.local.meteor_map_templates.get(refs[0])
+			nrefs = obj.get("refs")
+			nrefs = self.get_deep_refs(nrefs, deep-1)
+
+		return nrefs
+
+def flat_refs(template_path):
+	flat = []
+	obj = frappe.local.meteor_map_templates.get(template_path)
+	refs = obj.get("refs") or []
+	#if refs:
+	flat.extend(refs)
+	for ref in refs:
+		flat.extend(flat_refs(ref))
+
+	return flat
+
+
+@contextfilter
+def mdom_filter(ctx, source, page, **keyargs):
+	template_path = ctx.name
+	code = None
+
+	refs = [template_path]
+	refs.extend(flat_refs(template_path))
+
+	for ref in refs:
+		obj = frappe.local.meteor_map_templates.get(ref)
+		appname = obj.get("appname")
+		m = frappe.local.module_registe.get(appname)
+		if m:
+			module = m.module
+			if hasattr(module, "mdomfilter"):
+				code = module.mdomfilter(ctx, appname, page, source, obj.get("template_obj"), **keyargs)
+		if code:
+			break
+
+	return code or ""
 
 
 def mecho(value, content=""):
@@ -208,6 +290,7 @@ def fluorine_get_fenv():
 		fenv.globals.update({"mfiles_to_add":files_to_add})
 		fenv.globals.update({"mtkeep":tkeep})
 		fenv.filters["mecho"] = mecho
+		fenv.filters["mdom_filter"] = mdom_filter
 
 		frappe.local.fenv = fenv
 
@@ -741,7 +824,7 @@ def process_react_templates(context, apps, whatfor):
 	from reactivity import extras_context_methods
 	#from the first app to the last installed to override the changes made by first installed apps
 	get_extra_context_func(context, apps[::-1], extras_context_methods)
-	
+
 	out = compile_jinja_templates(context, whatfor)
 
 	spacebars_templates.update(out)
