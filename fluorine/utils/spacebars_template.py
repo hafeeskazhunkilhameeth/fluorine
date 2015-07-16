@@ -183,6 +183,8 @@ def msuper(ctx, tname, deep=1):
 		code = scrub_relative_urls(concat(render(template.new_context(ctx))))
 		code = get_msuper_inner_content(code)
 
+	print "after msuper call from template code {}".format(code)
+
 	return code
 
 @contextfunction
@@ -266,7 +268,7 @@ def mdom_filter(ctx, source, page, **keyargs):
 		if code:
 			break
 
-	return code or ""
+	return code or source
 
 
 def mecho(value, content=""):
@@ -277,12 +279,12 @@ def fluorine_get_fenv():
 
 	from jinja2 import DebugUndefined
 	from fluorine.utils.fjinja import MyEnvironment
-	from extension_template import MeteorTemplate
+	from extension_template import MeteorStartExpression, MeteorEndExpression, MeteorElseExpression, MeteorTemplate
 
 	if not frappe.local.fenv:
 		encoding = get_encoding()
 		fenv = MyEnvironment(loader = fluorine_get_floader(encoding=encoding),
-			undefined=DebugUndefined, extensions=[MeteorTemplate, "jinja2.ext.do"])# ["jinja2.ext.do",]
+			undefined=DebugUndefined, extensions=[MeteorTemplate, MeteorStartExpression, MeteorEndExpression, MeteorElseExpression, "jinja2.ext.do"])# ["jinja2.ext.do",]
 		set_filters(fenv)
 
 		fenv.globals.update(get_allowed_functions_for_jenv())

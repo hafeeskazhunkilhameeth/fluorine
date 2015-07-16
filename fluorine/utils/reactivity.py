@@ -220,7 +220,7 @@ def start_meteor():
 	mgdb = mongo.get("db") or "fluorine"
 
 	#TODO get hook fluorine_extra_context_method
-	extras_context_methods.update(get_extras_context_method())
+	#extras_context_methods.update(get_extras_context_method())
 	for app in ("meteor_app", "meteor_web"):
 		meteor_path = os.path.join(path_reactivity, app)
 		path_meteor = os.path.join(meteor_path, ".meteor")
@@ -231,7 +231,9 @@ def start_meteor():
 extras_context_methods = set([])
 
 def get_extras_context_method():
+	print "hooks founded before"
 	hooks = frappe.get_hooks("fluorine_extras_context_method")
+	print "hooks founded after {}".format(hooks)
 	return hooks
 
 """
