@@ -1,4 +1,4 @@
-{% if meteor_runtime_config %}
+{% if meteor_runtime_configs %}
 	<script type="text/javascript">
 		__meteor_runtime_config__ = {
 				"meteorRelease": "{{ meteorRelease }}",
@@ -14,26 +14,28 @@
 <!--
 	Meteor Inlude Files
 -->
-{% if developer_modes %}
-	<script type="text/javascript"
-		src="/assets/fluorine/js/meteor_{{ whatfor }}.devel.js"></script>
-		<script type="text/javascript">
-			{%- for spacetemp in compiled_spacebars_js %}
-				{{ spacetemp }}
-			{%- endfor -%}
-		</script>
-{% elif promodes %}
-	<script type="text/javascript"
-		src="/assets/fluorine/js/meteor_{{ whatfor }}.js"></script>
-{% endif %}
+{%- for link in meteor_package_css %}
+	<link type="text/css" rel="stylesheet" class="__meteor-css__" href="{{ meteor_root_url_ports or ""}}{{ link }}">
+{%- endfor -%}
 
 {% if meteor_app %}
 	<script type="text/javascript" src="/assets/fluorine/js/before_fluorine_helper.js"></script>
 {% endif %}
 
 {%- for link in meteor_package_js %}
-<script type="text/javascript" src="{{ meteor_root_url_port }}{{ link }}"></script>
+<script type="text/javascript" src="{{ meteor_root_url_ports or ""}}{{ link }}"></script>
 {%- endfor -%}
+<!--
+
+This is to support css autoupdaterefreshable. Can't be in __meteor_runtime_config__ because it make infinite reload
+
+<script type="text/javascript">
+
+__meteor_runtime_config__.ROOT_URL_PATH_PREFIX = "{{ meteor_root_url_port }}"
+
+</script>
+
+-->
 
 {% if meteor_app %}
 	<script type="text/javascript"

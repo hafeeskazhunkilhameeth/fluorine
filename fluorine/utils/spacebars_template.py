@@ -117,8 +117,10 @@ def local_tkeep(ctx, tname, page, patterns=None):
 
 	if isinstance(patterns, basestring):
 		patterns = [patterns]
+
 	obj = frappe.local.meteor_map_templates.get(page)
 	appname = obj.get("appname")
+
 	if not fadd.get(appname):
 		fadd[appname] = []
 	#realpath = obj.get("realpath")
@@ -156,11 +158,19 @@ def files_to_add(ctx, tname, appname, page):
 	return ""
 
 STARTTEMPLATE_SUB_ALL = c(r"<\s*template\s+name\s*=\s*(['\"])(\w+)\1(.*?)\s*>(.*?)<\s*/\s*template\s*>")
+STARTDIV_SUB_ALL = r"<\s*div\s+class\s*=\s*(['\"])%s\1\s*>(.*?)<\s*/\s*div\s*>"
 
-def get_msuper_inner_content(source):
+def get_msuper_inner_content(ctx, source):
 	s = STARTTEMPLATE_SUB_ALL.search(source)
 	if s:
+		name = s.group(2)
 		source = s.group(4)
+		#TODO remove not? or remove all code below
+		if not ctx.get("developer_mode"):
+			print "in developer mode inside msuper helper"
+			m = re.search(STARTDIV_SUB_ALL % (name,), source, re.S|re.M)
+			if m:
+				source = m.group(2)
 	return source
 
 @contextfunction
@@ -181,7 +191,7 @@ def msuper(ctx, tname, deep=1):
 		template = sobj.get("template_obj")
 		render = template.blocks.get(tname)
 		code = scrub_relative_urls(concat(render(template.new_context(ctx))))
-		code = get_msuper_inner_content(code)
+		code = get_msuper_inner_content(ctx, code)
 
 	print "after msuper call from template code {}".format(code)
 
@@ -279,12 +289,12 @@ def fluorine_get_fenv():
 
 	from jinja2 import DebugUndefined
 	from fluorine.utils.fjinja import MyEnvironment
-	from extension_template import MeteorStartExpression, MeteorEndExpression, MeteorElseExpression, MeteorTemplate
+	from extension_template import MeteorTemplate
 
 	if not frappe.local.fenv:
 		encoding = get_encoding()
 		fenv = MyEnvironment(loader = fluorine_get_floader(encoding=encoding),
-			undefined=DebugUndefined, extensions=[MeteorTemplate, MeteorStartExpression, MeteorEndExpression, MeteorElseExpression, "jinja2.ext.do"])# ["jinja2.ext.do",]
+			undefined=DebugUndefined, extensions=[MeteorTemplate, "jinja2.ext.do"])# ["jinja2.ext.do",]
 		set_filters(fenv)
 
 		fenv.globals.update(get_allowed_functions_for_jenv())
@@ -368,6 +378,7 @@ def compile_jinja_templates(context, whatfor):
 			#if not frappe.local.files_to_add.get(obj.get("appname")):
 			#	frappe.local.files_to_add[obj.get("appname")] = []
 			if template_path not in frappe.local.templates_referenced:
+				print "calling render template from compile jinja {}".format(template_path)
 				content = scrub_relative_urls(concat(template.render(template.new_context(context))))
 			#re_file = fnmatch.translate(realpath[:-6] + "[./]*")
 			#pattern = get_pattern_path(tname[:-6], realpath)
@@ -632,18 +643,19 @@ def make_auto_update_version(path, meteorRelease, root_url, root_prefix, appId=N
 	#runtimeCfg["appId"] = "1uo02wweyt6o11xsntyy"
 	manifest = file.read(path)
 	manifest = json.loads(manifest).get("manifest")
-	autoupdateVersion, autoupdateVersionRefresh, frappe_manifest = meteor_hash_version(manifest, runtimeCfg)
+	autoupdateVersion, autoupdateVersionRefresh, frappe_manifest_js, frappe_manifest_css = meteor_hash_version(manifest, runtimeCfg)
 	print "sha1 digest {} {}".format(autoupdateVersion, autoupdateVersionRefresh)
 	#runtimeCfg["autoupdateVersion"] = autoupdateVersion
 	#autoupdateVersionRefresh = meteor_hash_version(manifest, runtimeCfg, css=True)
 	#print "sha1 digest ", autoupdateVersionRefresh
-	return autoupdateVersion, autoupdateVersionRefresh, frappe_manifest
+	return autoupdateVersion, autoupdateVersionRefresh, frappe_manifest_js, frappe_manifest_css
 
 
 def meteor_hash_version(manifest, runtimeCfg):
 	sh1 = hashlib.sha1()
 	sh2 = hashlib.sha1()
-	frappe_manifest = []
+	frappe_manifest_js = []
+	frappe_manifest_css = []
 	#runtimeCfg = {"meteorRelease": meteorRelease,
 	#            "ROOT_URL": 'http://localhost',
 	#             "ROOT_URL_PATH_PREFIX": ""}
@@ -656,15 +668,27 @@ def meteor_hash_version(manifest, runtimeCfg):
 	for m in manifest:
 		if m.get("where") == "client" or m.get("where") == "internal":
 			if m.get("where") == "client":
-				frappe_manifest.append(m.get("url"))
-			if m.get("type") == "css":
-				sh2.update(m.get("path"))
-				sh2.update(m.get("hash"))
-				continue
+				url =  m.get("url").split("?")[0]
+				app = url.split("/", 2)[1]
+				is_app = ""
+				if app in frappe.get_installed_apps():
+					is_app = "/app"
+				nurl = "/assets/fluorine/meteor_web/webbrowser" + is_app + url
+				if m.get("type") == "css":
+					frappe_manifest_css.append(nurl)
+					sh2.update(m.get("path"))
+					sh2.update(m.get("hash"))
+					continue
+				else:
+					frappe_manifest_js.append(nurl)
+			#if m.get("type") == "css":
+			#	sh2.update(m.get("path"))
+			#	sh2.update(m.get("hash"))
+			#	continue
 			sh1.update(m.get("path"))
 			sh1.update(m.get("hash"))
 
-	return sh1.hexdigest(), sh2.hexdigest(), frappe_manifest
+	return sh1.hexdigest(), sh2.hexdigest(), frappe_manifest_js, frappe_manifest_css
 
 
 def make_meteor_ignor_files(apps):
@@ -847,6 +871,7 @@ def addto_meteor_templates_list(template_path):
 		#TODO with template_path and frappe.local.meteor_map_templates.get(template_path) get refs if needed to pass macro template object
 		#TODO get the context from frappe.local.context!
 		get_xhtml_files_to_add_remove(frappe.local.context, template_path)
+		print "calling render template from addto_meteor_templates_list {}".format(template_path)
 		return True
 	return False
 	#return fluorine_get_fenv().addto_meteor_templates_list(template_path)
@@ -961,7 +986,7 @@ def compile_spacebar_templates(context, whatfor):
 """
 
 def make_meteor_props(context, whatfor):
-	from file import get_path_reactivity, get_meteor_release
+	from file import get_path_reactivity, get_meteor_release, get_meteor_config
 
 	path_reactivity = get_path_reactivity()
 	progarm_path = os.path.join(path_reactivity, whatfor, ".meteor/local/build/programs/web.browser/program.json")
@@ -970,11 +995,24 @@ def make_meteor_props(context, whatfor):
 	appId = get_meteor_appId(os.path.join(path_reactivity, whatfor, ".meteor/.id"))
 	context.appId = appId.replace(" ","").replace("\n","")
 
-	context.meteor_autoupdate_version, context.meteor_autoupdate_version_freshable, manifest =\
+	context.meteor_autoupdate_version, context.meteor_autoupdate_version_freshable, manifest_js, manifest_css =\
 				make_auto_update_version(progarm_path, context.meteorRelease, context.meteor_root_url, context.meteor_url_path_prefix, appId=context.appId)
 
-	context.meteor_package_js = manifest
+	app_path = frappe.get_app_path("fluorine")
+	meteor_runtime_path = os.path.join(app_path, "public", whatfor, "meteor_runtime_config.js")
+
+	context.meteor_package_js = [os.path.join("/assets", "fluorine", whatfor, "meteor_runtime_config.js")] + manifest_js
+	context.meteor_package_css = manifest_css
 	context.meteor_runtime_config = True
+
+	meteor_url_path_prefix = os.path.join("/assets", "fluorine",  whatfor, "webbrowser")
+
+	props = get_meteor_config(context.meteor_root_url, context.meteor_root_url_port, meteor_url_path_prefix, context.meteor_autoupdate_version, context.meteor_autoupdate_version_freshable, context.meteorRelease)
+	save_meteor_props(props, meteor_runtime_path)
+
+def save_meteor_props(props, path):
+	from . import file
+	file.save_file(path, props)
 
 def get_meteor_appId(path):
 	appid = None

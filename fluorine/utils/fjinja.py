@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
-#from fluorine.utils.packages_path import get_package_path
+
 from jinja2 import FileSystemLoader, TemplateNotFound, ChoiceLoader
 from jinja2.utils import internalcode
 from jinja2.environment import Environment
@@ -12,16 +12,7 @@ try:
 except ImportError:
 	from StringIO import StringIO
 
-"""
-try:
-	import cPickle as pickle
-except:
-	import pickle
-"""
-
-import shelve
 import os, re, frappe
-
 
 class MyChoiceLoader(ChoiceLoader):
 	def __init__(self, loaders):
@@ -68,55 +59,10 @@ class MyChoiceLoader(ChoiceLoader):
 class MyEnvironment(Environment):
 
 	def __init__(self, **vars):
+		from . import check_dev_mode
 		super(MyEnvironment, self).__init__(**vars)
-	"""
-	def __init__(self,
-			block_start_string=BLOCK_START_STRING,
-			block_end_string=BLOCK_END_STRING,
-			variable_start_string=VARIABLE_START_STRING,
-			variable_end_string=VARIABLE_END_STRING,
-			comment_start_string=COMMENT_START_STRING,
-			comment_end_string=COMMENT_END_STRING,
-			line_statement_prefix=LINE_STATEMENT_PREFIX,
-			line_comment_prefix=LINE_COMMENT_PREFIX,
-			trim_blocks=TRIM_BLOCKS,
-			lstrip_blocks=LSTRIP_BLOCKS,
-			newline_sequence=NEWLINE_SEQUENCE,
-			keep_trailing_newline=KEEP_TRAILING_NEWLINE,
-			extensions=(),
-			optimized=True,
-			undefined=Undefined,
-			finalize=None,
-			autoescape=False,
-			loader=None,
-			cache_size=50,
-			auto_reload=True,
-			bytecode_cache=None):
+		self.devmode = check_dev_mode()
 
-		super(MyEnvironment, self).__init__(
-			block_start_string=block_start_string,
-			block_end_string=block_end_string,
-			variable_start_string=variable_start_string,
-			variable_end_string=variable_end_string,
-			comment_start_string=comment_start_string,
-			comment_end_string=comment_end_string,
-			line_statement_prefix=line_statement_prefix,
-			line_comment_prefix=line_comment_prefix,
-			trim_blocks=trim_blocks,
-			lstrip_blocks=lstrip_blocks,
-			newline_sequence=newline_sequence,
-			keep_trailing_newline=keep_trailing_newline,
-			extensions=extensions,
-			optimized=optimized,
-			undefined=undefined,
-			finalize=finalize,
-			autoescape=autoescape,
-			loader=loader,
-			cache_size=cache_size,
-			auto_reload=auto_reload,
-			bytecode_cache=bytecode_cache
-		)
-	"""
 	def addto_meteor_templates_list(self, path):
 		#return self.get_template(path)
 		return self.loader.get_meteor_source(self, path)

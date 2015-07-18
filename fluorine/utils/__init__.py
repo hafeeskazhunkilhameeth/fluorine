@@ -137,7 +137,8 @@ def build_meteor_context(context, devmode, whatfor):
 		meteor = conf.get("meteor_dev") or {}
 		add = 80 if whatfor == "meteor_app" else 0
 
-	meteor_host = meteor.get("host", "http://localhost") + ":" + str(meteor.get("port", 3000) + add)
+	context.mport = meteor.get("port", 3000) + add
+	meteor_host = meteor.get("host", "http://localhost") + ":" + str(context.mport)
 	context.meteor_root_url = meteor.get("host", "http://localhost")
 	context.meteor_root_url_port = meteor_host
 	context.meteor_url_path_prefix = meteor_url_path_prefix()

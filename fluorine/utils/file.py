@@ -213,12 +213,12 @@ def get_meteor_release(cpath):
 
 	return ""
 
-def get_meteor_config(mthost, mtport,  version, version_fresh):
+#def get_meteor_config(mthost, mtport, version, version_fresh, mrelease):
+def get_meteor_config(mthost, mthostport, meteor_url_path_prefix, version, version_fresh, mrelease):
+	#meteor_host = mthost + ":" + str(mtport)
 
-	meteor_host = mthost + ":" + str(mtport)
-
-	print "in get_meteor_config 2 {}".format(mtport)
-	meteor_config = """var __meteor_runtime_config__ = {
+	#print "in get_meteor_config 2 {}".format(mtport)
+	meteor_config = """__meteor_runtime_config__ = {
 		"meteorRelease": "%(meteorRelease)s",
 		"ROOT_URL": "%(meteor_root_url)s",
 		"ROOT_URL_PATH_PREFIX": "%(meteor_url_path_prefix)s",
@@ -226,9 +226,9 @@ def get_meteor_config(mthost, mtport,  version, version_fresh):
 		"autoupdateVersionRefreshable": "%(meteor_autoupdate_version_freshable)s",
 		"DDP_DEFAULT_CONNECTION_URL": "%(meteor_ddp_default_connection_url)s"
 };
-		""" % {"meteorRelease": get_meteor_release(), "meteor_root_url": meteor_host, "meteor_url_path_prefix": "",
+		""" % {"meteorRelease": mrelease, "meteor_root_url": mthost, "meteor_url_path_prefix": meteor_url_path_prefix,
 				"meteor_autoupdate_version": version, "meteor_autoupdate_version_freshable": version_fresh,
-				"meteor_ddp_default_connection_url": meteor_host}
+				"meteor_ddp_default_connection_url": mthostport}
 
 	return meteor_config
 
