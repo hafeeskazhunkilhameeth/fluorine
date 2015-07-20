@@ -30,20 +30,36 @@ class FluorineReactivity(Document):
 		fhooks.change_base_template(page_default=page_default)
 		save_to_common_site_config(self)
 
+	def validate(self, method=None):
+		if not self.ddpurl or self.ddpurl.strip() == "":
+			return frappe.throw("You must provide a valid ddp url")
+
+		if not self.site or self.site.strip() == "":
+			return frappe.throw("You must provide a valid site")
+
 
 
 def save_to_common_site_config(doc):
+	from fluorine.utils.reactivity import meteor_config
 	import os
+
 	mgconf = {}
 	mtconf = {}
+
 	path_reactivity = file.get_path_reactivity()
 	config_path = os.path.join(path_reactivity, "common_site_config.json")
-	f = frappe.get_file_json(config_path)
+
+	f = meteor_config
+
 	mtconf["port"] = doc.fluor_meteor_port
 	mtconf["host"] = doc.fluor_meteor_host
+	mtconf["ddpurl"] = doc.ddpurl
 	mgconf["host"] = doc.fluor_mongo_host
 	mgconf["port"] = doc.fluor_mongo_port
 	mgconf["db"] = doc.fluor_mongo_database
+
+	f["site"] = doc.site
+
 	if f.get("meteor_dev", None):
 		f["meteor_dev"].update(mtconf)
 	else:

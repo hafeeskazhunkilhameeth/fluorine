@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
+from fluorine.utils.meteor.utils import build_meteor_context
 no_sitemap = 1
 no_cache = 1
 base_template_path = "templates/pages/mdesk.html"
@@ -21,7 +22,7 @@ def get_context(context):
 	doc = frappe.get_doc("Fluorine Reactivity")
 
 	#Meteor
-	fluorine.utils.build_meteor_context(context, devmode, "meteor_app")
+	build_meteor_context(context, devmode, "meteor_app")
 	context.meteor_web = True
 	context.custom_template = doc.fluorine_base_template
 

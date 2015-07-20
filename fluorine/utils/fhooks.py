@@ -128,6 +128,153 @@ def save_batch_hook(objjs, file_path):
 			#	f.write(key + '=' + json.dumps(value) + os.linesep)
 
 
+def get_xhtml_files_to_add_remove(context, template_path):
+	obj = frappe.local.meteor_map_templates.get(template_path)
+	path = obj.realpath[:-6] + ".py"
+	appname = obj.get("appname")
+	module = get_xhtml_module(appname, template_path, path)
+	if module:
+
+		if hasattr(module, "get_files_to_add"):
+			ret = module.get_files_to_add(context, appname, template_path, obj.get("template_obj"))
+			if ret:
+				if isinstance(ret, basestring):
+					context.files_to_add.append({"tname": "", "pattern": ret, "page": template_path})
+				else:
+					context.files_to_add.append(ret)
+
+		if hasattr(module, "get_files_to_remove"):
+			ret = module.get_files_to_remove(context, appname, template_path, obj.get("template_obj"))
+			if ret:
+				if isinstance(ret, basestring):
+					context.files_to_remove.append({"tname": "", "pattern": ret, "page": template_path})
+				else:
+					context.files_to_remove.append(ret)
+
+def get_xhtml_context(context):
+
+	for template_path in reversed(frappe.local.meteor_map_templates.keys()):
+		obj = frappe.local.meteor_map_templates.get(template_path)
+		path = obj.realpath[:-6] + ".py"
+		appname = obj.get("appname")
+		module = get_xhtml_module(appname, template_path, path)
+		if module:
+			if hasattr(module, "get_context"):
+				ret = module.get_context(context, appname, template_path, obj.get("template_obj"))
+				if ret:
+					#print "get context app_path 6 controller_path {} ret {}".format(controller_path + ".py", ret)
+					context.update(ret)
+			if hasattr(module, "get_children"):
+				context.get_children = module.get_children
+
+#TODO - ver file.py function process_ignores_from_files
+def get_xhtml_module(appname, template_path, path):
+
+	if os.path.exists(path):
+		controller_path = os.path.join(appname, template_path).replace(os.path.sep, ".")[:-6]
+		module = frappe.get_module(controller_path)
+		frappe.local.module_registe[appname] = frappe._dict({"template_path": template_path, "module": module})
+		return module
+
+	return None
+
+
+def get_general_context(context, apps, whatfor):
+
+	from fluorine.utils.module import get_app_module
+
+	ctx = frappe._dict()
+
+	for app in apps:
+		app_path = frappe.get_app_path(app)
+		path = os.path.join(app_path, "templates", "react", whatfor)
+		module = get_app_module(path, app, app_path, "meteor_general_context.py")
+		if module:
+			if hasattr(module, "get_context"):
+				nctx = module.get_context(context, ctx, whatfor) or []
+				appname = nctx.get("appname")
+				pattern = nctx.get("pattern")
+				pattern = os.path.join("templates", "react", whatfor, pattern)
+				action = nctx.get("action", "add")
+				if not ctx.get(appname):
+					ctx[appname] = []
+
+				ctx[appname].append({"pattern": pattern, "action": action})
+
+	for k,v in ctx.iteritems():
+		for obj in v:
+			pattern = obj.get("pattern")
+			action = obj.get("action", "add")
+			if action == "add":
+				if not frappe.local.files_to_add.get(k):
+					frappe.local.files_to_add[k] = []
+				frappe.local.files_to_add.get(k).append({"tname": "", "pattern": pattern})
+			elif action == "remove":
+				if not frappe.local.files_to_remove.get(k):
+					frappe.local.files_to_remove[k] = []
+				frappe.local.files_to_remove.get(k).append({"tname": "", "pattern": pattern})
+
+	return
+
+def get_extra_context_func(context, apps, extras):
+
+	for app in apps:
+		obj = frappe.local.module_registe.get(app)
+		if not obj:
+			continue
+		module = obj.module
+		template_path = obj.template_path
+		for extra in extras:
+			if hasattr(module, extra):
+				extra_func = getattr(module, extra)#estava 'method_name'
+				extra_func(context, app, template_path)
+
+def get_extras_context():
+	hooks = frappe.get_hooks("fluorine_extras_context_method")
+	return hooks
+
+
+def check_jquery(hook, hooks):
+	found = False
+	iweb = hooks.get(hook, None)
+	for a in ("jquery.min.js", "jquery.js"):
+		if iweb and any(a in s for s in iweb):
+			found = True
+			break
+	if not found:
+		iweb.insert(0, "/assets/frappe/js/lib/jquery/jquery.min.js")
+		print "jquery not found, inserting frappe jquery!"
+
+
+def check_includes(hook, hooks):
+	iweb = hooks.get(hook, None)
+	if iweb and not any("before_fluorine_helper" in s for s in iweb):
+		update_includes(hook,iweb)
+	elif iweb:
+		to_remove = []
+		for include in iweb:
+			if "before_fluorine_helper" in include or "after_fluorine_helper" in include:
+				to_remove.append(include)
+		for i in to_remove:
+			iweb.remove(i)
+		update_includes(hook, iweb)
+
+
+def update_includes(hook, iweb):
+	d = fcache.get_cached_value("hooks_helper")
+
+	if not d:
+		return
+
+	fweb = d.get(hook, None)
+	if fweb:
+		iweb.insert(0, fweb[0])
+		iweb.insert(1, fweb[1])
+		if fweb[2:]:
+			iweb.extend(fweb[2:])
+		fcache.clear_frappe_caches()
+
+
 class FrappeContext:
 
 	def __init__(self, site, user):
@@ -143,5 +290,4 @@ class FrappeContext:
 	def __exit__(self, type, value, trace):
 		if frappe.db:
 			frappe.db.commit()
-
 		frappe.destroy()

@@ -5,7 +5,7 @@ import frappe, os, re
 
 from fluorine.utils import file
 from fluorine.utils import assets_public_path
-
+from fluorine.utils.fjinja2.utils import c
 
 
 """
@@ -17,8 +17,6 @@ files in lib first and inside lib alphabetic order
 other folders deepest first
 files with main.* (start with main) are load last
 """
-
-c = lambda t:re.compile(t, re.S|re.M)
 
 
 RE_MFRAPPE = c(r"\bmeteor_frappe\b")

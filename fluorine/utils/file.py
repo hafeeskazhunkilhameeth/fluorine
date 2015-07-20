@@ -88,6 +88,8 @@ def make_meteor_file(packages=None, jquery=0, client_only=0, devmode=1, whatfor=
 
 def make_meteor_config_file(mthost, mtport, version):
 	import fluorine
+	from fluorine.utils.meteor.utils import get_meteor_config
+
 	config = get_meteor_config(mthost, mtport,  version, version)
 	module_path = os.path.dirname(fluorine.__file__)
 	meteor_config_file = os.path.join(module_path, "public", "js", "meteor_config.js")
@@ -202,42 +204,6 @@ def save_js_file(file_path, p, indent=4):
 def save_file(file_path, p, mode="w"):
 	with open(file_path, mode) as f:
 		f.write(p)
-
-def get_meteor_release(cpath):
-	#rpath = get_path_reactivity()
-	#cpath = os.path.join(rpath, "server", "config.json")
-
-	if os.path.exists(cpath):
-		config = frappe.get_file_json(cpath)
-		return config.get("meteorRelease", "")
-
-	return ""
-
-#def get_meteor_config(mthost, mtport, version, version_fresh, mrelease):
-def get_meteor_config(mthost, mtddpurlport, meteor_url_path_prefix, version, version_fresh, mrelease, whatfor):
-	#meteor_host = mthost + ":" + str(mtport)
-
-	#print "in get_meteor_config 2 {}".format(mtport)
-	meteor_config = """__meteor_runtime_config__ = {
-		"meteorRelease": "%(meteorRelease)s",
-		"ROOT_URL": "%(meteor_root_url)s",
-		"ROOT_URL_PATH_PREFIX": "%(meteor_url_path_prefix)s",
-		"autoupdateVersion": "%(meteor_autoupdate_version)s",
-		"autoupdateVersionRefreshable": "%(meteor_autoupdate_version_freshable)s",
-		"DDP_DEFAULT_CONNECTION_URL": "%(meteor_ddp_default_connection_url)s"
-	};
-	%(jquery)s
-	""" % {"meteorRelease": mrelease, "meteor_root_url": mthost, "meteor_url_path_prefix": meteor_url_path_prefix,
-				"meteor_autoupdate_version": version, "meteor_autoupdate_version_freshable": version_fresh,
-				"meteor_ddp_default_connection_url": mtddpurlport, "jquery": """
-if (typeof Package === 'undefined')
-	Package = {};
-Package.jquery = {
-	$: $,
-	jQuery: jQuery
-}; """ if whatfor == "meteor_app" else ""}
-
-	return meteor_config
 
 
 def empty_directory(folder, ignore=None):

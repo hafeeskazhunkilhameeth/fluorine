@@ -4,286 +4,33 @@ __author__ = 'luissaguas'
 
 
 from frappe.website.utils import scrub_relative_urls
-#from frappe.website.template import render_blocks
 from jinja2.utils import concat
-from jinja2 import contextfunction, contextfilter
 import frappe
 from frappe.utils.jinja import set_filters, get_allowed_functions_for_jenv
-#from frappe.website.context import get_context
-#from fluorine.utils.packages_path import get_package_path
-from fjinja import MyFileSystemLoader
-#from jinja2 import ChoiceLoader
-import hashlib, json, os, re
+from fluorine.utils.fjinja2.fjinja import MyFileSystemLoader
+from fluorine.utils.fhooks import get_xhtml_context, get_xhtml_files_to_add_remove
+import os
 from collections import OrderedDict
 
 
-def get_encoding():
-	return "utf-8"
-
-#from jinja2 import contextfunction, environmentfunction
-
-def is_in_extend_path(doc, template):
-	for d in doc.docs:
-		if d.template == template:
-			print "one template found in is:in 5 {}".format(d.template)
-			return d
-		found = is_in_extend_path(d, template)
-		if found:
-			return found
-	return None
-
-def get_template_from_doc(doc, tname, encoding="utf-8"):
-	from file import read
-
-	content = doc.content
-	if not content:
-		content = read(doc.file_temp_path).decode(encoding)
-	template = r"<\s*template\s+name\s*=\s*(['\"])%s\1(.*?)\s*>(.*?)<\s*/\s*template\s*>" % tname
-	g = re.search(template, content, re.S|re.I|re.M)
-	t = ""
-	if g:
-		t = g.group(3)
-
-	return t
-
-def get_doc_from_template(template):
-		doc = None
-		obj = frappe.local.meteor_map_path.get(template)
-		if obj:
-			doc = obj.get("doc")
-		return doc
-
-def get_doc_from_deep(template, deep=1):
-
-	obj = frappe.local.meteor_map_path.get(template)
-	if obj:
-		doc = obj.get("doc")
-		if doc.extends_found and deep > 0:
-			return get_doc_from_deep(doc.extends_path[0], deep-1)
-		return doc, deep
-	return None, 1
-	#frappe.msgprint("The is no doc with xhtml template {} for deep {}.".format(template, deep), raise_exception=1)
-
-c = lambda t:re.compile(t, re.S|re.M)
-
-def get_pattern_path(name, path):
-
-	#basename = os.path.basename(realpath)
-	#dirpath = os.path.dirname(realpath)
-	#path = os.path.join(dirpath, basename[:-6])
-	pattern = path + r"/(?:.+?/)?(?:(?:%s)/(?:.+)|(?:%s/?$))" % (name, name)
-	return pattern
-
-def get_deep_refs(refs, tname, deep):
-
-	if deep == 1:
-		return get_page(refs, tname)
-
-	page = None
-	#first is the extends so only this count for deep
-	if refs:
-		obj = frappe.local.meteor_map_templates.get(refs[0])
-		nrefs = obj.get("refs")
-		page = get_deep_refs(nrefs, tname, deep-1)
-
-	return page
-
-
-def get_page(refs, tname):
-
-	for ref in refs:
-		sobj = frappe.local.meteor_map_templates.get(ref)
-		template = sobj.get("template_obj")
-		for block in template.blocks.keys():
-			if block == tname.strip():
-				return ref
-
-	return None
-
-@contextfunction
-def tkeep(ctx, tname, page=None, deep=1, patterns=None):
-
-	if not page:
-		obj = frappe.local.meteor_map_templates.get(ctx.name)
-		refs = obj.get("refs")
-		page = get_deep_refs(refs, tname, deep)
-
-	fadd = ctx.get("files_to_add",{})
-	fadd.append({"tname": tname, "pattern": patterns, "page": page})
-
-
-def local_tkeep(ctx, tname, page, patterns=None):
-	fadd = ctx.get("files_to_add",{})
-
-	if  patterns and isinstance(patterns, basestring):
-		patterns = [patterns]
-
-	obj = frappe.local.meteor_map_templates.get(page)
-	appname = obj.get("appname")
-
-	if not fadd.get(appname):
-		fadd[appname] = []
-	#realpath = obj.get("realpath")
-	template_path = obj.get("template")
-	if not patterns:
-		#pattern = get_pattern_path(tname, realpath)
-		pattern = get_pattern_path(tname, template_path[:-6])
-		print "templates paths to add tname 3 {} template_path {} pattern {}".format(tname, template_path, pattern)
-		fadd.get(appname).append({"tname": page, "pattern":pattern})
-	elif tname:
-		for pattern in patterns:
-			#print "templates paths to add tname {} template_path {} pattern {}".format(tname, template_path, pattern)
-			#pat = realpath[:-6] + "/.*/"+ tname + "/" + pattern
-			pat = template_path[:-6] + r"/.*/"+ tname + "/" + pattern
-			fadd.get(appname).append({"tname": page, "pattern": pat})
-	else:
-		for pattern in patterns:
-			fadd.get(appname).append({"tname": page, "pattern": pattern})
-
-STARTTEMPLATE_SUB_ALL = c(r"<\s*template\s+name\s*=\s*(['\"])(\w+)\1(.*?)\s*>(.*?)<\s*/\s*template\s*>")
-STARTDIV_SUB_ALL = r"<\s*div\s+class\s*=\s*(['\"])%s\1\s*>(.*?)<\s*/\s*div\s*>"
-
-def get_msuper_inner_content(ctx, source):
-	s = STARTTEMPLATE_SUB_ALL.search(source)
-	if s:
-		name = s.group(2)
-		source = s.group(4)
-		#TODO remove not? or remove all code below
-		if not ctx.get("developer_mode"):
-			print "in developer mode inside msuper helper"
-			m = re.search(STARTDIV_SUB_ALL % (name,), source, re.S|re.M)
-			if m:
-				source = m.group(2)
-	return source
-
-@contextfunction
-def msuper(ctx, tname, deep=1):
-	#encoding = get_encoding()
-	#tp = tPages(ctx.name)
-	#for r in tp:
-	code = ""
-	page = ctx.name
-	obj = frappe.local.meteor_map_templates.get(page)
-	refs = obj.get("refs")
-
-	if deep >= 1:
-		page = get_deep_refs(refs, tname, deep)
-
-	if page:
-		sobj = frappe.local.meteor_map_templates.get(page)
-		template = sobj.get("template_obj")
-		render = template.blocks.get(tname)
-		code = scrub_relative_urls(concat(render(template.new_context(ctx))))
-		code = get_msuper_inner_content(ctx, code)
-
-	print "after msuper call from template code {}".format(code)
-
-	return code
-
-@contextfunction
-def mself(ctx, tname):
-	return msuper(ctx, tname, deep=0)
-
-class tPages:
-	def __init__(self, template_path):
-		self.template_path = template_path
-		self.cdeep = 1
-		self.i = 0
-		obj = frappe.local.meteor_map_templates.get(self.template_path)
-		self.refs = obj.get("refs")
-
-	def __iter__(self):
-		return self
-
-	def next(self):
-		ref = None
-
-		if not self.refs:
-			raise StopIteration()
-
-		if self.i < len(self.refs):
-			ref = self.refs[self.i]
-			self.i += 1
-		else:
-			self.cdeep += 1
-			self.refs = self.get_deep_refs(self.refs, self.cdeep)
-			if self.refs:
-				self.i = 1
-				ref = self.refs[0]
-
-		if ref:
-			return ref
-		else:
-			raise StopIteration()
-
-	def get_deep_refs(self, refs, deep):
-
-		if deep == 1:
-			return refs
-
-		nrefs = None
-		#first is the extends so only this count for deep
-		if refs:
-			obj = frappe.local.meteor_map_templates.get(refs[0])
-			nrefs = obj.get("refs")
-			nrefs = self.get_deep_refs(nrefs, deep-1)
-
-		return nrefs
-
-def flat_refs(template_path):
-	flat = []
-	obj = frappe.local.meteor_map_templates.get(template_path)
-	refs = obj.get("refs") or []
-	#if refs:
-	flat.extend(refs)
-	for ref in refs:
-		flat.extend(flat_refs(ref))
-
-	return flat
-
-
-@contextfilter
-def mdom_filter(ctx, source, page, **keyargs):
-	template_path = ctx.name
-	code = None
-
-	refs = [template_path]
-	refs.extend(flat_refs(template_path))
-
-	for ref in refs:
-		obj = frappe.local.meteor_map_templates.get(ref)
-		appname = obj.get("appname")
-		m = frappe.local.module_registe.get(appname)
-		if m:
-			module = m.module
-			if hasattr(module, "mdomfilter"):
-				code = module.mdomfilter(ctx, appname, page, source, obj.get("template_obj"), **keyargs)
-		if code:
-			break
-
-	return code or source
-
-
-def mecho(value, content=""):
-	print "mecho content is value 2 {} content {}".format(value, content)
-	return value + "  " + content
-
 def fluorine_get_fenv():
-
+	from fluorine.utils import get_encoding
 	from jinja2 import DebugUndefined
-	from fluorine.utils.fjinja import MyEnvironment
+	from fluorine.utils.fjinja2.fjinja import MyEnvironment
 	from extension_template import MeteorTemplate
+	from fluorine.utils.fjinja2.utils import mdom_filter, mself, msuper, tkeep
 
 	if not frappe.local.fenv:
 		encoding = get_encoding()
 		fenv = MyEnvironment(loader = fluorine_get_floader(encoding=encoding),
-			undefined=DebugUndefined, extensions=[MeteorTemplate, "jinja2.ext.do"])# ["jinja2.ext.do",]
+			undefined=DebugUndefined, extensions=[MeteorTemplate, "jinja2.ext.do"])
 		set_filters(fenv)
 
 		fenv.globals.update(get_allowed_functions_for_jenv())
 		fenv.globals.update({"msuper":msuper})
+		fenv.globals.update({"mself":mself})
 		fenv.globals.update({"mtkeep":tkeep})
-		fenv.filters["mecho"] = mecho
+		#fenv.filters["mecho"] = mecho
 		fenv.filters["mdom_filter"] = mdom_filter
 
 		frappe.local.fenv = fenv
@@ -293,7 +40,7 @@ def fluorine_get_fenv():
 
 def fluorine_get_floader(encoding="utf-8"):
 
-	from fluorine.utils.fjinja import MyChoiceLoader
+	from fluorine.utils.fjinja2.fjinja import MyChoiceLoader
 
 	if not frappe.local.floader:
 
@@ -316,11 +63,12 @@ def fluorine_get_floader(encoding="utf-8"):
 def fluorine_get_template(path):
 	return fluorine_get_fenv().addto_meteor_templates_list(path)
 
-#def compile_jinja_templates(mtl, context, whatfor):
+
 def compile_jinja_templates(context, whatfor):
 
+	from fluorine.utils import get_encoding
 	from file import save_file
-	from Templates import STARTTEMPLATE_SUB_ALL
+	from fluorine.utils.fjinja2.utils import STARTTEMPLATE_SUB_ALL
 
 	#print "mtl list de templates {}".format(mtl)
 	out = {}
@@ -397,8 +145,9 @@ def compile_jinja_templates(context, whatfor):
 
 	remove_from_path(context, toadd)
 
+	from fluorine.utils.fjinja2.utils import local_tkeep
+
 	for obj in context.files_to_add:
-		#appname = obj.get("appname")
 		tname = obj.get("tname")
 		pattern = obj.get("pattern")
 		page = obj.get("page")
@@ -462,77 +211,12 @@ def check_refs(tname, refs):
 			return found
 	return None
 
-def make_auto_update_version(path, meteorRelease, root_url, root_prefix, whatfor, appId=None):
-	from fluorine.utils import file
-
-	runtimeCfg = OrderedDict()
-	runtimeCfg["meteorRelease"] = meteorRelease#"METEOR@1.1.0.2"
-	runtimeCfg["ROOT_URL"] = root_url#"http://localhost"
-	runtimeCfg["ROOT_URL_PATH_PREFIX"] = ""#root_prefix
-	if appId:
-		runtimeCfg["appId"] = appId
-	#runtimeCfg["appId"] = "1uo02wweyt6o11xsntyy"
-	manifest = file.read(path)
-	manifest = json.loads(manifest).get("manifest")
-	autoupdateVersion, autoupdateVersionRefresh, frappe_manifest_js, frappe_manifest_css = meteor_hash_version(manifest, runtimeCfg, whatfor)
-	print "sha1 digest {} {}".format(autoupdateVersion, autoupdateVersionRefresh)
-	#runtimeCfg["autoupdateVersion"] = autoupdateVersion
-	#autoupdateVersionRefresh = meteor_hash_version(manifest, runtimeCfg, css=True)
-	#print "sha1 digest ", autoupdateVersionRefresh
-	return autoupdateVersion, autoupdateVersionRefresh, frappe_manifest_js, frappe_manifest_css
-
-
-def meteor_hash_version(manifest, runtimeCfg, whatfor):
-	sh1 = hashlib.sha1()
-	sh2 = hashlib.sha1()
-	frappe_manifest_js = []
-	frappe_manifest_css = []
-	#runtimeCfg = {"meteorRelease": meteorRelease,
-	#            "ROOT_URL": 'http://localhost',
-	#             "ROOT_URL_PATH_PREFIX": ""}
-
-	#runtimeCfg = """{'meteorRelease': %s,'ROOT_URL': 'http://localhost','ROOT_URL_PATH_PREFIX': ''}""" % meteorRelease
-	rt = json.dumps(runtimeCfg).replace(" ", "").encode('utf8')
-	print "json.dumps ", rt
-	sh1.update(rt)
-	sh2.update(rt)
-	for m in manifest:
-		if m.get("where") == "client" or m.get("where") == "internal":
-			prefix = "assets/fluorine/%s/webbrowser" % whatfor
-
-			if m.get("where") == "client":
-				url =  m.get("url").split("?")[0]
-				app = url.split("/", 2)[1]
-				is_app = ""
-				path = m.get("path")
-				if app in frappe.get_installed_apps():
-					is_app = "/app"
-				nurl = prefix + is_app + url
-				if m.get("type") == "css":
-					frappe_manifest_css.append(nurl)
-					sh2.update(path)
-					sh2.update(m.get("hash"))
-					continue
-				else:
-					if whatfor == "meteor_app":
-						if "jquery" not in path:
-							frappe_manifest_js.append(nurl)
-					else:
-						frappe_manifest_js.append(nurl)
-			#if m.get("type") == "css":
-			#	sh2.update(m.get("path"))
-			#	sh2.update(m.get("hash"))
-			#	continue
-			sh1.update(m.get("path"))
-			sh1.update(m.get("hash"))
-
-	return sh1.hexdigest(), sh2.hexdigest(), frappe_manifest_js, frappe_manifest_css
-
 
 def fluorine_build_context(context, whatfor):
 
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity#, save_js_file
 	from reactivity import list_ignores
+	from fluorine.utils.meteor.utils import make_meteor_props
 
 	frappe.local.context = context
 	frappe.local.fenv = None
@@ -588,6 +272,9 @@ def fluorine_build_context(context, whatfor):
 def process_react_templates(context, apps, whatfor):
 
 	from react_file_loader import read_client_xhtml_files, get_custom_pattern
+	from fluorine.utils.fhooks import get_extra_context_func, get_general_context
+	from fluorine.utils.meteor.utils import compile_spacebars_templates
+	from reactivity import extras_context_methods
 	#from fjinja import process_hooks_apps, process_hooks_meteor_templates
 	#first installed app first
 	#list_apps_remove = process_hooks_apps(apps)
@@ -626,7 +313,6 @@ def process_react_templates(context, apps, whatfor):
 	#and compile them all
 	#out = compile_jinja_templates(mtl, context, whatfor)
 	#TODO get from hooks
-	from reactivity import extras_context_methods
 	#from the first app to the last installed to override the changes made by first installed apps
 	get_extra_context_func(context, apps[::-1], extras_context_methods)
 
@@ -658,202 +344,3 @@ def addto_meteor_templates_list(template_path):
 	#return fluorine_get_fenv().addto_meteor_templates_list(template_path)
 
 
-def get_general_context(context, apps, whatfor):
-
-	from fluorine.utils.module import get_app_module
-
-	ctx = frappe._dict()
-
-	for app in apps:
-		app_path = frappe.get_app_path(app)
-		path = os.path.join(app_path, "templates", "react", whatfor)
-		module = get_app_module(path, app, app_path, "meteor_general_context.py")
-		if module:
-			if hasattr(module, "get_context"):
-				nctx = module.get_context(context, ctx, whatfor) or []
-				appname = nctx.get("appname")
-				pattern = nctx.get("pattern")
-				pattern = os.path.join("templates", "react", whatfor, pattern)
-				action = nctx.get("action", "add")
-				if not ctx.get(appname):
-					ctx[appname] = []
-
-				ctx[appname].append({"pattern": pattern, "action": action})
-
-	for k,v in ctx.iteritems():
-		for obj in v:
-			pattern = obj.get("pattern")
-			action = obj.get("action", "add")
-			if action == "add":
-				if not frappe.local.files_to_add.get(k):
-					frappe.local.files_to_add[k] = []
-				frappe.local.files_to_add.get(k).append({"tname": "", "pattern": pattern})
-			elif action == "remove":
-				if not frappe.local.files_to_remove.get(k):
-					frappe.local.files_to_remove[k] = []
-				frappe.local.files_to_remove.get(k).append({"tname": "", "pattern": pattern})
-
-	return
-
-def get_extra_context_func(context, apps, extras):
-
-	for app in apps:
-		obj = frappe.local.module_registe.get(app)
-		if not obj:
-			continue
-		module = obj.module
-		template_path = obj.template_path
-		for extra in extras:
-			if hasattr(module, extra):
-				extra_func = getattr(module, extra)#estava 'method_name'
-				extra_func(context, app, template_path)
-
-
-def get_xhtml_files_to_add_remove(context, template_path):
-	obj = frappe.local.meteor_map_templates.get(template_path)
-	path = obj.realpath[:-6] + ".py"
-	appname = obj.get("appname")
-	module = get_xhtml_module(appname, template_path, path)
-	if module:
-
-		if hasattr(module, "get_files_to_add"):
-			ret = module.get_files_to_add(context, appname, template_path, obj.get("template_obj"))
-			if ret:
-				if isinstance(ret, basestring):
-					context.files_to_add.append({"tname": "", "pattern": ret, "page": template_path})
-				else:
-					context.files_to_add.append(ret)
-
-		if hasattr(module, "get_files_to_remove"):
-			ret = module.get_files_to_remove(context, appname, template_path, obj.get("template_obj"))
-			if ret:
-				if isinstance(ret, basestring):
-					context.files_to_remove.append({"tname": "", "pattern": ret, "page": template_path})
-				else:
-					context.files_to_remove.append(ret)
-
-def get_xhtml_context(context):
-
-	for template_path in reversed(frappe.local.meteor_map_templates.keys()):
-		obj = frappe.local.meteor_map_templates.get(template_path)
-		path = obj.realpath[:-6] + ".py"
-		appname = obj.get("appname")
-		module = get_xhtml_module(appname, template_path, path)
-		if module:
-			if hasattr(module, "get_context"):
-				ret = module.get_context(context, appname, template_path, obj.get("template_obj"))
-				if ret:
-					#print "get context app_path 6 controller_path {} ret {}".format(controller_path + ".py", ret)
-					context.update(ret)
-			if hasattr(module, "get_children"):
-				context.get_children = module.get_children
-
-#TODO - ver file.py function process_ignores_from_files
-def get_xhtml_module(appname, template_path, path):
-
-	if os.path.exists(path):
-		controller_path = os.path.join(appname, template_path).replace(os.path.sep, ".")[:-6]
-		module = frappe.get_module(controller_path)
-		frappe.local.module_registe[appname] = frappe._dict({"template_path": template_path, "module": module})
-		return module
-
-	return None
-
-
-def get_meteor_template_list():
-	return fluorine_get_fenv().get_meteor_template_list() or {}
-
-def make_meteor_props(context, whatfor):
-	from file import get_path_reactivity, get_meteor_release, get_meteor_config
-	from . import meteor_url_path_prefix
-
-	path_reactivity = get_path_reactivity()
-	progarm_path = os.path.join(path_reactivity, whatfor, ".meteor/local/build/programs/web.browser/program.json")
-	config_path = os.path.join(path_reactivity, whatfor, ".meteor/local/build/programs/server/config.json")
-	context.meteorRelease = get_meteor_release(config_path)
-	appId = get_meteor_appId(os.path.join(path_reactivity, whatfor, ".meteor/.id"))
-	context.appId = appId.replace(" ","").replace("\n","")
-
-	context.meteor_autoupdate_version, context.meteor_autoupdate_version_freshable, manifest_js, manifest_css =\
-				make_auto_update_version(progarm_path, context.meteorRelease, context.meteor_root_url, "", whatfor, appId=context.appId)
-
-	app_path = frappe.get_app_path("fluorine")
-	#meteor_runtime_path = os.path.join(app_path, "public", whatfor, "meteor_runtime_web_config.js")
-	meteor_runtime_path = os.path.join(app_path, "public", whatfor, "meteor_runtime_config.js")
-
-	meteor_root_url_prefix = os.path.join(app_path, "public", whatfor, "meteor_url_prefix.js")
-	#meteor_root_url_prefix = os.path.join(app_path, "public", "js", "meteor_url_prefix.js")
-
-	context.meteor_package_js = [os.path.join("assets", "fluorine", whatfor, "meteor_runtime_config.js")] + manifest_js + [os.path.join("assets", "fluorine", whatfor, "meteor_url_prefix.js")]
-	context.meteor_package_css = manifest_css
-	context.meteor_runtime_config = True
-
-	#meteor_url_path_prefix(whatfor)
-
-	props = get_meteor_config(context.meteor_root_url, context.meteor_ddp_default_connection_url, "", context.meteor_autoupdate_version,\
-							context.meteor_autoupdate_version_freshable, context.meteorRelease, whatfor)
-
-	save_meteor_props(props, meteor_runtime_path)
-
-	save_meteor_props("__meteor_runtime_config__.ROOT_URL_PATH_PREFIX = '" + meteor_url_path_prefix(whatfor) + "';", meteor_root_url_prefix)
-
-def save_meteor_props(props, path):
-	from . import file
-	file.save_file(path, props)
-
-def get_meteor_appId(path):
-	appid = None
-	with open(path, "r") as f:
-		for line in f:
-			if line.startswith("#") or line.startswith("\n"):
-				continue
-			appid = line
-			break
-	print "appId {}".format(appid)
-	return appid
-
-def make_heritage(block, context):
-	#for block, render in out.items():
-	#in_first_block_render, data_first_block_render, outer_first_block_render = context.spacebars_data.get(block, None), context.data.get(block, None),\
-	#context.block
-	in_first_block_render = context.get(block, None)
-	#print frappe.utils.pprint_dict(context)
-	#print "make_heritages  template {} data.path {}".format(context["template"], context.get("path"))
-	if in_first_block_render:
-		contents = re.sub("<template name=['\"](.+?)['\"](.*?)>(.*?)</template>", template_replace, in_first_block_render, flags=re.S)
-		#print "my new context block {}".format(context.get(block, None))
-		context["_" + block] = contents
-	#if data_first_block_render:
-	#	context["__" + block] = data_first_block_render
-	#if outer_first_block_render:
-	#	context["___" + block] = outer_first_block_render
-
-
-def template_replace(m):
-	content = m.group(3)
-	return content
-
-
-def compile_spacebars_templates(context):
-	import zerorpc
-	import subprocess
-	from fluorine.utils.file import get_path_reactivity
-
-	templates = []
-	for name, template in context.items():
-		#template = context.get(name, "")
-		m = re.match(r".*?<template\s+.*?>(.*?)</template>", template, re.S)
-		if m:
-			print "m.group(1) name {} group(1) {}".format(name, m.group(1))
-			templates.append({"name":name, "code": m.group(1)})
-
-	path = get_path_reactivity()
-	print "path in compile_spacebars_templates {}".format(os.path.join(path, "compile_spacebars_js.js"))
-	node = subprocess.Popen(["node", os.path.join(path, "server/compile_spacebars_js.js"), os.path.join(path, "fluorine_program.json")], cwd=os.path.join(path, "server"), shell=False, close_fds=True)
-	c = zerorpc.Client()
-	c.connect("tcp://127.0.0.1:4242")
-	#for key, val in out.items():
-	compiled_templates = c.compile(templates)
-	node.kill()
-
-	return compiled_templates

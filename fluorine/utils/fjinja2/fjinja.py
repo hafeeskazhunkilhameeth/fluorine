@@ -7,11 +7,6 @@ from jinja2 import FileSystemLoader, TemplateNotFound, ChoiceLoader
 from jinja2.utils import internalcode
 from jinja2.environment import Environment
 
-try:
-	from cStringIO import StringIO
-except ImportError:
-	from StringIO import StringIO
-
 import os, re, frappe
 
 class MyChoiceLoader(ChoiceLoader):
@@ -59,7 +54,7 @@ class MyChoiceLoader(ChoiceLoader):
 class MyEnvironment(Environment):
 
 	def __init__(self, **vars):
-		from . import check_dev_mode
+		from .. import check_dev_mode
 		super(MyEnvironment, self).__init__(**vars)
 		self.devmode = check_dev_mode()
 
@@ -73,7 +68,7 @@ class MyEnvironment(Environment):
 			return floader.get_meteor_template_list()
 		return None
 
-from Templates import Templates
+from fluorine.utils.Templates import Templates
 from collections import OrderedDict
 
 class MyFileSystemLoader(FileSystemLoader):
@@ -188,8 +183,7 @@ class MyFileSystemLoader(FileSystemLoader):
 
 	def process_references(self, template, source):
 		from jinja2 import meta
-		from fluorine.utils.spacebars_template import fluorine_get_fenv
-		from spacebars_template import addto_meteor_templates_list
+		from fluorine.utils.spacebars_template import fluorine_get_fenv, addto_meteor_templates_list
 
 		env = fluorine_get_fenv()
 		for referenced_template_path in meta.find_referenced_templates(env.parse(source)):
@@ -202,7 +196,7 @@ class MyFileSystemLoader(FileSystemLoader):
 
 
 	def get_jinja_dependencies(self, doc):
-		from spacebars_template import fluorine_get_fenv
+		from fluorine.utils.spacebars_template import fluorine_get_fenv
 
 		docs = []
 		#if not doc.extends_path:
@@ -256,7 +250,7 @@ class MyFileSystemLoader(FileSystemLoader):
 			return False
 
 	def get_meteor_template_list(self):
-		from spacebars_template import fluorine_get_fenv
+		from fluorine.utils.spacebars_template import fluorine_get_fenv
 
 		#app_fluorine = frappe.get_app_path("fluorine")
 		templates_list = []
@@ -269,10 +263,6 @@ class MyFileSystemLoader(FileSystemLoader):
 				templates_list.append(frappe._dict({"template":t, "tpath":template, "doc": value}))
 
 		return templates_list
-
-	def cache(self, key):
-		doc = self.db.get(key)
-		return doc
 
 	def compile_templates(self):
 
@@ -352,7 +342,7 @@ def process_hooks_meteor_templates(apps, hook_name):
 	map_hooks = frappe._dict({"fluorine_files_templates": "get_meteor_files_templates", "fluorine_meteor_templates": "get_meteor_templates",
 							"fluorine_files_folders": "get_meteor_files_folders"})
 
-	from file import process_ignores_from_modules
+	from fluorine.utils.file import process_ignores_from_modules
 
 	modules_list = process_ignores_from_modules(apps, map_hooks.get(hook_name))
 	n = -1
@@ -383,7 +373,7 @@ def process_hooks_meteor_templates(apps, hook_name):
 	return list_meteor_tplt_add, list_meteor_tplt_remove
 
 def process_hooks_apps_old(apps):
-	from file import process_ignores_from_modules
+	from fluorine.utils.file import process_ignores_from_modules
 	#from fhooks import FrappeContext
 
 	list_apps_add = []
@@ -417,7 +407,7 @@ def process_hooks_apps_old(apps):
 
 
 def process_hooks_apps(apps):
-	from file import process_ignores_from_modules
+	#from file import process_ignores_from_modules
 	#from fhooks import FrappeContext
 
 	list_apps_add = []

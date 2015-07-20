@@ -2,52 +2,8 @@ from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
 import os, subprocess
-from fluorine.utils import start_hash
 import file
-import fcache
 
-
-def check_jquery(hook, hooks):
-	found = False
-	iweb = hooks.get(hook, None)
-	for a in ("jquery.min.js", "jquery.js"):
-		if iweb and any(a in s for s in iweb):
-			found = True
-			break
-	if not found:
-		iweb.insert(0, "/assets/frappe/js/lib/jquery/jquery.min.js")
-		print "jquery not found, inserting frappe jquery!"
-
-
-def check_includes(hook, hooks):
-	iweb = hooks.get(hook, None)
-	if iweb and not any("before_fluorine_helper" in s for s in iweb):
-		update_includes(hook,iweb)
-	elif iweb:
-		to_remove = []
-		for include in iweb:
-			if "before_fluorine_helper" in include or "after_fluorine_helper" in include:
-				to_remove.append(include)
-		for i in to_remove:
-			iweb.remove(i)
-		update_includes(hook, iweb)
-
-
-def update_includes(hook, iweb):
-	#d = file.read_file("hook_help.txt")
-	d = fcache.get_cached_value("hooks_helper")
-
-	if not d:
-		return
-
-	fweb = d.get(hook, None)
-	if fweb:
-		iweb.insert(0, fweb[0])
-		iweb.insert(1, fweb[1])
-		if fweb[2:]:
-			iweb.extend(fweb[2:])
-		fcache.clear_frappe_caches()
-	#print "hooks {} name {}".format(iweb, hook)
 
 """
 original_get_hooks = frappe.get_hooks
@@ -95,7 +51,7 @@ def flourine_get_hooks(hook=None, default=None, app_name=None):
 frappe.get_hooks = flourine_get_hooks
 """
 
-
+"""
 def run_meteor(path, mthost="http://localhost", mtport=3000, mghost="http://localhost", mgport=27017, mgdb="fluorine", restart=False):
 	#if make_meteor_config:
 	#make_meteor_config_file(mthost, mtport, version)
@@ -147,7 +103,7 @@ def run_meteor(path, mthost="http://localhost", mtport=3000, mghost="http://loca
 	#react = subprocess.Popen(["node", path + "/rundevserver.js"], cwd=path, shell=False, close_fds=True, env=environ)
 	p = subprocess.Popen(["meteor", "--port=" + str(mtport)], cwd=path, shell=False, close_fds=True, env=environ)
 	file.save_js_file(pidfile, {"meteorapp": p.pid})
-
+"""
 """
 def run_reactivity(path, mthost="http://localhost", mtport=3000, mghost="http://localhost", mgport=27017, mgdb="fluorine", restart=False):
 	#if make_meteor_config:
@@ -205,11 +161,30 @@ def run_reactivity(path, mthost="http://localhost", mtport=3000, mghost="http://
 meteor_config = None
 
 
+def run_meteor(path, mthost="http://localhost", mtport=3000, mghost="http://localhost", mgport=27017, mgdb="fluorine", restart=False):
+	import os, copy
+	from . import is_open_port
+
+	if is_open_port() and not restart:
+		print "Port {} is open!".format(mtport)
+		return
+
+	print "Port {} is not open!".format(mtport)
+	environ = copy.copy(os.environ)
+	if not os.environ.get("FLUOR_METEOR_ROOT_URL", None):
+		environ["ROOT_URL"] = mthost.strip(' \t\n\r')#"http://localhost"
+	if not os.environ.get("FLUOR_METEOR_PORT", None):
+		environ["PORT"] = str(mtport)
+	if not os.environ.get("FLUOR_MONGO_URL", None):
+		#os.environ["MONGO_URL"] = "mongodb://localhost:27017/ekaiser"
+		mghost = mghost.replace("http://","").replace("mongodb://","").strip(' \t\n\r')
+		environ["MONGO_URL"] = "mongodb://" + mghost + ":" + str(mgport) + "/" + mgdb#"mongodb://localhost:27017/ekaiser"
+
+	subprocess.Popen(["meteor", "--port=" + str(mtport)], cwd=path, shell=False, close_fds=True, env=environ)
+
+
 def start_meteor():
 	import frappe
-	#path = file.get_path_server_observe()
-	#file.observe_dir(path)
-	#print start_hash(path)
 	path_reactivity = file.get_path_reactivity()
 
 	global meteor_config
@@ -230,9 +205,12 @@ def start_meteor():
 
 	frappesite = conf.get("site")
 
-	#TODO get hook fluorine_extra_context_method
 	extras_context_methods.update(get_extras_context_method(frappesite))
-	for app in ("meteor_app", "meteor_web"):
+
+	tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
+	fluorine_recativity = frappe.db.get_value("Fluorine Reactivity", fieldname="fluorine_reactivity")
+
+	for app in tostart[fluorine_recativity]:
 		meteor_path = os.path.join(path_reactivity, app)
 		path_meteor = os.path.join(meteor_path, ".meteor")
 		mtport = mtport_web if app == "meteor_web" else mtport_app
@@ -242,28 +220,28 @@ def start_meteor():
 extras_context_methods = set([])
 
 def get_extras_context_method(site):
-	from fhooks import FrappeContext
+	#from fhooks import FrappeContext
+	from fluorine.utils.fhooks import get_extras_context
+
 	try:
 		make_meteor_ignor_files()
-		hooks = _get_extras_context()
+		hooks = get_extras_context()
 	except:
-		with FrappeContext(site, "Administrator") as f:
-			make_meteor_ignor_files()
-			print "with Frappe Context!!!"
-			hooks = _get_extras_context()
+		user = "Administrator"
+		#with FrappeContext(site, "Administrator") as f:
+		frappe.init(site=site)
+		frappe.connect()
+		frappe.set_user(user)
+		make_meteor_ignor_files()
+		hooks = get_extras_context()
+		print "with Frappe Context extra hooks {}!!!".format(hooks)
 
-	return hooks
-
-def _get_extras_context():
-	print "hooks founded before"
-	hooks = frappe.get_hooks("fluorine_extras_context_method")
-	print "hooks founded after {}".format(hooks)
 	return hooks
 
 list_ignores = None
 
 def make_meteor_ignor_files():
-	from fjinja import process_hooks_apps, process_hooks_meteor_templates
+	from fluorine.utils.fjinja2.fjinja import process_hooks_apps
 
 	apps = frappe.get_installed_apps()
 	#from file import process_ignores_from_modules#, save_js_file, get_path_reactivity

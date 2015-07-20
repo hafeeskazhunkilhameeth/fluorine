@@ -9,6 +9,9 @@ import copy, frappe
 react = {"Reactive Web": "web", "Reactive App": "app", "Both": "both"}
 assets_public_path = "/assets/fluorine/js/react"
 
+def get_encoding():
+	return "utf-8"
+
 def check_dev_mode():
 	import file
 	#config = {}
@@ -103,15 +106,6 @@ def addjs_file(path):
 	print "asssets {}".format(p)
 	return p
 
-def meteor_autoupdate_version():
-	return "128"
-
-def meteor_autoupdate_version_freshable():
-	return "128"
-
-def meteor_url_path_prefix(whatfor):
-	return os.path.join("assets", "fluorine",  whatfor, "webbrowser")
-
 def jquery_include():
 	return True
 
@@ -119,48 +113,6 @@ def get_Frappe_Version(version=None):
 	version = version or frappe.__version__
 	import semantic_version as sv
 	return sv.Version(version)
-
-def build_meteor_context(context, devmode, whatfor):
-	#from file import get_path_reactivity
-	import random
-	from reactivity import meteor_config
-
-	#path_reactivity = get_path_reactivity()
-
-	#config_path = os.path.join(path_reactivity, "common_site_config.json")
-	#conf = frappe.get_file_json(config_path)
-	conf = meteor_config
-
-	if not devmode:
-		add = 0
-		meteor_dns = conf.get("meteor_dns") or {}
-		all_dns = meteor_dns.get(whatfor)
-		n = random.randint(0, len(all_dns) - 1)
-		meteor = all_dns[n]
-	else:
-		meteor = conf.get("meteor_dev") or {}
-		add = 80 if whatfor == "meteor_app" else 0
-
-	context.mport = meteor.get("port", 3000) + add
-
-	#base_url = frappe.local.request.url
-	#burl = base_url.rsplit(":",1)
-	#if burl > 1:
-		#port = burl[1]
-	#	host_url = burl[0]
-	#else:
-	#	host_url = base_url
-		#port = ""
-
-	host = meteor.get("host", "http://localhost")
-	ddpurl = meteor.get("ddpurl", "http://localhost")
-	meteor_host =  host + ":" + str(context.mport)
-	ddpurl_port = ddpurl + ":" + str(context.mport)
-	context.meteor_root_url = host
-	context.meteor_root_url_port = meteor_host
-	context.meteor_url_path_prefix = ""#meteor_url_path_prefix(whatfor)
-	context.meteor_ddp_default_connection_url = ddpurl_port
-
 
 if check_dev_mode():
 	print "Enter Reactivity State !!!"

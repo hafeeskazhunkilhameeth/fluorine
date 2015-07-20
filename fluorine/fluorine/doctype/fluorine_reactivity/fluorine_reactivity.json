@@ -90,6 +90,15 @@
    "precision": ""
   }, 
   {
+   "default": "http://localhost", 
+   "description": "This must be the url or ip (without port) where meteor is running. If url is http://localhost or ip is http://127.0.0.1 then you only can test meteor from localhost.\nThis will be used in developer mode. In production mode it will be used in app mode (desk requests).", 
+   "fieldname": "ddpurl", 
+   "fieldtype": "Data", 
+   "label": "DDP URL", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
    "fieldname": "mongodb", 
    "fieldtype": "Section Break", 
    "label": "MongoDB", 
@@ -124,6 +133,21 @@
    "precision": ""
   }, 
   {
+   "fieldname": "frappe_configurations", 
+   "fieldtype": "Section Break", 
+   "label": "Frappe Configurations", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
+   "description": "This must be the site where you will test meteor.js in developer mode.", 
+   "fieldname": "site", 
+   "fieldtype": "Data", 
+   "label": "Site of Test", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
    "fieldname": "make_meteor_file", 
    "fieldtype": "Section Break", 
    "hidden": 1, 
@@ -149,7 +173,7 @@
  "is_submittable": 0, 
  "issingle": 1, 
  "istable": 0, 
- "modified": "2015-05-27 16:58:49.956210", 
+ "modified": "2015-07-20 17:06:28.460377", 
  "modified_by": "Administrator", 
  "module": "Fluorine", 
  "name": "Fluorine Reactivity", 
