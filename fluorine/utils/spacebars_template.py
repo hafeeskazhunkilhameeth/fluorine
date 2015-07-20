@@ -184,6 +184,23 @@ def msuper(ctx, tname, deep=1):
 def mself(ctx, tname):
 	return msuper(ctx, tname, deep=0)
 
+@contextfunction
+def files_to_add(ctx, tname, appname, page):
+	#filename = re.findall('\'([^\']*)\'', str(mself))
+	#fadd = ctx.get("files_to_add",{})
+	#print "files to add function tname 24 {} appname {} ctx {} filename {}".format(tname, appname, ctx.get("files_to_add"), page)
+	"""
+	if page:
+		obj = frappe.local.meteor_map_templates.get(page)
+		if not fadd.get(appname):
+			fadd[appname] = []
+		realpath = obj.get("realpath")
+		pattern = get_pattern_path(tname, realpath)
+		#fadd.get(appname).append({"tname": tname, "path": realpath[:-6] + "[./]*"})
+		fadd.get(appname).append({"tname": tname, "path": pattern})
+	"""
+	return ""
+
 class tPages:
 	def __init__(self, template_path):
 		self.template_path = template_path
