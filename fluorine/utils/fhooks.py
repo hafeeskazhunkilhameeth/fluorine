@@ -126,3 +126,22 @@ def save_batch_hook(objjs, file_path):
 			f.write(key + '=' + json.dumps(value) + os.linesep)
 			#else:
 			#	f.write(key + '=' + json.dumps(value) + os.linesep)
+
+
+class FrappeContext:
+
+	def __init__(self, site, user):
+		self.site = site
+		self.user = user
+
+	def __enter__(self):
+		frappe.init(site=self.site)
+		frappe.connect()
+		print frappe.local.site
+		frappe.set_user(self.user)
+
+	def __exit__(self, type, value, trace):
+		if frappe.db:
+			frappe.db.commit()
+
+		frappe.destroy()

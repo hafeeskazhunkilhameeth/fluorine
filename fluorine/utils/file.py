@@ -214,7 +214,7 @@ def get_meteor_release(cpath):
 	return ""
 
 #def get_meteor_config(mthost, mtport, version, version_fresh, mrelease):
-def get_meteor_config(mthost, mthostport, meteor_url_path_prefix, version, version_fresh, mrelease, whatfor):
+def get_meteor_config(mthost, mtddpurlport, meteor_url_path_prefix, version, version_fresh, mrelease, whatfor):
 	#meteor_host = mthost + ":" + str(mtport)
 
 	#print "in get_meteor_config 2 {}".format(mtport)
@@ -229,7 +229,7 @@ def get_meteor_config(mthost, mthostport, meteor_url_path_prefix, version, versi
 	%(jquery)s
 	""" % {"meteorRelease": mrelease, "meteor_root_url": mthost, "meteor_url_path_prefix": meteor_url_path_prefix,
 				"meteor_autoupdate_version": version, "meteor_autoupdate_version_freshable": version_fresh,
-				"meteor_ddp_default_connection_url": mthostport, "jquery": """
+				"meteor_ddp_default_connection_url": mtddpurlport, "jquery": """
 if (typeof Package === 'undefined')
 	Package = {};
 Package.jquery = {
@@ -465,10 +465,12 @@ def make_all_files_with_symlink(dst, whatfor, context, meteor_ignore=None, custo
 								pass
 """
 
+import re
+c = lambda t:re.compile(t, re.S|re.M)
+common_pattern = c(r"templates/(.*)/?common/(.*)")
+
 @profile
-def make_all_files_with_symlink(dst, whatfor, meteor_ignore=None, custom_pattern=None):
-	import re
-	c = lambda t:re.compile(t, re.S|re.M)
+def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 
 	_whatfor = ["meteor_app", "meteor_web", "meteor_frappe"]
 	folders_path = []
@@ -489,14 +491,9 @@ def make_all_files_with_symlink(dst, whatfor, meteor_ignore=None, custom_pattern
 	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", "*.xhtml"])
 	pattern = ignore_patterns(*custom_pattern)
 
-	#first installed app first
-	#apps = frappe.get_installed_apps()#[::-1]
-	#for app in apps:
 	for app, paths in frappe.local.files_to_add.iteritems():#context.files_to_add.iteritems():
-		#top_folder = True
 		print "apps in frappe.local.files_to_add 2 {}".format(frappe.local.files_to_add)
 		pathname = frappe.get_app_path(app)
-		#startpath = os.path.join(pathname, "templates", "react", whatfor[0])
 		meteorpath = os.path.join(pathname, "templates", "react", whatfor[0])
 		app_path = frappe.get_app_path(app)
 
@@ -504,44 +501,21 @@ def make_all_files_with_symlink(dst, whatfor, meteor_ignore=None, custom_pattern
 			folders_path.append(app)
 			app_folders = "/".join(folders_path)
 			destpath = os.path.join(dst, app_folders)
-			#process_top_folder(meteorpath, dst, app, app_folders, pattern, meteor_ignore=meteor_ignore)
-			#process_pubpriv_folder(meteorpath, dst, app, app_folders, pattern, meteor_ignore=meteor_ignore)
-			#process_pubpriv_folder(startpath, dst, app, app_folders, pattern, meteor_ignore=meteor_ignore)
 			for obj in paths:
 				tpath = obj.get("tname")
 				if tpath:
 					relpath = os.path.relpath(tpath[:-6], os.path.join("templates", "react", whatfor[0]))
 					startpath = os.path.normpath(os.path.join(meteorpath, relpath, ".."))
 				else:
-					#tpath= obj.get("apppath")
-					#relpath = os.path.relpath(app_path, os.path.join("templates", "react", whatfor[0]))
-					startpath = os.path.join(app_path, "templates")
+					startpath = os.path.join(app_path, os.path.join("templates", "react", whatfor[0]))
 
 				pat = obj.get("pattern")
-				#for path in context.files_to_add:
-				#re_file = fnmatch.translate(filespath)
 				madd = c(pat)
-				sp = obj.get("folders") or []
-				#print "path to add appname 10 {} tpath {} relpath {} startpath {}".format(app, tpath, relpath, startpath)
+
 				for root, dirs, files in os.walk(startpath):
 
-					[dirs.remove(toexclude) for toexclude in dirs if toexclude not in sp and sp]
-					#relative_path = os.path.relpath(root, startpath) + "/"
-					#re.match(relative_path, re_file, re.S)
-					#found = m.match(root)
-					#print "in file make all files symlink root 16 {} dirs {} files {} re_file {} files_path {} found {}".format(root, dirs, files, re_file, filespath, found)
-					#if found:
-					#start with templates/react
-					#meteor_relpath = os.path.relpath(root, frappe.get_app_path(app))
-					#meteor_ignore_folders(app, meteor_relpath, root, dirs, meteor_ignore=meteor_ignore)
 					ign_names = pattern(startpath, files)
-				#if top_folder:
-				#	ign_dirs.update(exclude)
-				#	[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
-				#	top_folder = False
-				#else:
-					#[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
-				#relpath = os.path.relpath(root, startpath)
+
 					for f in files:
 						if f in ign_names: #or meteor_ignore_files(app, meteor_relpath, root, f, meteor_ignore=meteor_ignore):
 							continue
@@ -555,14 +529,8 @@ def make_all_files_with_symlink(dst, whatfor, meteor_ignore=None, custom_pattern
 
 						if check_remove(source):
 							continue
-						#if f in ign_names or meteor_ignore_files(app, meteor_relpath, root, f, meteor_ignore=meteor_ignore):
-						#found = madd.match(os.path.join(root,f))
-						curr_dir = root.rsplit("/",1)[1]
-						found = madd.match(source)
 
-						#print "in file make all files symlink root files root 5 {} pattern {} relative_file {} found {}".format(root, source, relative_file, found)
-						if curr_dir == "common":
-							found = True
+						found = madd.match(source) or common_pattern.match(source)
 
 						if found:
 							try:
@@ -580,6 +548,7 @@ def check_remove(source):
 			if found:
 				return True
 	return False
+
 
 def process_pubpriv_folder(meteorpath, dst, app, app_folders, pattern, meteor_ignore=None):
 	ign_top = ("meteor_app", "meteor_web", "meteor_frappe", "temp")

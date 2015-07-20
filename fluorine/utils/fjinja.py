@@ -841,8 +841,9 @@ def process_hooks_meteor_templates(apps, hook_name):
 	#print "meteor templates lists add {} remove {}".format(list_meteor_tplt_add, list_meteor_tplt_remove)
 	return list_meteor_tplt_add, list_meteor_tplt_remove
 
-def process_hooks_apps(apps):
+def process_hooks_apps_old(apps):
 	from file import process_ignores_from_modules
+	#from fhooks import FrappeContext
 
 	list_apps_add = []
 	list_apps_remove = []
@@ -861,28 +862,40 @@ def process_hooks_apps(apps):
 	modules_list = process_ignores_from_modules(apps, "get_meteor_apps")
 	n = - 1
 	list_max = len(modules_list) - 1
+
+	#with FrappeContext("site1.local", "Administrator") as f:
 	for app in apps:
 		hooks = frappe.get_hooks(hook="fluorine_apps", default={}, app_name=app)
-		#if hooks:
 		process(hooks)
 		n += 1
 		#n=0 is the last installed app. Same order as the for cycle
 		if n <= list_max:
 			process(modules_list[n])
 
-	#list_ignores = frappe._dict({
-	#	"remove":{
-	#		"apps":tuple(list_apps_remove)
-	#	},
-	#	"add":{
-	#		"apps": tuple(list_apps_add)
-	#	}
-	#})
+	return list_apps_remove
 
-	#new_list = process_ignores_from_files(apps, "get_meteor_apps", list_ignores=list_ignores)
-	#first to be processed is last installed
-	#for n in new_list:
-	#	process(n)
+
+def process_hooks_apps(apps):
+	from file import process_ignores_from_modules
+	#from fhooks import FrappeContext
+
+	list_apps_add = []
+	list_apps_remove = []
+
+	def process(hooks):
+
+		for k,v in hooks.items():
+			if v.get("remove",[0])[0]:
+				if k not in list_apps_add:
+					list_apps_remove.append(k)
+			elif v.get("add",[0])[0]:
+				if k not in list_apps_remove:
+					list_apps_add.append(k)
+
+	#with FrappeContext("site1.local", "Administrator") as f:
+	for app in apps:
+		hooks = frappe.get_hooks(hook="fluorine_apps", default={}, app_name=app)
+		process(hooks)
 
 	return list_apps_remove
 

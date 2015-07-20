@@ -297,8 +297,8 @@ def read_client_xhtml_files(start_folder, whatfor, appname, meteor_ignore=None, 
 	for root, dirs, files in os.walk(start_folder):
 
 		#start with templates/react
-		meteor_relpath = os.path.relpath(root, frappe.get_app_path(appname))
-		meteor_ignore_folders(appname, meteor_relpath, root, dirs, meteor_ignore=meteor_ignore)
+		#meteor_relpath = os.path.relpath(root, frappe.get_app_path(appname))
+		#meteor_ignore_folders(appname, meteor_relpath, root, dirs, meteor_ignore=meteor_ignore)
 
 		ign_dirs = pattern(start_folder, dirs)
 		try:
@@ -329,8 +329,8 @@ def read_client_xhtml_files(start_folder, whatfor, appname, meteor_ignore=None, 
 		files = [toinclude for toinclude in files if fnmatch.fnmatch(toinclude, "*xhtml")]
 
 		for f in files:
-			if meteor_ignore_files(appname, meteor_relpath, root, f, meteor_ignore=meteor_ignore):
-				continue
+			#if meteor_ignore_files(appname, meteor_relpath, root, f, meteor_ignore=meteor_ignore):
+			#	continue
 			ext = f.rsplit(".", 1)
 			path = os.path.join(root, f)
 			obj = {"name":f, "path": path, "relpath": relpath, "filePath": root, "fileName": ext[0], "deep": deeper}

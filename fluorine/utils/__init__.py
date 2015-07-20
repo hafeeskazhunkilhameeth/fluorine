@@ -140,21 +140,23 @@ def build_meteor_context(context, devmode, whatfor):
 
 	context.mport = meteor.get("port", 3000) + add
 
-	base_url = frappe.local.request.url
-	burl = base_url.rsplit(":",1)
-	if burl > 1:
+	#base_url = frappe.local.request.url
+	#burl = base_url.rsplit(":",1)
+	#if burl > 1:
 		#port = burl[1]
-		host_url = burl[0]
-	else:
-		host_url = base_url
+	#	host_url = burl[0]
+	#else:
+	#	host_url = base_url
 		#port = ""
 
-	host = meteor.get("host", host_url)
+	host = meteor.get("host", "http://localhost")
+	ddpurl = meteor.get("ddpurl", "http://localhost")
 	meteor_host =  host + ":" + str(context.mport)
+	ddpurl_port = ddpurl + ":" + str(context.mport)
 	context.meteor_root_url = host
 	context.meteor_root_url_port = meteor_host
-	context.meteor_url_path_prefix = meteor_url_path_prefix(whatfor)
-	context.meteor_ddp_default_connection_url = meteor_host
+	context.meteor_url_path_prefix = ""#meteor_url_path_prefix(whatfor)
+	context.meteor_ddp_default_connection_url = ddpurl_port
 
 
 if check_dev_mode():

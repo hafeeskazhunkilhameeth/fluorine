@@ -219,9 +219,10 @@ def start_meteor():
 	mghost = mongo.get("host") or "http://localhost"
 	mgport = mongo.get("port") or 27017
 	mgdb = mongo.get("db") or "fluorine"
+	frappesite = conf.get("site")
 
 	#TODO get hook fluorine_extra_context_method
-	#extras_context_methods.update(get_extras_context_method())
+	extras_context_methods.update(get_extras_context_method(frappesite))
 	for app in ("meteor_app", "meteor_web"):
 		meteor_path = os.path.join(path_reactivity, app)
 		path_meteor = os.path.join(meteor_path, ".meteor")
@@ -231,11 +232,77 @@ def start_meteor():
 
 extras_context_methods = set([])
 
-def get_extras_context_method():
+def get_extras_context_method(site):
+	from fhooks import FrappeContext
+	try:
+		make_meteor_ignor_files()
+		hooks = _get_extras_context()
+	except:
+		with FrappeContext(site, "Administrator") as f:
+			make_meteor_ignor_files()
+			print "with Frappe Context!!!"
+			hooks = _get_extras_context()
+
+	return hooks
+
+def _get_extras_context():
 	print "hooks founded before"
 	hooks = frappe.get_hooks("fluorine_extras_context_method")
 	print "hooks founded after {}".format(hooks)
 	return hooks
+
+list_ignores = None
+
+def make_meteor_ignor_files():
+	from fjinja import process_hooks_apps, process_hooks_meteor_templates
+
+	apps = frappe.get_installed_apps()
+	#from file import process_ignores_from_modules#, save_js_file, get_path_reactivity
+
+	#if not frappe.local.meteor_ignores:
+	apps_last_first = apps[::-1]
+	list_apps_remove = process_hooks_apps(apps_last_first)
+	#list_meteor_files_add, list_meteor_files_remove = process_hooks_meteor_templates(apps_last_first, "fluorine_files_templates")
+	#list_meteor_files_folders_add, list_meteor_files_folders_remove = process_hooks_meteor_templates(apps_last_first, "fluorine_files_folders")
+	#list_meteor_tplt_add, list_meteor_tplt_remove = process_hooks_meteor_templates(apps_last_first, "fluorine_meteor_templates")
+
+	global list_ignores
+
+	list_ignores = frappe._dict({
+		"remove":{
+			"apps": list_apps_remove
+		}
+	})
+
+	print "list apps to remove {}".format(list_ignores)
+
+	"""
+	list_ignores = frappe._dict({
+		"remove":{
+			"apps": list_apps_remove,
+			"files_folders": list_meteor_files_folders_remove,
+			"meteor_files_templates": list_meteor_files_remove,
+			"meteor_templates": list_meteor_tplt_remove
+		},
+		"add":{
+			"files_folders": list_meteor_files_folders_add,
+			"meteor_files": list_meteor_files_add,
+			"meteor_templates": list_meteor_tplt_add
+		},
+		"templates_to_remove": frappe.local.templates_found_remove,
+		"templates_to_add": frappe.local.templates_found_add
+
+	})
+	"""
+
+	#this is for teste how it will stay when cached
+	#save_js_file(os.path.join(get_path_reactivity(), "teste_list_dump.json"), list_ignores)
+
+	# Process list_ignores from all installed apps.
+	# Last installed app process last.
+	# In this way last installed app can remove or add what others added or removed
+	#apps_last_last = apps
+	#process_ignores_from_modules(apps_last_last, "proces_all_meteor_lists", frappe.local.meteor_ignores)
 
 """
 def start_reactivity():
