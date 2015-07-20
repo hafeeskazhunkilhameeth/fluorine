@@ -11,30 +11,17 @@
 			}
 	</script>
 {% endif %}
-<!--
-	Meteor Inlude Files
--->
-{%- for link in meteor_package_css %}
-	<link type="text/css" rel="stylesheet" class="__meteor-css__" href="{{ meteor_root_url_ports or ""}}{{ link }}">
-{%- endfor -%}
 
-{% if meteor_app %}
-	<script type="text/javascript" src="/assets/fluorine/js/before_fluorine_helper.js"></script>
-{% endif %}
-
-{%- for link in meteor_package_js %}
-<script type="text/javascript" src="{{ meteor_root_url_ports or ""}}{{ link }}"></script>
-{%- endfor -%}
 <!--
 
 This is to support css autoupdaterefreshable. Can't be in __meteor_runtime_config__ because it make infinite reload
 
+
 <script type="text/javascript">
 
-__meteor_runtime_config__.ROOT_URL_PATH_PREFIX = "{{ meteor_root_url_port }}"
+__meteor_runtime_config__.ROOT_URL_PATH_PREFIX = "{{ meteor_url_path_prefix }}"
 
 </script>
-
 -->
 
 {% if meteor_app %}

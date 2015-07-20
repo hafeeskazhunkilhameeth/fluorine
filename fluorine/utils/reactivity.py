@@ -121,6 +121,7 @@ def run_meteor(path, mthost="http://localhost", mtport=3000, mghost="http://loca
 		mghost = mghost.replace("http://","").replace("mongodb://","").strip(' \t\n\r')
 		environ["MONGO_URL"] = "mongodb://" + mghost + ":" + str(mgport) + "/" + mgdb#"mongodb://localhost:27017/ekaiser"
 
+	environ["ROOT_URL_PATH_PREFIX"] = "/assets/fluorine/meteor_web/webbrowser"#"http://localhost"
 	#environ["AUTOUPDATE_VERSION"] = str(version)
 	pidfile = os.path.join(os.path.dirname(__file__), "pids.json")
 	if restart:

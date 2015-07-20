@@ -1,5 +1,20 @@
 {% extends 'templates/pages/teste_homepage.html' %}
 
 {% block includes %}
+<!--
+	Meteor Inlude Files
+-->
+{%- for link in meteor_package_css %}
+	<link type="text/css" rel="stylesheet" class="__meteor-css__" href="{{ meteor_root_url_ports or ""}}{{ link }}">
+{%- endfor -%}
+
+{% if meteor_app %}
+	<script type="text/javascript" src="/assets/fluorine/js/before_fluorine_helper.js"></script>
+{% endif %}
+
+{%- for link in meteor_package_js %}
+<script type="text/javascript" src="{{ meteor_root_url_ports or ""}}{{ link }}"></script>
+{%- endfor -%}
+
     {% include "templates/includes/meteor_web.html" %}
 {% endblock %}

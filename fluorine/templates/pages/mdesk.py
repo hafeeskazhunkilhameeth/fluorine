@@ -1,3 +1,4 @@
+# encoding: utf-8
 from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
@@ -28,8 +29,20 @@ def get_context(context):
 
 	fcontext = get_frappe_context(context)
 
-	fcontext["include_js"] = context.meteor_package_js + fcontext.get("include_js",[])
-	fcontext["include_css"] = context.meteor_package_css + fcontext.get("include_css", [])
+	include_js = fcontext.get("include_js",[])
+	include_css = fcontext.get("include_css", [])
+
+	if devmode:
+		#TODO ver se é preciso remove tb o css gerado
+		try:
+			include_js.remove("/assets/fluorine/js/meteor_app.js")
+		except:
+			pass
+
+	fcontext["include_js"] = context.meteor_package_js + include_js
+	fcontext["include_css"] = context.meteor_package_css + include_css
+	#fcontext["include_js"] = context.meteor_package_js + fcontext.get("include_js",[])
+	#fcontext["include_css"] = context.meteor_package_css + fcontext.get("include_css", [])
 
 	context.update(fcontext)
 
@@ -37,24 +50,10 @@ def get_context(context):
 
 
 def get_frappe_context(context):
+	from fluorine.utils.module import get_app_context
 
-	ret = None
 	app = "frappe"
 	app_path = frappe.get_app_path(app)
 	path = os.path.join(app_path, "templates", "pages")
-	if os.path.exists(path):
-		# add website route
-		controller_path = os.path.join(path, "desk.py")
-		if os.path.exists(controller_path):
-			controller = app + "." + os.path.relpath(controller_path,
-				app_path).replace(os.path.sep, ".")[:-3]
-			module = frappe.get_module(controller)
-			if module:
-				if hasattr(module, "get_context"):
-					ret = module.get_context(context)
-				if hasattr(module, "get_children"):
-					context.get_children = module.get_children
-				for prop in ("template", "condition_field"):
-					if hasattr(module, prop):
-						context[prop] = getattr(module, prop)
+	ret = get_app_context(context, path, app, app_path, "desk.py")
 	return ret

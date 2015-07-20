@@ -214,7 +214,7 @@ def get_meteor_release(cpath):
 	return ""
 
 #def get_meteor_config(mthost, mtport, version, version_fresh, mrelease):
-def get_meteor_config(mthost, mthostport, meteor_url_path_prefix, version, version_fresh, mrelease):
+def get_meteor_config(mthost, mthostport, meteor_url_path_prefix, version, version_fresh, mrelease, whatfor):
 	#meteor_host = mthost + ":" + str(mtport)
 
 	#print "in get_meteor_config 2 {}".format(mtport)
@@ -225,10 +225,17 @@ def get_meteor_config(mthost, mthostport, meteor_url_path_prefix, version, versi
 		"autoupdateVersion": "%(meteor_autoupdate_version)s",
 		"autoupdateVersionRefreshable": "%(meteor_autoupdate_version_freshable)s",
 		"DDP_DEFAULT_CONNECTION_URL": "%(meteor_ddp_default_connection_url)s"
-};
-		""" % {"meteorRelease": mrelease, "meteor_root_url": mthost, "meteor_url_path_prefix": meteor_url_path_prefix,
+	};
+	%(jquery)s
+	""" % {"meteorRelease": mrelease, "meteor_root_url": mthost, "meteor_url_path_prefix": meteor_url_path_prefix,
 				"meteor_autoupdate_version": version, "meteor_autoupdate_version_freshable": version_fresh,
-				"meteor_ddp_default_connection_url": mthostport}
+				"meteor_ddp_default_connection_url": mthostport, "jquery": """
+if (typeof Package === 'undefined')
+	Package = {};
+Package.jquery = {
+	$: $,
+	jQuery: jQuery
+}; """ if whatfor == "meteor_app" else ""}
 
 	return meteor_config
 
@@ -491,6 +498,8 @@ def make_all_files_with_symlink(dst, whatfor, meteor_ignore=None, custom_pattern
 		pathname = frappe.get_app_path(app)
 		#startpath = os.path.join(pathname, "templates", "react", whatfor[0])
 		meteorpath = os.path.join(pathname, "templates", "react", whatfor[0])
+		app_path = frappe.get_app_path(app)
+
 		if os.path.exists(meteorpath) and paths:
 			folders_path.append(app)
 			app_folders = "/".join(folders_path)
@@ -499,15 +508,24 @@ def make_all_files_with_symlink(dst, whatfor, meteor_ignore=None, custom_pattern
 			#process_pubpriv_folder(meteorpath, dst, app, app_folders, pattern, meteor_ignore=meteor_ignore)
 			#process_pubpriv_folder(startpath, dst, app, app_folders, pattern, meteor_ignore=meteor_ignore)
 			for obj in paths:
-				tpath = obj.get("tname") or obj.get("apppath")
-				relpath = os.path.relpath(tpath[:-6], os.path.join("templates", "react", whatfor[0]))
+				tpath = obj.get("tname")
+				if tpath:
+					relpath = os.path.relpath(tpath[:-6], os.path.join("templates", "react", whatfor[0]))
+					startpath = os.path.normpath(os.path.join(meteorpath, relpath, ".."))
+				else:
+					#tpath= obj.get("apppath")
+					#relpath = os.path.relpath(app_path, os.path.join("templates", "react", whatfor[0]))
+					startpath = os.path.join(app_path, "templates")
+
 				pat = obj.get("pattern")
 				#for path in context.files_to_add:
 				#re_file = fnmatch.translate(filespath)
 				madd = c(pat)
-				startpath = os.path.normpath(os.path.join(meteorpath, relpath, ".."))
+				sp = obj.get("folders") or []
 				#print "path to add appname 10 {} tpath {} relpath {} startpath {}".format(app, tpath, relpath, startpath)
 				for root, dirs, files in os.walk(startpath):
+
+					[dirs.remove(toexclude) for toexclude in dirs if toexclude not in sp and sp]
 					#relative_path = os.path.relpath(root, startpath) + "/"
 					#re.match(relative_path, re_file, re.S)
 					#found = m.match(root)
@@ -528,8 +546,12 @@ def make_all_files_with_symlink(dst, whatfor, meteor_ignore=None, custom_pattern
 						if f in ign_names: #or meteor_ignore_files(app, meteor_relpath, root, f, meteor_ignore=meteor_ignore):
 							continue
 
-						relative_file = os.path.relpath(root, meteorpath)
-						source = os.path.normpath(os.path.join("templates", "react", whatfor[0], relative_file, f))
+						if tpath:
+							relative_file = os.path.relpath(root, meteorpath)
+							source = os.path.normpath(os.path.join("templates", "react", whatfor[0], relative_file, f))
+						else:
+							relative_file = os.path.relpath(root, startpath)
+							source = os.path.normpath(os.path.join("templates", relative_file, f))
 
 						if check_remove(source):
 							continue

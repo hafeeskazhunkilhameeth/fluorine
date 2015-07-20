@@ -115,7 +115,7 @@ def tkeep(ctx, tname, page=None, deep=1, patterns=None):
 def local_tkeep(ctx, tname, page, patterns=None):
 	fadd = ctx.get("files_to_add",{})
 
-	if isinstance(patterns, basestring):
+	if  patterns and isinstance(patterns, basestring):
 		patterns = [patterns]
 
 	obj = frappe.local.meteor_map_templates.get(page)
@@ -128,9 +128,11 @@ def local_tkeep(ctx, tname, page, patterns=None):
 	if not patterns:
 		#pattern = get_pattern_path(tname, realpath)
 		pattern = get_pattern_path(tname, template_path[:-6])
+		print "templates paths to add tname 3 {} template_path {} pattern {}".format(tname, template_path, pattern)
 		fadd.get(appname).append({"tname": page, "pattern":pattern})
 	elif tname:
 		for pattern in patterns:
+			#print "templates paths to add tname {} template_path {} pattern {}".format(tname, template_path, pattern)
 			#pat = realpath[:-6] + "/.*/"+ tname + "/" + pattern
 			pat = template_path[:-6] + r"/.*/"+ tname + "/" + pattern
 			fadd.get(appname).append({"tname": page, "pattern": pat})
@@ -631,19 +633,19 @@ def fluorine_build_context3(context, whatfor):
 	return context
 """
 
-def make_auto_update_version(path, meteorRelease, root_url, root_prefix, appId=None):
+def make_auto_update_version(path, meteorRelease, root_url, root_prefix, whatfor, appId=None):
 	from fluorine.utils import file
 
 	runtimeCfg = OrderedDict()
 	runtimeCfg["meteorRelease"] = meteorRelease#"METEOR@1.1.0.2"
 	runtimeCfg["ROOT_URL"] = root_url#"http://localhost"
-	runtimeCfg["ROOT_URL_PATH_PREFIX"] = root_prefix
+	runtimeCfg["ROOT_URL_PATH_PREFIX"] = ""#root_prefix
 	if appId:
 		runtimeCfg["appId"] = appId
 	#runtimeCfg["appId"] = "1uo02wweyt6o11xsntyy"
 	manifest = file.read(path)
 	manifest = json.loads(manifest).get("manifest")
-	autoupdateVersion, autoupdateVersionRefresh, frappe_manifest_js, frappe_manifest_css = meteor_hash_version(manifest, runtimeCfg)
+	autoupdateVersion, autoupdateVersionRefresh, frappe_manifest_js, frappe_manifest_css = meteor_hash_version(manifest, runtimeCfg, whatfor)
 	print "sha1 digest {} {}".format(autoupdateVersion, autoupdateVersionRefresh)
 	#runtimeCfg["autoupdateVersion"] = autoupdateVersion
 	#autoupdateVersionRefresh = meteor_hash_version(manifest, runtimeCfg, css=True)
@@ -651,7 +653,7 @@ def make_auto_update_version(path, meteorRelease, root_url, root_prefix, appId=N
 	return autoupdateVersion, autoupdateVersionRefresh, frappe_manifest_js, frappe_manifest_css
 
 
-def meteor_hash_version(manifest, runtimeCfg):
+def meteor_hash_version(manifest, runtimeCfg, whatfor):
 	sh1 = hashlib.sha1()
 	sh2 = hashlib.sha1()
 	frappe_manifest_js = []
@@ -667,20 +669,27 @@ def meteor_hash_version(manifest, runtimeCfg):
 	sh2.update(rt)
 	for m in manifest:
 		if m.get("where") == "client" or m.get("where") == "internal":
+			prefix = "assets/fluorine/%s/webbrowser" % whatfor
+
 			if m.get("where") == "client":
 				url =  m.get("url").split("?")[0]
 				app = url.split("/", 2)[1]
 				is_app = ""
+				path = m.get("path")
 				if app in frappe.get_installed_apps():
 					is_app = "/app"
-				nurl = "/assets/fluorine/meteor_web/webbrowser" + is_app + url
+				nurl = prefix + is_app + url
 				if m.get("type") == "css":
 					frappe_manifest_css.append(nurl)
-					sh2.update(m.get("path"))
+					sh2.update(path)
 					sh2.update(m.get("hash"))
 					continue
 				else:
-					frappe_manifest_js.append(nurl)
+					if whatfor == "meteor_app":
+						if "jquery" not in path:
+							frappe_manifest_js.append(nurl)
+					else:
+						frappe_manifest_js.append(nurl)
 			#if m.get("type") == "css":
 			#	sh2.update(m.get("path"))
 			#	sh2.update(m.get("hash"))
@@ -851,6 +860,8 @@ def process_react_templates(context, apps, whatfor):
 	#from the first app to the last installed to override the changes made by first installed apps
 	get_extra_context_func(context, apps[::-1], extras_context_methods)
 
+	get_general_context(context, apps[::-1], whatfor)
+
 	out = compile_jinja_templates(context, whatfor)
 
 	spacebars_templates.update(out)
@@ -877,6 +888,38 @@ def addto_meteor_templates_list(template_path):
 	#return fluorine_get_fenv().addto_meteor_templates_list(template_path)
 
 
+def get_general_context(context, apps, whatfor):
+
+	from fluorine.utils.module import get_app_module
+
+	ctx = frappe._dict()
+
+	for app in apps:
+		app_path = frappe.get_app_path(app)
+		path = os.path.join(app_path, "templates", "react", whatfor)
+		module = get_app_module(path, app, app_path, "meteor_general_context.py")
+		if module:
+			if hasattr(module, "get_context"):
+				nctx = module.get_context(context, ctx) or []
+				appname = nctx.get("appname")
+				pattern = nctx.get("pattern")
+				action = nctx.get("action")
+				startpath = nctx.get("folders") or []
+				if not ctx.get(appname):
+					ctx[appname] = []
+
+				ctx[appname].append({"pattern": pattern, "action": action, "folders": startpath})
+
+	for k,v in ctx.iteritems():
+		pattern = v.get("pattern")
+		startpath = v.get("startpath")
+		if v.get("action") == "add":
+			frappe.local.files_to_add.get(k).append({"tname": "", "pattern": pattern, "folders": startpath})
+		elif v.get("action") == "remove":
+			frappe.local.files_to_remove.get(k).append({"tname": "", "pattern": pattern, "folders": startpath})
+
+	return
+
 def get_extra_context_func(context, apps, extras):
 
 	for app in apps:
@@ -887,7 +930,7 @@ def get_extra_context_func(context, apps, extras):
 		template_path = obj.template_path
 		for extra in extras:
 			if hasattr(module, extra):
-				extra_func = getattr(module, 'method_name')
+				extra_func = getattr(module, extra)#estava 'method_name'
 				extra_func(context, app, template_path)
 
 
@@ -987,6 +1030,7 @@ def compile_spacebar_templates(context, whatfor):
 
 def make_meteor_props(context, whatfor):
 	from file import get_path_reactivity, get_meteor_release, get_meteor_config
+	from . import meteor_url_path_prefix
 
 	path_reactivity = get_path_reactivity()
 	progarm_path = os.path.join(path_reactivity, whatfor, ".meteor/local/build/programs/web.browser/program.json")
@@ -996,19 +1040,27 @@ def make_meteor_props(context, whatfor):
 	context.appId = appId.replace(" ","").replace("\n","")
 
 	context.meteor_autoupdate_version, context.meteor_autoupdate_version_freshable, manifest_js, manifest_css =\
-				make_auto_update_version(progarm_path, context.meteorRelease, context.meteor_root_url, context.meteor_url_path_prefix, appId=context.appId)
+				make_auto_update_version(progarm_path, context.meteorRelease, context.meteor_root_url, "", whatfor, appId=context.appId)
 
 	app_path = frappe.get_app_path("fluorine")
+	#meteor_runtime_path = os.path.join(app_path, "public", whatfor, "meteor_runtime_web_config.js")
 	meteor_runtime_path = os.path.join(app_path, "public", whatfor, "meteor_runtime_config.js")
 
-	context.meteor_package_js = [os.path.join("/assets", "fluorine", whatfor, "meteor_runtime_config.js")] + manifest_js
+	meteor_root_url_prefix = os.path.join(app_path, "public", whatfor, "meteor_url_prefix.js")
+	#meteor_root_url_prefix = os.path.join(app_path, "public", "js", "meteor_url_prefix.js")
+
+	context.meteor_package_js = [os.path.join("assets", "fluorine", whatfor, "meteor_runtime_config.js")] + manifest_js + [os.path.join("assets", "fluorine", whatfor, "meteor_url_prefix.js")]
 	context.meteor_package_css = manifest_css
 	context.meteor_runtime_config = True
 
-	meteor_url_path_prefix = os.path.join("/assets", "fluorine",  whatfor, "webbrowser")
+	#meteor_url_path_prefix(whatfor)
 
-	props = get_meteor_config(context.meteor_root_url, context.meteor_root_url_port, meteor_url_path_prefix, context.meteor_autoupdate_version, context.meteor_autoupdate_version_freshable, context.meteorRelease)
+	props = get_meteor_config(context.meteor_root_url, context.meteor_root_url_port, "", context.meteor_autoupdate_version,\
+							context.meteor_autoupdate_version_freshable, context.meteorRelease, whatfor)
+
 	save_meteor_props(props, meteor_runtime_path)
+
+	save_meteor_props("__meteor_runtime_config__.ROOT_URL_PATH_PREFIX = '" + meteor_url_path_prefix(whatfor) + "';", meteor_root_url_prefix)
 
 def save_meteor_props(props, path):
 	from . import file

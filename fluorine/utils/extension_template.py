@@ -117,6 +117,7 @@ class MeteorTemplate(Extension):
 		else:
 			filepath = nodes.Const(None)
 
+		lineno = nodes.Const(tag.lineno)
 		stream.skip_if('colon')
 		stream.expect('block_end')
 		body = self._subparse(parser, ("gt", "dot", "mod", "div", "else", "lbrace"), end_tokens=['name:endmeteor'])
@@ -125,7 +126,7 @@ class MeteorTemplate(Extension):
 		ctx_ref = nodes.ContextReference()
 
 		return nodes.CallBlock(
-			self.call_method('_template', args=[ctx_ref, tname, filepath]), [], [], body).\
+			self.call_method('_template', args=[ctx_ref, tname, filepath, lineno]), [], [], body).\
 				set_lineno(tag.lineno)
 
 
@@ -199,30 +200,35 @@ class MeteorTemplate(Extension):
 
 		return body
 
-	def _template(self, ctx, tname, filepath, caller=None):
+	def _template(self, ctx, tname, filepath, lineno, caller=None):
 		"""Helper callback."""
 
 		devmod = ctx.get("developer_mode")
 		source = caller()
 		if devmod:
-			template = STARTTEMPLATE_SUB_ALL.sub(self.highlight(filepath), source)
+			template = STARTTEMPLATE_SUB_ALL.sub(self.highlight(filepath, lineno), source)
 		else:
 			template = """%s""" % (source)
 
 		return Markup(template.strip())
 
-	def highlight(self, filepath):
+	def highlight(self, filepath, lineno):
+
 		print "parser calls 4 {}".format(filepath)
 		filepath = filepath or ""
 		def _highlight(m):
+			import json
 			name = m.group(2)
 			content = m.group(4)
 			attrs = m.group(3)
+			#debug = """{"path":"%s"}""" % filepath
+			debug = {"path": filepath, "lineno": lineno}
 			template =\
-			"""<template name='%s'%s>\n\t<div class="{{ highlight '%s' }}" path='%s'>\n\t%s\n\t</div>\n</template>
-			""" % (name, attrs, name, filepath, content)
+			"""<template name='%s'%s>\n\t<div class="{{ highlight "%s" '%s' }}">\n\t%s\n\t</div>\n</template>
+			""" % (name, attrs, name, json.dumps(debug), content)
 			return template
 		return _highlight
+
 
 """
 def _subparse(self, parser, expr_tokens, end_tokens=None):

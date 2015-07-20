@@ -1,3 +1,4 @@
+# encoding: utf-8
 from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
@@ -108,8 +109,8 @@ def meteor_autoupdate_version():
 def meteor_autoupdate_version_freshable():
 	return "128"
 
-def meteor_url_path_prefix():
-	return ""
+def meteor_url_path_prefix(whatfor):
+	return os.path.join("assets", "fluorine",  whatfor, "webbrowser")
 
 def jquery_include():
 	return True
@@ -138,10 +139,21 @@ def build_meteor_context(context, devmode, whatfor):
 		add = 80 if whatfor == "meteor_app" else 0
 
 	context.mport = meteor.get("port", 3000) + add
-	meteor_host = meteor.get("host", "http://localhost") + ":" + str(context.mport)
-	context.meteor_root_url = meteor.get("host", "http://localhost")
+
+	base_url = frappe.local.request.url
+	burl = base_url.rsplit(":",1)
+	if burl > 1:
+		#port = burl[1]
+		host_url = burl[0]
+	else:
+		host_url = base_url
+		#port = ""
+
+	host = meteor.get("host", host_url)
+	meteor_host =  host + ":" + str(context.mport)
+	context.meteor_root_url = host
 	context.meteor_root_url_port = meteor_host
-	context.meteor_url_path_prefix = meteor_url_path_prefix()
+	context.meteor_url_path_prefix = meteor_url_path_prefix(whatfor)
 	context.meteor_ddp_default_connection_url = meteor_host
 
 
