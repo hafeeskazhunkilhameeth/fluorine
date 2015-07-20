@@ -121,13 +121,16 @@ def get_Frappe_Version(version=None):
 	return sv.Version(version)
 
 def build_meteor_context(context, devmode, whatfor):
-	from file import get_path_reactivity
+	#from file import get_path_reactivity
 	import random
+	from reactivity import meteor_config
 
-	path_reactivity = get_path_reactivity()
+	#path_reactivity = get_path_reactivity()
 
-	config_path = os.path.join(path_reactivity, "common_site_config.json")
-	conf = frappe.get_file_json(config_path)
+	#config_path = os.path.join(path_reactivity, "common_site_config.json")
+	#conf = frappe.get_file_json(config_path)
+	conf = meteor_config
+
 	if not devmode:
 		add = 0
 		meteor_dns = conf.get("meteor_dns") or {}

@@ -140,25 +140,6 @@ def local_tkeep(ctx, tname, page, patterns=None):
 		for pattern in patterns:
 			fadd.get(appname).append({"tname": page, "pattern": pattern})
 
-
-@contextfunction
-#@environmentfunction
-def files_to_add(ctx, tname, appname, page):
-	#filename = re.findall('\'([^\']*)\'', str(mself))
-	#fadd = ctx.get("files_to_add",{})
-	#print "files to add function tname 24 {} appname {} ctx {} filename {}".format(tname, appname, ctx.get("files_to_add"), page)
-	"""
-	if page:
-		obj = frappe.local.meteor_map_templates.get(page)
-		if not fadd.get(appname):
-			fadd[appname] = []
-		realpath = obj.get("realpath")
-		pattern = get_pattern_path(tname, realpath)
-		#fadd.get(appname).append({"tname": tname, "path": realpath[:-6] + "[./]*"})
-		fadd.get(appname).append({"tname": tname, "path": pattern})
-	"""
-	return ""
-
 STARTTEMPLATE_SUB_ALL = c(r"<\s*template\s+name\s*=\s*(['\"])(\w+)\1(.*?)\s*>(.*?)<\s*/\s*template\s*>")
 STARTDIV_SUB_ALL = r"<\s*div\s+class\s*=\s*(['\"])%s\1\s*>(.*?)<\s*/\s*div\s*>"
 
@@ -301,7 +282,6 @@ def fluorine_get_fenv():
 
 		fenv.globals.update(get_allowed_functions_for_jenv())
 		fenv.globals.update({"msuper":msuper})
-		fenv.globals.update({"mfiles_to_add":files_to_add})
 		fenv.globals.update({"mtkeep":tkeep})
 		fenv.filters["mecho"] = mecho
 		fenv.filters["mdom_filter"] = mdom_filter
@@ -335,23 +315,6 @@ def fluorine_get_floader(encoding="utf-8"):
 
 def fluorine_get_template(path):
 	return fluorine_get_fenv().addto_meteor_templates_list(path)
-
-"""
-def fluorine_render_blocks(context, whatfor):
-	env = fluorine_get_fenv()
-
-	def _render_blocks(template_path):
-		#print "template_paths {}".format(template_path)
-		#get the first template. The last installed in this case
-		source = frappe.local.floader.get_source(frappe.local.fenv, template_path)[0]
-		for referenced_template_path in meta.find_referenced_templates(env.parse(source)):
-			if referenced_template_path:
-				_render_blocks(referenced_template_path)
-
-		#fluorine_get_template(template_path)
-	fluorine_get_template(context["spacebars_template"])
-	#_render_blocks(context["spacebars_template"])
-"""
 
 #def compile_jinja_templates(mtl, context, whatfor):
 def compile_jinja_templates(context, whatfor):
@@ -441,15 +404,6 @@ def compile_jinja_templates(context, whatfor):
 		page = obj.get("page")
 		local_tkeep({"files_to_add":frappe.local.files_to_add}, tname, page, patterns=pattern)
 
-	"""
-	for k, v in frappe.local.meteor_map_templates.itemitems():
-		if k not in frappe.local.templates_referenced:
-			template = v.get("template_obj")
-			tname = v.get("template")
-			refs = v.get("refs")
-			add_to_path(tname, template, refs)
-	"""
-
 	return out
 
 
@@ -507,131 +461,6 @@ def check_refs(tname, refs):
 		if found:
 			return found
 	return None
-
-"""
-def fluorine_render_blocks(context, whatfor):
-	#import inspect
-	#print 'I am f1 and was called by', inspect.currentframe().f_back.f_code.co_name
-	out = {}
-	#env = frappe.get_jenv()
-	env = fluorine_get_fenv()
-
-	def _render_blocks(template_path):
-		#print "template_paths {}".format(template_path)
-		#get the first template. The last installed in this case
-		source = frappe.local.floader.get_source(frappe.local.fenv, template_path)[0]
-		for referenced_template_path in meta.find_referenced_templates(env.parse(source)):
-			if referenced_template_path:
-				_render_blocks(referenced_template_path)
-
-		template = fluorine_get_template(template_path)
-		items = template.blocks.items()
-		#if not items:
-		from file import save_file
-		#from shutil import copyfile
-		dstPath = template.filename[:-6] + ".html"
-		content = scrub_relative_urls(concat(template.render(template.new_context(context))))
-		save_file(dstPath, content)
-		#return
-			#copyfile(template.filename, dst)
-			#out[block] = scrub_relative_urls(concat(render(template.new_context(context))))
-		#if whatfor in ("meteor_app", "meteor_frappe"):
-		for block, render in items:
-			if block.startswith("spacebars"):
-				block = block[10:]
-				make_heritage(block, context)
-				out[block] = scrub_relative_urls(concat(render(template.new_context(context))))
-
-	_render_blocks(context["spacebars_template"])
-
-	return out
-"""
-
-"""
-def fluorine_build_context3(context, whatfor):
-
-	from react_file_loader import read_client_files
-	from . import check_dev_mode
-	#print "befores fluorine_spacebars_build_context path {}".format(path)
-	#if path.find(".") == -1 and not path == "404":
-		#print "news fluorine_spacebars_build_context path {}".format(path)
-	#fl = frappe.get_doc("Fluorine Reactivity")
-	#if fl.fluorine_base_template and fl.fluorine_base_template.lower() != "default":
-	#	app_base_template = fl.fluorine_base_template
-	#else:
-	#	app_base_template = frappe.get_hooks("base_template")
-	#	if not app_base_template:
-	#		app_base_template = "templates/base.html"
-
-	#if context.base_template_path == app_base_template:
-
-		#if not context.spacebars_data:
-		#	context.spacebars_data = {}
-		#print "context data path in override {}".format(context.data)
-		#context.update(context.data or {})
-	if not check_dev_mode():
-		return
-
-	apps = frappe.get_installed_apps()#[::-1]
-	#apps.remove("fluorine")
-	name_templates = []
-	spacebars_templates = {}
-
-	for app in apps:
-		#print "app {}".format(app)
-		pathname = frappe.get_app_path(app)#get_package_path(app, "", "")
-		path = os.path.join(pathname, "templates", "react")
-		if os.path.exists(path):
-			files = read_client_files(path, whatfor, extension="html")
-			for file in files:
-				#l = prepare_files(files)
-				for obj in reversed(file):
-					#print "app is {} path is {}".format(app, os.path.join(os.path.relpath(root, pathname), file))
-					#print(os.path.join(root, file[:-5] + ".py"))
-					#filename = os.path.join(root, file)
-					file_path = obj.get("path")
-					py_path = file_path[:-5]
-					root = file_path[:-len(obj.get("name"))]
-					context.spacebars_template = os.path.join(os.path.relpath(root, pathname), obj.get("name"))
-					if os.path.exists(os.path.join(root, py_path + ".py")):
-						controller_path = os.path.join(app, context.spacebars_template).replace(os.path.sep, ".")[:-5]
-						print "app_path 4 {} root {} context.spacebars_template {}".format(controller_path + ".py", root, context.spacebars_template)
-						module = frappe.get_module(controller_path)
-						if module:
-							if hasattr(module, "get_context"):
-								ret = module.get_context(context)
-								if ret:
-									context.update(ret)
-							if hasattr(module, "get_children"):
-								context.get_children = module.get_children
-					#heritage
-					out = fluorine_render_blocks(context)
-					#context.spacebars_data.update(out)
-					print "out {}".format(out)
-					#print "context teste123 {} out {}".format(context.teste123, out.get("teste123", None))
-					#print frappe.utils.pprint_dict(out)
-					spacebars_templates.update(out)
-					#for name in out:
-					#	name_templates.append(name)
-					context.update(out)
-						#print "new spacebars_data {}".format(context)
-	#context.data.update(context.spacebars_data or {})
-#print "In fluorine_spacebars_build_context"
-	if spacebars_templates:
-		compiled_spacebars_js = compile_spacebars_templates(spacebars_templates)
-		arr = compiled_spacebars_js.split("__templates__\n")
-		arr.insert(0, "(function(){\n")
-		arr.append("})();\n")
-		context.compiled_spacebars_js = arr
-
-	fluorine_publicjs_dst_path = os.path.join(frappe.get_app_path("fluorine"), "public", "js", "react")
-	hooks_js = get_js_to_client(fluorine_publicjs_dst_path, whatfor)
-
-	context.update(hooks_js)
-	#print "A compilar templates \n{}".format(context.compiled_spacebars_js)
-
-	return context
-"""
 
 def make_auto_update_version(path, meteorRelease, root_url, root_prefix, whatfor, appId=None):
 	from fluorine.utils import file
@@ -755,16 +584,6 @@ def fluorine_build_context(context, whatfor):
 	make_meteor_props(context, whatfor)
 
 	return context
-
-"""
-def check_in_files_remove_list(app, template, list_meteor_files_remove):
-
-	for name in list_meteor_files_remove.get(app, []):
-		if name == template:
-			return True
-
-	return False
-"""
 
 def process_react_templates(context, apps, whatfor):
 
@@ -944,46 +763,6 @@ def get_xhtml_module(appname, template_path, path):
 def get_meteor_template_list():
 	return fluorine_get_fenv().get_meteor_template_list() or {}
 
-"""
-def compile_spacebar_templates(context, whatfor):
-
-	from react_file_loader import read_client_files
-	from file import save_file
-
-	#first installed app first
-	apps = frappe.get_installed_apps()#[::-1]
-
-	spacebars_templates = {}
-
-	for app in apps:
-
-		pathname = frappe.get_app_path(app)
-		path = os.path.join(pathname, "templates", "react")
-		if os.path.exists(path):
-			files = read_client_files(path, whatfor, extension="xhtml")
-			for f in files:
-				for obj in reversed(f):
-					file_path = obj.get("path")
-					out = render_spacebar_html(context, file_path, obj.get("name"), pathname, app, whatfor)
-					if whatfor in ("meteor_app", "meteor_frappe"):
-						spacebars_templates.update(out)
-						context.update(out)
-					#dstPath = os.path.join(obj.get("filePath"), obj.get("fileName") + ".html")
-					#content = ""
-					#for k in out.keys():
-					#	content = content + out[k] + "\n"
-					#if content:
-					#	save_file(dstPath, content)
-
-	#only compile if meteor_app or meteor_frappe
-	if spacebars_templates and whatfor in ("meteor_app", "meteor_frappe"):
-		compiled_spacebars_js = compile_spacebars_templates(spacebars_templates)
-		arr = compiled_spacebars_js.split("__templates__\n")
-		arr.insert(0, "(function(){\n")
-		arr.append("})();\n")
-		context.compiled_spacebars_js = arr
-"""
-
 def make_meteor_props(context, whatfor):
 	from file import get_path_reactivity, get_meteor_release, get_meteor_config
 	from . import meteor_url_path_prefix
@@ -1033,168 +812,6 @@ def get_meteor_appId(path):
 	print "appId {}".format(appid)
 	return appid
 
-"""
-def get_page(url, context):
-	from bs4 import BeautifulSoup
-	import urllib2, json, ast
-
-	scripts = []
-	html = BeautifulSoup(urllib2.urlopen(url).read())
-	for link in html.find_all('script'):
-		src = link.get("src")
-		if src:
-			scripts.append(src)
-		else:
-			#uq = urllib2.unquote(link.string)
-			#mc = urllib2.unquote(link.string)
-			#u = mc.split("(")[2][:-3]
-			#mc = urllib2.unquote(str(link.string))
-
-			#get __meteor_runtime_config__ string and convert to object and unquote
-			c = urllib2.unquote(ast.literal_eval(link.string.split("(")[2][:-3]))
-			meteor_config = json.loads(c)
-			meteor_config["ROOT_URL"] = url
-			meteor_config["DDP_DEFAULT_CONNECTION_URL"] = url
-			context.meteor_runtime_config = json.dumps(meteor_config)
-			#print "scripts meteor {}".format(json.loads(c).get("ROOT_URL"))
-
-	return scripts
-"""
-
-
-"""
-def render_spacebar_html(context, file_path, file_name, app_path, appname, whatfor):
-
-	py_path = file_path[:-5]
-	root = file_path[:-len(file_name)]
-	context.spacebars_template = os.path.join(os.path.relpath(root, app_path), file_name)
-	if os.path.exists(os.path.join(root, py_path + ".py")):
-		controller_path = os.path.join(appname, context.spacebars_template).replace(os.path.sep, ".")[:-5]
-		print "app_path 4 {} root {} context.spacebars_template {}".format(controller_path + ".py", root, context.spacebars_template)
-		module = frappe.get_module(controller_path)
-		if module:
-			if hasattr(module, "get_context"):
-				ret = module.get_context(context)
-				if ret:
-					context.update(ret)
-			if hasattr(module, "get_children"):
-				context.get_children = module.get_children
-	#heritage
-	out = fluorine_render_blocks(context, whatfor=whatfor)
-
-	return out
-"""
-
-"""
-def get_html_to_client(whatfor):
-	from react_file_loader import copy_client_files, read_client_files, remove_directory
-
-	fluorine_temp_path = os.path.join(frappe.get_app_path("fluorine"), "templates", "react", "temp")
-	frappe.create_folder(fluorine_temp_path)
-	copy_client_files(fluorine_temp_path, extension="html")
-	files = read_client_files(fluorine_temp_path, whatfor, extension="html")
-
-	hooks_js = move_to_public(files, whatfor)
-
-	remove_directory(fluorine_temp_path)
-
-	return hooks_js
-
-
-def move_to_public(files, whatfor):
-	from fluorine.utils import assets_public_path
-	hooks_js = {"client_hooks_html":[]}
-	fpath = assets_public_path
-
-	for f in files:
-		hooks_js["client_hooks_html"].extend(prepare_files(f, fpath))
-
-	return hooks_js
-
-
-def prepare_files(files):
-	hooks = []
-	for f in reversed(files):
-		hooks.append(f)
-
-	return hooks
-"""
-
-"""
-def fluorine_build_context2(context, whatfor):
-
-	#print "befores fluorine_spacebars_build_context path {}".format(path)
-	#if path.find(".") == -1 and not path == "404":
-		#print "news fluorine_spacebars_build_context path {}".format(path)
-	#fl = frappe.get_doc("Fluorine Reactivity")
-	#if fl.fluorine_base_template and fl.fluorine_base_template.lower() != "default":
-	#	app_base_template = fl.fluorine_base_template
-	#else:
-	#	app_base_template = frappe.get_hooks("base_template")
-	#	if not app_base_template:
-	#		app_base_template = "templates/base.html"
-
-	#if context.base_template_path == app_base_template:
-
-		#if not context.spacebars_data:
-		#	context.spacebars_data = {}
-		#print "context data path in override {}".format(context.data)
-		#context.update(context.data or {})
-	apps = frappe.get_installed_apps()#[::-1]
-	#apps.remove("fluorine")
-	name_templates = []
-	spacebars_templates = {}
-
-	for app in apps:
-		#print "app {}".format(app)
-		pathname = frappe.get_app_path(app)#get_package_path(app, "", "")
-		if pathname:
-			for root, dirs, files in os.walk(os.path.join(pathname, "templates", "react")):
-				for file in files:
-					if file.endswith(".html"):
-						#print "app is {} path is {}".format(app, os.path.join(os.path.relpath(root, pathname), file))
-						#print(os.path.join(root, file[:-5] + ".py"))
-						#filename = os.path.join(root, file)
-						context.spacebars_template = os.path.join(os.path.relpath(root, pathname), file)
-						if os.path.exists(os.path.join(root, file[:-5] + ".py")):
-							controller_path = os.path.join(app, context.spacebars_template).replace(os.path.sep, ".")[:-5]
-							print "app_path 3 {} root {} context.spacebars_template {}".format(controller_path + ".py", root, context.spacebars_template)
-							module = frappe.get_module(controller_path)
-							if module:
-								if hasattr(module, "get_context"):
-									ret = module.get_context(context)
-									if ret:
-										context.update(ret)
-								if hasattr(module, "get_children"):
-									context.get_children = module.get_children
-						#heritage
-						out = fluorine_render_blocks(context)
-						#context.spacebars_data.update(out)
-						print "out {}".format(out)
-						#print "context teste123 {} out {}".format(context.teste123, out.get("teste123", None))
-						#print frappe.utils.pprint_dict(out)
-						spacebars_templates.update(out)
-						#for name in out:
-						#	name_templates.append(name)
-						context.update(out)
-						#print "new spacebars_data {}".format(context)
-	#context.data.update(context.spacebars_data or {})
-#print "In fluorine_spacebars_build_context"
-	compiled_spacebars_js = compile_spacebars_templates(spacebars_templates)
-	arr = compiled_spacebars_js.split("__templates__\n")
-	arr.insert(0, "(function(){\n")
-	arr.append("})();\n")
-
-	hooks_js = get_js_to_client(whatfor)
-
-	context.compiled_spacebars_js = arr
-
-	context.update(hooks_js)
-	#print "A compilar templates \n{}".format(context.compiled_spacebars_js)
-
-	return context
-"""
-
 def make_heritage(block, context):
 	#for block, render in out.items():
 	#in_first_block_render, data_first_block_render, outer_first_block_render = context.spacebars_data.get(block, None), context.data.get(block, None),\
@@ -1240,9 +857,3 @@ def compile_spacebars_templates(context):
 	node.kill()
 
 	return compiled_templates
-#print "In override spacebars"
-#frappe.website.context.build_context = fluorine_spacebars_build_context
-#frappe.website.render.build_page = fluorine_spacebars_build_page
-#frappe.website.context.__dict__["get_context"] = fluorine_spacebars_get_context
-
-#print "frappe.website.context.get_context {}".format(frappe.website.context.__dict__["get_context"])

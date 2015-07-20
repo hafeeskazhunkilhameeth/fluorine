@@ -202,6 +202,9 @@ def run_reactivity(path, mthost="http://localhost", mtport=3000, mghost="http://
 
 """
 
+meteor_config = None
+
+
 def start_meteor():
 	import frappe
 	#path = file.get_path_server_observe()
@@ -209,8 +212,13 @@ def start_meteor():
 	#print start_hash(path)
 	path_reactivity = file.get_path_reactivity()
 
+	global meteor_config
+
 	config_path = os.path.join(path_reactivity, "common_site_config.json")
 	conf = frappe.get_file_json(config_path)
+
+	meteor_config = conf
+
 	meteor = conf.get("meteor_dev") or {}
 	mongo = conf.get("meteor_mongo") or {}
 	mtport_web = meteor.get("port") or 3000
@@ -219,6 +227,7 @@ def start_meteor():
 	mghost = mongo.get("host") or "http://localhost"
 	mgport = mongo.get("port") or 27017
 	mgdb = mongo.get("db") or "fluorine"
+
 	frappesite = conf.get("site")
 
 	#TODO get hook fluorine_extra_context_method
