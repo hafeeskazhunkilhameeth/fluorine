@@ -64,7 +64,7 @@ def create_meteor_apps(path_reactivity):
 
 	try:
 		for app in ("meteor_app", "meteor_web"):
-			subprocess.Popen(["meteor create " + app], cwd=path_reactivity, shell=False, close_fds=True)
+			subprocess.Popen(["meteor", "create", app], cwd=path_reactivity, shell=False, close_fds=True)
 	except:
 		print """Error. You must install meteor and node before you can use this app. After that you must create two apps in apps/reactivity folder.
 				For that, cd to apps/reactivity and issue 'meteor create meteor_app' and 'meteor create meteor_web'.
