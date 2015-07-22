@@ -8,19 +8,19 @@ from frappe.model.document import Document
 
 class FluorineReactivity(Document):
 	def on_update(self, method=None):
-		import fluorine as fluor
+		from fluorine.utils import set_config
 		from fluorine.utils.file import save_custom_template
-		from fluorine.utils import fhooks
+		from fluorine.utils.fhooks import change_base_template
 
 		from fluorine.utils.reactivity import meteor_config
 
 		meteor_config["developer_mode"] = self.fluor_dev_mode
 
 		if self.fluorine_state == "off":
-			fluor.utils.set_config({
+			set_config({
 				"developer_mode": self.fluor_dev_mode
 			})
-			fhooks.change_base_template(devmode=1)
+			change_base_template(devmode=1)
 			return
 
 		page_default = True
@@ -29,7 +29,7 @@ class FluorineReactivity(Document):
 			page_default = False
 			save_custom_template(self.fluorine_base_template)
 
-		fhooks.change_base_template(page_default=page_default, devmode=self.fluor_dev_mode)
+		change_base_template(page_default=page_default, devmode=self.fluor_dev_mode)
 		save_to_common_site_config(self)
 
 
@@ -82,9 +82,10 @@ def save_to_common_site_config(doc):
 def make_meteor_file(devmode, mthost, mtport, mtddpurl, mghost, mgport, mgdb, architecture, whatfor):
 	#devmode = frappe.utils.cint(devmode)
 	from frappe.website.context import get_context
-	from fluorine.utils import fcache, file
+	from fluorine.utils.file import make_meteor_file
+	from fluorine.utils.fcache import clear_frappe_caches
 	#from fluorine.utils.spacebars_template import get_app_pages, get_web_pages
-	fcache.clear_frappe_caches()
+	clear_frappe_caches()
 	#whatfor = ["common"] if devmode else ["meteor_web", "meteor_app"]
 	_whatfor = {"Both": ("meteor_web", "meteor_app"), "Reactive Web": ("meteor_web",), "Reactive App": ("meteor_app",)}
 
@@ -103,7 +104,7 @@ def make_meteor_file(devmode, mthost, mtport, mtddpurl, mghost, mgport, mgdb, ar
 			frappe.get_template(context.base_template_path).render(context)
 			#get_web_pages(context)
 
-		file.make_meteor_file(jquery=0, whatfor=w, mtport=mtport, mthost=mthost, architecture=architecture)
+		make_meteor_file(jquery=0, whatfor=w, mtport=mtport, mthost=mthost, architecture=architecture)
 
 	if "meteor_app" in _whatfor.get(whatfor):
 		make_final_app_client(meteor_root_url=mthost, meteor_port=int(mtport), meteor_ddpurl=mtddpurl)
@@ -117,9 +118,9 @@ def make_meteor_file(devmode, mthost, mtport, mtddpurl, mghost, mgport, mgdb, ar
 def prepare_compile_environment():
 
 	from fluorine.utils.reactivity import meteor_config, list_ignores
-	import fluorine as fluor
+	from fluorine.utils import set_config
 
-	fluor.utils.set_config({
+	set_config({
 		"developer_mode": 0
 	})
 	meteor_config["developer_mode"] = 0
