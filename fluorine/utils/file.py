@@ -238,12 +238,12 @@ def match_path(startpath, excludes, includes):
 			print fname
 
 
-from profilehooks import profile, timecall, coverage
+#from profilehooks import profile, timecall, coverage
 import re
 c = lambda t:re.compile(t, re.S|re.M)
 common_pattern = c(r"templates/(.*)/?common/(.*)")
 
-@profile
+#@profile
 def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 
 	_whatfor = ["meteor_app", "meteor_web", "meteor_frappe"]
