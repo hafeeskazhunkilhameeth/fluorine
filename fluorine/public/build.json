@@ -1,9 +1,43 @@
 {
-	"js/before_fluorine_helper.js": [
-		"public/js/before_fluorine_helper.js"
-	],
-    "js/after_fluorine_helper.js":[
-        "public/js/after_fluorine_helper.js"
+    "js/meteor_app.css": [], 
+    "js/meteor_app.js": [
+        "public/js/meteor/meteor_runtime_config.js", 
+        "public/js/meteor/packages/underscore.js", 
+        "public/js/meteor/packages/meteor.js", 
+        "public/js/meteor/packages/json.js", 
+        "public/js/meteor/packages/base64.js", 
+        "public/js/meteor/packages/ejson.js", 
+        "public/js/meteor/packages/logging.js", 
+        "public/js/meteor/packages/reload.js", 
+        "public/js/meteor/packages/tracker.js", 
+        "public/js/meteor/packages/random.js", 
+        "public/js/meteor/packages/retry.js", 
+        "public/js/meteor/packages/check.js", 
+        "public/js/meteor/packages/id-map.js", 
+        "public/js/meteor/packages/ordered-dict.js", 
+        "public/js/meteor/packages/geojson-utils.js", 
+        "public/js/meteor/packages/minimongo.js", 
+        "public/js/meteor/packages/ddp.js", 
+        "public/js/meteor/packages/insecure.js", 
+        "public/js/meteor/packages/mongo.js", 
+        "public/js/meteor/packages/autoupdate.js", 
+        "public/js/meteor/packages/meteor-platform.js", 
+        "public/js/meteor/packages/autopublish.js", 
+        "public/js/meteor/packages/webapp.js", 
+        "public/js/meteor/packages/deps.js", 
+        "public/js/meteor/packages/reactive-dict.js", 
+        "public/js/meteor/packages/session.js", 
+        "public/js/meteor/packages/livedata.js", 
+        "public/js/meteor/packages/htmljs.js", 
+        "public/js/meteor/packages/observe-sequence.js", 
+        "public/js/meteor/packages/reactive-var.js", 
+        "public/js/meteor/packages/blaze.js", 
+        "public/js/meteor/packages/ui.js", 
+        "public/js/meteor/packages/templating.js", 
+        "public/js/meteor/packages/spacebars.js", 
+        "public/js/meteor/packages/launch-screen.js", 
+        "public/js/meteor/packages/global-imports.js", 
+        "public/js/meteor/app/fluorine/common/client/clear_cache.js", 
+        "public/js/meteor/meteor_url_prefix.js"
     ]
 }
-

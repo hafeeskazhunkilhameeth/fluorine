@@ -8,9 +8,39 @@
         {{ meta or "" }}
     {% endblock %}
 
-    {% block includes %}
-        {{ includes or "" }}
+    {% block meteor_includes %}
+            {% if not remove_meteor_includes %}
+                <!--
+                    Meteor Inlude Files
+                -->
+                {% if developer_mode %}
+                    {%- for link in meteor_package_css %}
+                        <link type="text/css" rel="stylesheet" class="__meteor-css__" href="{{ meteor_root_url_ports or ""}}{{ link }}">
+                    {%- endfor -%}
+
+                    {%- for link in meteor_package_js %}
+                        <script type="text/javascript" src="{{ meteor_root_url_ports or ""}}{{ link }}"></script>
+                    {%- endfor -%}
+                {% endif %}
+
+            {% endif %}
+
+            {{ meteor_includes or "" }}
+
     {% endblock %}
+
+    {% block includes %}
+
+        {%- for link in meteor_web_include_css %}
+            <link type="text/css" rel="stylesheet" href="{{ link }}">
+        {%- endfor -%}
+
+        {%- for link in meteor_web_include_js %}
+            <script type="text/javascript" src="{{ link }}"></script>
+        {%- endfor -%}
+
+    {% endblock %}
+
 
 </head>
 <body>

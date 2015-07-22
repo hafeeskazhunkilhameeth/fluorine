@@ -61,27 +61,49 @@ class cd:
 		os.chdir(self.savedPath)
 
 
-def make_meteor_file(packages=None, jquery=0, client_only=0, devmode=1, whatfor="meteor_web"):
+def save_custom_template(template_path):
+	from fluorine.utils import get_encoding
+
+	fluorine_path = frappe.get_app_path("fluorine")
+	if not template_path.startswith("templates/pages/"):
+		template_path = os.path.join("templates/pages/", template_path)
+	tplt = os.path.join(fluorine_path, "templates", "pages", "fluorine_home.html")
+	#content = file.read(tplt).decode(get_encoding())
+	#content = ("{%% extends '%s' %%}\n" % template_path + content).encode(get_encoding())
+	content = ("{%% extends '%s' %%}\n" % template_path).encode(get_encoding())
+	save_file(tplt, content)
+
+
+def make_meteor_file(packages=None, jquery=0, client_only=0, mtport=3000, mthost="http://localhost", architecture="os.linux.x86_64", whatfor="meteor_web"):
+	import shlex
 	#module_path = os.path.dirname(fluorine.__file__)
 	#path = os.path.realpath(os.path.join(module_path, "..", "reactivity"))
 	#base = get_site_base_path()
 	#path = os.path.realpath(os.path.join(base, "..", "..", "apps", "reactivity"))
-	w = {"meteor_web": "web", "meteor_app": "app", "common":"common"}
-	packages = packages or []
+	#w = {"meteor_web": "web", "meteor_app": "app", "common":"common"}
+	#packages = packages or []
 	path = get_path_reactivity()
 	#js_path = os.path.realpath(os.path.join(base,"..", "assets", "js"))
 	#if not devmode:
 	#	js_path = get_path_assets_js()
 	#else:
-	js_path = os.path.join(frappe.get_app_path("fluorine"), "public/js")
+	#js_path = os.path.join(frappe.get_app_path("fluorine"), "public/js")
 	#packages.append("iron:router")
-	print "meteor_file_path js_path {} path  {}".format(js_path, path)
+	#print "meteor_file_path js_path {} path  {}".format(js_path, path)
 	#fluorine_publicjs_path = os.path.join(frappe.get_app_path("fluorine"), "public", "js", "react")
 	#file.remove_folder_content(fluorine_publicjs_path)
 	#copy_all_files(os.path.join(path, "app"), "meteor_web")
 	#with cd(path):
 		#subprocess.call(['./build-meteor-client.sh', js_path, str(frappe.conf.developer_mode), " ".join(packages)])
-	proc = subprocess.Popen([path + '/build-meteor-client.sh', js_path, str(devmode), " ".join(packages), str(jquery), str(client_only), w[whatfor]], cwd=path, close_fds=True)
+	#if whatfor == "meteor_web":
+	args = shlex.split("meteor build --directory %s --server %s --architecture %s %s" % (os.path.join(path, "final_" + whatfor.split("_")[1]), mthost + ':' + str(mtport), architecture,\
+																						"--debug" if whatfor == "meteor_app" else ""))
+	#proc = subprocess.Popen([os.path.join(path, whatfor, "meteor"), "build", "--server " + mthost + ':' + str(mtport), "--directory " + os.path.join(path, "final_web"),
+	#						"--architecture " + architecture], cwd=os.path.join(path, whatfor), close_fds=True)
+	proc = subprocess.Popen(args, cwd=os.path.join(path, whatfor), close_fds=True)
+#else:
+#	proc = subprocess.Popen([path + '/build-meteor-client.sh', js_path, 0, " ".join(packages), str(jquery), str(client_only), w[whatfor]], cwd=path, close_fds=True)
+
 	proc.wait()
 	#observe_dir(get_path_server_observe())
 

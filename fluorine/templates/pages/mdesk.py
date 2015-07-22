@@ -30,18 +30,18 @@ def get_context(context):
 
 	fcontext = get_frappe_context(context)
 
-	include_js = fcontext.get("include_js",[])
-	include_css = fcontext.get("include_css", [])
-
 	if devmode:
+		include_js = fcontext.get("include_js",[])
+		include_css = fcontext.get("include_css", [])
 		#TODO ver se é preciso remove tb o css gerado
 		try:
-			include_js.remove("/assets/fluorine/js/meteor_app.js")
+			include_js.remove("/assets/js/meteor_app.js")
 		except:
 			pass
+		finally:
+			fcontext["include_js"] = include_js + context.meteor_package_js
+			fcontext["include_css"] = include_css + context.meteor_package_css
 
-	fcontext["include_js"] = context.meteor_package_js + include_js
-	fcontext["include_css"] = context.meteor_package_css + include_css
 	#fcontext["include_js"] = context.meteor_package_js + fcontext.get("include_js",[])
 	#fcontext["include_css"] = context.meteor_package_css + fcontext.get("include_css", [])
 

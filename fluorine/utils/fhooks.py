@@ -8,7 +8,13 @@ from fluorine.utils import fcache
 from fluorine.utils import file
 
 
-def change_base_template(hooks=None, page_default=True):
+def change_base_template(hooks=None, page_default=True, devmode=1):
+
+	def remove_meteor_include():
+		try:
+			hooks.get("app_include_js").remove("/assets/js/meteor_app.js")
+		except:
+			pass
 
 	if not hooks:
 		hooks = frappe.get_hooks(app_name="fluorine")
@@ -19,18 +25,19 @@ def change_base_template(hooks=None, page_default=True):
 		hooks["base_template"] = ["templates/fluorine_base.html"]
 		hooks["home_page"] = ["fluorine_home"]
 
+	remove_meteor_include()
+
+	if not devmode:
+		app_include_js = hooks.get("app_include_js")
+		if app_include_js:
+			app_include_js.append("/assets/js/meteor_app.js")
+		else:
+			hooks["app_include_js"] = ["/assets/js/meteor_app.js"]
+
+
 	fluorine_path = frappe.get_app_path("fluorine")
 	save_batch_hook(hooks, fluorine_path + "/hooks.py")
 	fcache.clear_frappe_caches()
-
-
-def save_custom_template(template_path):
-	fluorine_path = frappe.get_app_path("fluorine")
-	if not template_path.startswith("templates/pages/"):
-		template_path = os.path.join("templates/pages/", template_path)
-	tplt = os.path.join(fluorine_path, "templates", "pages", "fluorine_home.html")
-	content = "{% extends '"+ template_path + "' %}"
-	file.save_file(tplt, content)
 
 #not used
 def add_react_to_hook(paths, page_default=True):

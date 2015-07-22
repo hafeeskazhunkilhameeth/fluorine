@@ -1,22 +1,3 @@
-
-{% if developer_mode %}
-
-    {% if jquery_includes %}
-        <script type="text/javascript"
-            src="/assets/frappe/js/lib/jquery/jquery.min.js"></script>
-    {% endif %}
-
-    <link rel="shortcut icon"
-        href="{{ favicon or "/assets/frappe/images/favicon.ico" }}"
-        type="image/x-icon">
-    <link rel="icon"
-        href="{{ favicon or "/assets/frappe/images/favicon.ico" }}"
-        type="image/x-icon">
-
-{% endif %}
-
-{% include "templates/includes/meteor_include.html" %}
-
 {%- for link in meteor_web_include_css %}
     <link type="text/css" rel="stylesheet" href="{{ link }}">
 {%- endfor -%}

@@ -1,1 +1,1 @@
-__meteor_runtime_config__.ROOT_URL_PATH_PREFIX = '';
+__meteor_runtime_config__.ROOT_URL_PATH_PREFIX = 'assets/fluorine/meteor_app/webbrowser';

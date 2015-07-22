@@ -99,6 +99,16 @@
    "precision": ""
   }, 
   {
+   "default": "os.linux.x86_64", 
+   "description": "By default, your application is bundled for your current architecture. This may cause difficulties if your app contains binary code due to, for example, npm packages. You can try to override that behavior choosing the target architecture.", 
+   "fieldname": "meteor_target_arch", 
+   "fieldtype": "Select", 
+   "label": "Target Architecture", 
+   "options": "os.osx.x86_64\nos.linux.x86_64\nos.linux.x86_32", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
    "fieldname": "mongodb", 
    "fieldtype": "Section Break", 
    "label": "MongoDB", 
@@ -129,6 +139,20 @@
    "fieldname": "fluor_mongo_database", 
    "fieldtype": "Data", 
    "label": "MongoDB Database", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
+   "fieldname": "mongo_user", 
+   "fieldtype": "Data", 
+   "label": "User", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
+   "fieldname": "mongo_pass", 
+   "fieldtype": "Password", 
+   "label": "Password", 
    "permlevel": 0, 
    "precision": ""
   }, 
@@ -173,7 +197,7 @@
  "is_submittable": 0, 
  "issingle": 1, 
  "istable": 0, 
- "modified": "2015-07-20 17:06:28.460377", 
+ "modified": "2015-07-20 20:02:20.533906", 
  "modified_by": "Administrator", 
  "module": "Fluorine", 
  "name": "Fluorine Reactivity", 

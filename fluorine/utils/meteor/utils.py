@@ -9,7 +9,7 @@ import hashlib, json, os
 
 
 def meteor_url_path_prefix(whatfor):
-	return ""#os.path.join("assets", "fluorine",  whatfor, "webbrowser")
+	return os.path.join("assets", "fluorine",  whatfor, "webbrowser")
 
 
 def build_meteor_context(context, devmode, whatfor):
@@ -92,7 +92,7 @@ def make_auto_update_version(path, meteorRelease, root_url, root_prefix, whatfor
 	runtimeCfg = OrderedDict()
 	runtimeCfg["meteorRelease"] = meteorRelease#"METEOR@1.1.0.2"
 	runtimeCfg["ROOT_URL"] = root_url#"http://localhost"
-	runtimeCfg["ROOT_URL_PATH_PREFIX"] = ""#root_prefix
+	runtimeCfg["ROOT_URL_PATH_PREFIX"] = root_prefix
 	if appId:
 		runtimeCfg["appId"] = appId
 	#runtimeCfg["appId"] = "1uo02wweyt6o11xsntyy"
@@ -183,7 +183,11 @@ def make_meteor_props(context, whatfor):
 
 	save_meteor_props(props, meteor_runtime_path)
 
-	save_meteor_props("__meteor_runtime_config__.ROOT_URL_PATH_PREFIX = '" + meteor_url_path_prefix(whatfor) + "';", meteor_root_url_prefix)
+	save_meteor_root_prefix(meteor_url_path_prefix(whatfor), meteor_root_url_prefix)
+
+
+def save_meteor_root_prefix(prefix, path):
+	save_meteor_props("__meteor_runtime_config__.ROOT_URL_PATH_PREFIX = '%s';" % prefix, path)
 
 def save_meteor_props(props, path):
 	from fluorine.utils.file import save_file

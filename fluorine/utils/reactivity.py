@@ -234,6 +234,7 @@ def get_extras_context_method(site):
 		frappe.set_user(user)
 		make_meteor_ignor_files()
 		hooks = get_extras_context()
+		frappe.set_user("guest")
 		print "with Frappe Context extra hooks {}!!!".format(hooks)
 
 	return hooks

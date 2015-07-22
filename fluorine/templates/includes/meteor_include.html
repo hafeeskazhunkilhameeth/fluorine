@@ -12,6 +12,25 @@
 	</script>
 {% endif %}
 
+
+{% if developer_modes %}
+
+    {% if jquery_includes %}
+        <script type="text/javascript"
+            src="/assets/frappe/js/lib/jquery/jquery.min.js"></script>
+    {% endif %}
+
+    <link rel="shortcut icon"
+        href="{{ favicon or "/assets/frappe/images/favicon.ico" }}"
+        type="image/x-icon">
+    <link rel="icon"
+        href="{{ favicon or "/assets/frappe/images/favicon.ico" }}"
+        type="image/x-icon">
+
+{% endif %}
+
+
+
 <!--
 
 This is to support css autoupdaterefreshable. Can't be in __meteor_runtime_config__ because it make infinite reload
