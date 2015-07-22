@@ -212,6 +212,80 @@ def check_refs(tname, refs):
 	return None
 
 
+def prepare_common_page_context(context, whatfor):
+	import fluorine
+	from fluorine.utils.meteor.utils import build_meteor_context
+
+	devmode = fluorine.utils.check_dev_mode()
+	context.developer_mode = devmode
+	context.jquery_include = fluorine.utils.jquery_include()
+
+	doc = frappe.get_doc("Fluorine Reactivity")
+
+	#Meteor
+	build_meteor_context(context, devmode, whatfor)
+	context.meteor_web = True
+	context.custom_template = doc.fluorine_base_template
+
+	return fluorine_build_context(context, whatfor), devmode
+
+
+def get_app_pages(context):
+
+	from fluorine.utils.module import get_app_context
+
+	def get_frappe_context(context):
+
+		app = "frappe"
+		app_path = frappe.get_app_path(app)
+		path = os.path.join(app_path, "templates", "pages")
+		ret = get_app_context(context, path, app, app_path, "desk.py")
+		return ret
+
+	context, devmode = prepare_common_page_context(context, "meteor_app")
+
+	fcontext = get_frappe_context(context)
+
+	if devmode:
+		include_js = fcontext.get("include_js",[])
+		include_css = fcontext.get("include_css", [])
+		#TODO ver se é preciso remove tb o css gerado
+		try:
+			include_js.remove("/assets/js/meteor_app.js")
+		except:
+			pass
+		finally:
+			fcontext["include_js"] = include_js + context.meteor_package_js
+			fcontext["include_css"] = include_css + context.meteor_package_css
+
+	#fcontext["include_js"] = context.meteor_package_js + fcontext.get("include_js",[])
+	#fcontext["include_css"] = context.meteor_package_css + fcontext.get("include_css", [])
+
+	context.update(fcontext)
+
+	return context
+
+
+def get_web_pages(context):
+
+	context, devmode = prepare_common_page_context(context, "meteor_web")
+
+	context.meteor_web_include_css = frappe.get_hooks("meteor_web_include_css")
+	context.meteor_web_include_js = frappe.get_hooks("meteor_web_include_js")
+
+	if devmode:
+		#TODO ver se é preciso remove tb o css gerado
+		try:
+			context.meteor_web_include_js.remove("/assets/fluorine/js/meteor_web.js")
+		except:
+			pass
+
+	print "frappe.local.request 6 url {} url_root {} host {} scheme {} host_url {}".format(frappe.local.request.url, frappe.local.request.url_root, frappe.local.request.host, frappe.local.request.scheme,\
+																				frappe.local.request.host_url)
+
+	return context
+
+
 def fluorine_build_context(context, whatfor):
 
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity#, save_js_file
@@ -249,21 +323,21 @@ def fluorine_build_context(context, whatfor):
 
 	if devmode:
 		frefresh = os.path.join(path_reactivity, "common_site_config.json")
-		refresh = True
+		#refresh = True
 		if os.path.exists(frefresh):
 			f = frappe.get_file_json(frefresh)
 			meteor = f.get("meteor_folder", {})
 			refresh = meteor.get("folder_refresh", True)
 			space_compile = meteor.get("compile", True)
 
-	if refresh or space_compile or whatfor == "meteor_app":
-		process_react_templates(context, apps[::-1], whatfor)
+	#if refresh or space_compile or whatfor == "meteor_app":
+	process_react_templates(context, apps[::-1], whatfor)
 
-	if refresh:
-		fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
-		empty_directory(fluorine_publicjs_dst_path, ignore=(".meteor",))
-		print "context files_to_add {}".format(context.files_to_add)
-		make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, custom_pattern=["*.xhtml"])
+	#if refresh:
+	fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
+	empty_directory(fluorine_publicjs_dst_path, ignore=(".meteor",))
+	print "context files_to_add 2 {}".format(context.files_to_add)
+	make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, custom_pattern=["*.xhtml"])
 
 	make_meteor_props(context, whatfor)
 

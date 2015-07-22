@@ -12,13 +12,19 @@ assets_public_path = "/assets/fluorine/js/react"
 def get_encoding():
 	return "utf-8"
 
+
 def check_dev_mode():
 	import file
-	#config = {}
-	#path_module = os.path.dirname(fluorine.__file__)
-	#path_reactivity = os.path.realpath(os.path.join(path_module, "..", "..", ".."))#utils.file.get_path_reactivity()
+	from reactivity import meteor_config
+
+	if meteor_config:
+		devmode = meteor_config.get("developer_mode") or 0
+		if devmode:
+			return True
+
+		return False
+
 	path_reactivity = file.get_path_reactivity()
-	#common_site_config = os.path.join(path_reactivity, "reactivity", "common_site_config.json")
 	common_site_config = os.path.join(path_reactivity, "common_site_config.json")
 	print "path_reactivity {}".format(common_site_config)
 	if os.path.exists(common_site_config):
@@ -27,8 +33,6 @@ def check_dev_mode():
 			return True
 
 	return False
-		#config.update(frappe.get_file_json(common_site_config))
-	#return frappe._dict(config)
 
 def set_config(fobj):
 	import file

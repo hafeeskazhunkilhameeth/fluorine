@@ -81,15 +81,27 @@ def save_to_common_site_config(doc):
 @frappe.whitelist()
 def make_meteor_file(devmode, mthost, mtport, mtddpurl, mghost, mgport, mgdb, architecture, whatfor):
 	#devmode = frappe.utils.cint(devmode)
-	from fluorine.utils.reactivity import meteor_config
+	from frappe.website.context import get_context
+	#from fluorine.utils.spacebars_template import get_app_pages, get_web_pages
 	fcache.clear_frappe_caches()
 	#whatfor = ["common"] if devmode else ["meteor_web", "meteor_app"]
 	_whatfor = {"Both": ("meteor_web", "meteor_app"), "Reactive Web": ("meteor_web",), "Reactive App": ("meteor_app",)}
 
+	prepare_compile_environment()
+
 	for w in _whatfor.get(whatfor):
 		prepare_client_files(w)
+
 		if whatfor == "Both" and w == "meteor_app":
 			mtport = int(mtport) + 80
+			#get_app_pages(context)
+			context = get_context("mdesk")
+			frappe.get_template(context.base_template_path).render(context)
+		else:
+			context = get_context("fluorine_home")
+			frappe.get_template(context.base_template_path).render(context)
+			#get_web_pages(context)
+
 		file.make_meteor_file(jquery=0, whatfor=w, mtport=mtport, mthost=mthost, architecture=architecture)
 
 	if "meteor_app" in _whatfor.get(whatfor):
@@ -98,16 +110,28 @@ def make_meteor_file(devmode, mthost, mtport, mtddpurl, mghost, mgport, mgdb, ar
 	#file.remove_folder_content(fluorine_publicjs_path)
 	#file.make_meteor_config_file(mthost, mtport, version)
 
+	#if devmode:
+	#	restart_reactivity(mthost=mthost, mtport=mtport, mghost=mghost, mgport=mgport, mgdb=mgdb)
+
+def prepare_compile_environment():
+	from fluorine.utils.reactivity import meteor_config, list_ignores
+
 	fluor.utils.set_config({
 		"developer_mode": 0
 	})
 	meteor_config["developer_mode"] = 0
+
+	list_ignores["files_folders"] = {
+		"all":{
+			"remove": [{"pattern": "highlight/?.*"}]
+		}
+	}
+
 	doc = frappe.get_doc("Fluorine Reactivity")
 	doc.fluor_dev_mode = 0
 	doc.fluorine_state = "off"
 	doc.save()
-	#if devmode:
-	#	restart_reactivity(mthost=mthost, mtport=mtport, mghost=mghost, mgport=mgport, mgdb=mgdb)
+
 
 def make_final_app_client(jquery=0, meteor_root_url="http://localhost", meteor_ddpurl="http://localhost", meteor_port=3000):
 

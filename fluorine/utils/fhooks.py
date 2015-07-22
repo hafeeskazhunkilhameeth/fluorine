@@ -198,7 +198,9 @@ def get_general_context(context, apps, whatfor):
 		module = get_app_module(path, app, app_path, "meteor_general_context.py")
 		if module:
 			if hasattr(module, "get_context"):
-				nctx = module.get_context(context, ctx, whatfor) or []
+				nctx = module.get_context(context, ctx, whatfor)
+				if not nctx:
+					continue
 				appname = nctx.get("appname")
 				pattern = nctx.get("pattern")
 				pattern = os.path.join("templates", "react", whatfor, pattern)

@@ -2,8 +2,6 @@ from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
 import os, subprocess
-import file
-
 
 """
 original_get_hooks = frappe.get_hooks
@@ -185,6 +183,8 @@ def run_meteor(path, mthost="http://localhost", mtport=3000, mghost="http://loca
 
 def start_meteor():
 	import frappe
+	import file
+	
 	path_reactivity = file.get_path_reactivity()
 
 	global meteor_config
@@ -210,6 +210,8 @@ def start_meteor():
 	tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
 	fluorine_recativity = frappe.db.get_value("Fluorine Reactivity", fieldname="fluorine_reactivity")
 
+	frappe.set_user("guest")
+
 	for app in tostart[fluorine_recativity]:
 		meteor_path = os.path.join(path_reactivity, app)
 		path_meteor = os.path.join(meteor_path, ".meteor")
@@ -223,46 +225,97 @@ def get_extras_context_method(site):
 	#from fhooks import FrappeContext
 	from fluorine.utils.fhooks import get_extras_context
 
-	try:
-		make_meteor_ignor_files()
-		hooks = get_extras_context()
-	except:
-		user = "Administrator"
-		#with FrappeContext(site, "Administrator") as f:
-		frappe.init(site=site)
-		frappe.connect()
-		frappe.set_user(user)
-		make_meteor_ignor_files()
-		hooks = get_extras_context()
-		frappe.set_user("guest")
-		print "with Frappe Context extra hooks {}!!!".format(hooks)
+	#try:
+	#	make_meteor_ignor_files()
+	#	hooks = get_extras_context()
+	#except:
+	user = "Administrator"
+	#with FrappeContext(site, "Administrator") as f:
+	frappe.init(site=site)
+	frappe.connect()
+	frappe.set_user(user)
+	make_meteor_ignor_files()
+	hooks = get_extras_context()
+	#frappe.set_user("guest")
+	print "with Frappe Context extra hooks {}!!!".format(hooks)
 
 	return hooks
 
 list_ignores = None
 
-def make_meteor_ignor_files():
-	from fluorine.utils.fjinja2.fjinja import process_hooks_apps
+def process_permission_apps(apps):
 
-	apps = frappe.get_installed_apps()
+	list_apps_add = []
+	list_apps_remove = []
+
+	for k, v in apps.iteritems():
+		if v.get("remove", 0):
+			if k not in list_apps_add:
+				list_apps_remove.append(k)
+		elif v.get("add", 0):
+			if k not in list_apps_remove:
+				list_apps_add.append(k)
+
+	return list_apps_remove
+
+def process_permission_files_folders(ff):
+	from fluorine.utils.fjinja2.utils import c
+
+	list_ff_add = frappe._dict()
+	list_ff_remove = frappe._dict()
+
+	for k, v in ff.iteritems():
+		remove = v.get("remove") or []
+		for r in remove:
+			if not list_ff_remove.get(k):
+				list_ff_remove[k] = []
+			pattern = c(r.get("pattern"))
+			list_ff_remove[k].append(pattern)
+
+		add = v.get("add") or []
+		for a in add:
+			if not list_ff_add.get(k):
+				list_ff_add[k] = []
+			pattern = c(a.get("pattern"))
+			list_ff_add[k].append(pattern)
+
+	return list_ff_add, list_ff_remove
+
+def make_meteor_ignor_files():
+	#from fluorine.utils.fjinja2.fjinja import process_hooks_apps, process_hooks_meteor_templates
+
+	#apps = frappe.get_installed_apps()
 	#from file import process_ignores_from_modules#, save_js_file, get_path_reactivity
 
 	#if not frappe.local.meteor_ignores:
-	apps_last_first = apps[::-1]
-	list_apps_remove = process_hooks_apps(apps_last_first)
-	#list_meteor_files_add, list_meteor_files_remove = process_hooks_meteor_templates(apps_last_first, "fluorine_files_templates")
-	#list_meteor_files_folders_add, list_meteor_files_folders_remove = process_hooks_meteor_templates(apps_last_first, "fluorine_files_folders")
-	#list_meteor_tplt_add, list_meteor_tplt_remove = process_hooks_meteor_templates(apps_last_first, "fluorine_meteor_templates")
+	#apps_last_first = apps[::-1]
+	path_reactivity = file.get_path_reactivity()
+	perm_path = os.path.join(path_reactivity, "permission_files.json")
 
-	global list_ignores
+	if os.path.exists(perm_path):
+		conf = frappe.get_file_json(perm_path)
 
-	list_ignores = frappe._dict({
-		"remove":{
-			"apps": list_apps_remove
-		}
-	})
+		#list_apps_remove = process_hooks_apps(apps_last_first)
+		list_apps_remove = process_permission_apps(conf.get("apps") or {})
+		list_meteor_files_folders_add, list_meteor_files_folders_remove = process_permission_files_folders(conf.get("files_folders") or {})
+		#list_meteor_files_add, list_meteor_files_remove = process_hooks_meteor_templates(apps_last_first, "fluorine_files_templates")
+		#list_meteor_files_folders_add, list_meteor_files_folders_remove = process_hooks_meteor_templates(apps_last_first, "fluorine_files_folders")
+		#list_meteor_tplt_add, list_meteor_tplt_remove = process_hooks_meteor_templates(apps_last_first, "fluorine_meteor_templates")
 
-	print "list apps to remove {}".format(list_ignores)
+		global list_ignores
+
+		list_ignores = frappe._dict({
+			"remove":{
+				"apps": list_apps_remove,
+				"files_folders": list_meteor_files_folders_remove
+			},
+			"add":{
+				"apps": [],
+				"files_folders": list_meteor_files_folders_add
+			}
+		})
+
+		print "list apps to remove {}".format(list_ignores)
 
 	"""
 	list_ignores = frappe._dict({

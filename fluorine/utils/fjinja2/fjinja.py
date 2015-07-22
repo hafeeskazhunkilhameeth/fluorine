@@ -339,14 +339,14 @@ def process_hooks_meteor_templates(apps, hook_name):
 				html = ext[0] + ".html"
 				lrm.append(html)
 
-	map_hooks = frappe._dict({"fluorine_files_templates": "get_meteor_files_templates", "fluorine_meteor_templates": "get_meteor_templates",
-							"fluorine_files_folders": "get_meteor_files_folders"})
+	#map_hooks = frappe._dict({"fluorine_files_templates": "get_meteor_files_templates", "fluorine_meteor_templates": "get_meteor_templates",
+	#						"fluorine_files_folders": "get_meteor_files_folders"})
 
 	from fluorine.utils.file import process_ignores_from_modules
 
-	modules_list = process_ignores_from_modules(apps, map_hooks.get(hook_name))
-	n = -1
-	list_max = len(modules_list) - 1
+	#modules_list = process_ignores_from_modules(apps, map_hooks.get(hook_name))
+	#n = -1
+	#list_max = len(modules_list) - 1
 
 	for app in apps:
 		hooks = frappe.get_hooks(hook=hook_name, default={}, app_name=app)
@@ -359,6 +359,7 @@ def process_hooks_meteor_templates(apps, hook_name):
 			process_add(k, add)
 
 		#n=0 is the last installed app. Same order as the for cycle
+		"""
 		n += 1
 		if n <= list_max:
 			hooks = modules_list[n]
@@ -368,6 +369,7 @@ def process_hooks_meteor_templates(apps, hook_name):
 				process_remove(k, remove)
 				add = v.get("add") or []
 				process_add(k, add)
+		"""
 
 	#print "meteor templates lists add {} remove {}".format(list_meteor_tplt_add, list_meteor_tplt_remove)
 	return list_meteor_tplt_add, list_meteor_tplt_remove
