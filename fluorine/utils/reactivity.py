@@ -177,7 +177,8 @@ def run_meteor(path, mthost="http://localhost", mtport=3000, mghost="http://loca
 		mghost = mghost.replace("http://","").replace("mongodb://","").strip(' \t\n\r')
 		environ["MONGO_URL"] = "mongodb://" + mghost + ":" + str(mgport) + "/" + mgdb#"mongodb://localhost:27017/ekaiser"
 
-	subprocess.Popen(["meteor", "--port=" + str(mtport)], cwd=path, shell=False, close_fds=True, env=environ)
+	subprocess.Popen(["meteor", "--port=" + str(mtport)], cwd=path, shell=False, close_fds=False, env=environ)
+	#subprocess.Popen([path + "/meteor", "--port=" + str(mtport)], shell=True, env=environ)
 
 
 def start_meteor():
@@ -205,7 +206,7 @@ def start_meteor():
 
 	frappe.set_user("guest")
 
-	for app in tostart[fluorine_recativity]:
+	for app in tostart.get(fluorine_recativity):
 		meteor_path = os.path.join(path_reactivity, app)
 		path_meteor = os.path.join(meteor_path, ".meteor")
 		mtport = mtport_web if app == "meteor_web" else mtport_app

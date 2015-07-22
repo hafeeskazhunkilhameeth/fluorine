@@ -63,7 +63,7 @@
    "precision": ""
   }, 
   {
-   "default": "1", 
+   "default": "0", 
    "description": "Check to enter in develop mode.", 
    "fieldname": "fluor_dev_mode", 
    "fieldtype": "Check", 
@@ -197,7 +197,7 @@
  "is_submittable": 0, 
  "issingle": 1, 
  "istable": 0, 
- "modified": "2015-07-20 20:02:20.533906", 
+ "modified": "2015-07-22 15:54:00.067701", 
  "modified_by": "Administrator", 
  "module": "Fluorine", 
  "name": "Fluorine Reactivity", 

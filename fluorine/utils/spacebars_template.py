@@ -7,8 +7,6 @@ from frappe.website.utils import scrub_relative_urls
 from jinja2.utils import concat
 import frappe
 from frappe.utils.jinja import set_filters, get_allowed_functions_for_jenv
-#from fluorine.utils.fjinja2.fjinja import MyFileSystemLoader
-#from fluorine.utils.fhooks import get_xhtml_context, get_xhtml_files_to_add_remove
 import os
 from collections import OrderedDict
 

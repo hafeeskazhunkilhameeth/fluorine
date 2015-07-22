@@ -4,61 +4,10 @@ __author__ = 'luissaguas'
 
 import frappe
 import os, json
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 import subprocess
 import shutil
 from shutil import ignore_patterns
 
-observer = None
-
-
-class FileSystemHandler(FileSystemEventHandler):
-	def __init__(self):
-		pass
-
-	def process(self, event):
-		from . import make_hash
-		hash = make_hash(event.src_path)
-		os.environ["AUTOUPDATE_VERSION"] = str(130)
-		#import zerorpc
-		#c = zerorpc.Client()
-		#c.connect("tcp://127.0.0.1:4242")
-		#print c.autoupdate(130)
-		print event.src_path, event.event_type, hash  # print now only for debug
-
-	def on_modified(self, event):
-		self.process(event)
-	def on_created(self, event):
-		#self.process(event)
-		from . import addjs_file
-		p = addjs_file(event.src_path)
-		save_js_file(event.src_path, p)
-
-def observe_dir(dir_path):
-	global observer
-	if not os.path.exists(dir_path):
-		print "problems, observer not started!! path {}".format(dir_path)
-		return
-	#base = get_site_base_path()
-	#path = os.path.realpath(os.path.join(base, "..", "..", "apps", "reactivity","server","app", "server"))
-	observer = Observer()
-	observer.schedule(FileSystemHandler(), dir_path, recursive=True)
-	observer.start()
-	print "start observer!"
-
-#not used for now
-class cd:
-	"""Context manager for changing the current working directory"""
-	def __init__(self, newPath):
-		self.newPath = newPath
-
-	def __enter__(self):
-		self.savedPath = os.getcwd()
-		os.chdir(self.newPath)
-
-	def __exit__(self, etype, value, traceback):
-		os.chdir(self.savedPath)
 
 
 def save_custom_template(template_path):
