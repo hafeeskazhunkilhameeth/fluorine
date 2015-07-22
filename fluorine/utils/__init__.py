@@ -2,8 +2,10 @@
 from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
-import hashlib, os
-import copy, frappe
+#import hashlib
+import os
+#import copy
+import frappe
 
 
 meteor_config = None
@@ -52,11 +54,14 @@ def set_config(fobj):
 
 	return
 
+"""
 def get_js_paths():
 	meteor_path = "/assets/fluorine/js/meteor.devel.js" if check_dev_mode() else "/assets/js/meteor.js"
 	paths = ["/assets/fluorine/js/meteor_config.js", "/assets/fluorine/js/before_fluorine_helper.js", meteor_path, "/assets/fluorine/js/after_fluorine_helper.js"]
 	return paths
+"""
 
+"""
 def start_hash(rootDir):
 	hash = {}
 	ignore_file = [".DS_Store"]
@@ -86,6 +91,7 @@ def make_hash(path):
 			elif not multi:
 				m.update(line)
 		return m.hexdigest()
+"""
 
 def is_open_port(ip="127.0.0.1", port=3000):
 	import socket
@@ -98,7 +104,7 @@ def is_open_port(ip="127.0.0.1", port=3000):
 	sock.close()
 	return is_open
 
-
+"""
 def addjs_file(path):
 	import file
 	p = file.get_fluorine_server_conf()
@@ -112,6 +118,7 @@ def addjs_file(path):
 	load.append({"path":path, "assets":copy_assets})
 	print "asssets {}".format(p)
 	return p
+"""
 
 def jquery_include():
 	return True
