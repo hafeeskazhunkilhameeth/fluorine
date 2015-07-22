@@ -148,6 +148,7 @@ def get_meteor_configuration_file():
 
 	return conf
 
+"""
 if check_dev_mode():
 	frappe_conf = frappe.get_site_config()
 	frappe_developer_mode = frappe_conf.developer_mode
@@ -156,3 +157,4 @@ if check_dev_mode():
 		print "Enter Reactivity State !!!"
 		import spacebars_template
 		import reactivity
+"""
