@@ -4,15 +4,14 @@
 from __future__ import unicode_literals
 import frappe, os
 from frappe.model.document import Document
-import fluorine as fluor
-from fluorine.utils import file
-from fluorine.utils import fhooks
-from fluorine.utils import fcache
 
 
 class FluorineReactivity(Document):
-
 	def on_update(self, method=None):
+		import fluorine as fluor
+		from fluorine.utils import file
+		from fluorine.utils import fhooks
+
 		from fluorine.utils.reactivity import meteor_config
 
 		meteor_config["developer_mode"] = self.fluor_dev_mode
@@ -82,6 +81,7 @@ def save_to_common_site_config(doc):
 def make_meteor_file(devmode, mthost, mtport, mtddpurl, mghost, mgport, mgdb, architecture, whatfor):
 	#devmode = frappe.utils.cint(devmode)
 	from frappe.website.context import get_context
+	from fluorine.utils import fcache, file
 	#from fluorine.utils.spacebars_template import get_app_pages, get_web_pages
 	fcache.clear_frappe_caches()
 	#whatfor = ["common"] if devmode else ["meteor_web", "meteor_app"]
@@ -114,7 +114,9 @@ def make_meteor_file(devmode, mthost, mtport, mtddpurl, mghost, mgport, mgdb, ar
 	#	restart_reactivity(mthost=mthost, mtport=mtport, mghost=mghost, mgport=mgport, mgdb=mgdb)
 
 def prepare_compile_environment():
+
 	from fluorine.utils.reactivity import meteor_config, list_ignores
+	import fluorine as fluor
 
 	fluor.utils.set_config({
 		"developer_mode": 0
@@ -136,6 +138,7 @@ def prepare_compile_environment():
 def make_final_app_client(jquery=0, meteor_root_url="http://localhost", meteor_ddpurl="http://localhost", meteor_port=3000):
 
 	import json
+	import file
 	from fluorine.utils.meteor.utils import get_meteor_release, make_auto_update_version, get_meteor_config,\
 		save_meteor_props, save_meteor_root_prefix
 
