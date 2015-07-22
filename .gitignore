@@ -3,12 +3,12 @@
 *.egg-info
 *.swp
 .meteor/
+meteor/
+meteor_app/
+meteor_web/
+meteor_web_temp/
 tags
 react/
 reactivity/
-meteor_web_temp/
-meteor.devel.js
 meteor_web.js
-meteor_app.js
 meteor.js
-pids.json
