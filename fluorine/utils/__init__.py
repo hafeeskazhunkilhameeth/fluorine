@@ -6,11 +6,10 @@ import hashlib, os
 import copy, frappe
 
 
-
 meteor_config = None
 
-react = {"Reactive Web": "web", "Reactive App": "app", "Both": "both"}
-assets_public_path = "/assets/fluorine/js/react"
+#react = {"Reactive Web": "web", "Reactive App": "app", "Both": "both"}
+#assets_public_path = "/assets/fluorine/js/react"
 
 def get_encoding():
 	return "utf-8"
