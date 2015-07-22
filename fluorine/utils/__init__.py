@@ -15,14 +15,14 @@ def get_encoding():
 
 def check_dev_mode():
 	import file
-	from reactivity import meteor_config
+	#from reactivity import meteor_config
 
-	if meteor_config:
-		devmode = meteor_config.get("developer_mode") or 0
-		if devmode:
-			return True
+	#if meteor_config:
+	#	devmode = meteor_config.get("developer_mode") or 0
+	#	if devmode:
+	#		return True
 
-		return False
+	#	return False
 
 	path_reactivity = file.get_path_reactivity()
 	common_site_config = os.path.join(path_reactivity, "common_site_config.json")
@@ -117,6 +117,7 @@ def get_Frappe_Version(version=None):
 	version = version or frappe.__version__
 	import semantic_version as sv
 	return sv.Version(version)
+
 
 if check_dev_mode():
 	print "Enter Reactivity State !!!"

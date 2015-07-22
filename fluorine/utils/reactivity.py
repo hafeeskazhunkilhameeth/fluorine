@@ -282,6 +282,7 @@ def process_permission_files_folders(ff):
 	return list_ff_add, list_ff_remove
 
 def make_meteor_ignor_files():
+	import file
 	#from fluorine.utils.fjinja2.fjinja import process_hooks_apps, process_hooks_meteor_templates
 
 	#apps = frappe.get_installed_apps()

@@ -7,8 +7,8 @@ from frappe.website.utils import scrub_relative_urls
 from jinja2.utils import concat
 import frappe
 from frappe.utils.jinja import set_filters, get_allowed_functions_for_jenv
-from fluorine.utils.fjinja2.fjinja import MyFileSystemLoader
-from fluorine.utils.fhooks import get_xhtml_context, get_xhtml_files_to_add_remove
+#from fluorine.utils.fjinja2.fjinja import MyFileSystemLoader
+#from fluorine.utils.fhooks import get_xhtml_context, get_xhtml_files_to_add_remove
 import os
 from collections import OrderedDict
 
@@ -41,6 +41,7 @@ def fluorine_get_fenv():
 def fluorine_get_floader(encoding="utf-8"):
 
 	from fluorine.utils.fjinja2.fjinja import MyChoiceLoader
+	from fluorine.utils.fjinja2.fjinja import MyFileSystemLoader
 
 	if not frappe.local.floader:
 
@@ -345,6 +346,7 @@ def fluorine_build_context(context, whatfor):
 
 def process_react_templates(context, apps, whatfor):
 
+	from fluorine.utils.fhooks import get_xhtml_context
 	from react_file_loader import read_client_xhtml_files, get_custom_pattern
 	from fluorine.utils.fhooks import get_extra_context_func, get_general_context
 	from fluorine.utils.meteor.utils import compile_spacebars_templates
@@ -405,6 +407,8 @@ def process_react_templates(context, apps, whatfor):
 
 
 def addto_meteor_templates_list(template_path):
+	from fluorine.utils.fhooks import get_xhtml_files_to_add_remove
+
 	if not frappe.local.meteor_map_templates.get(template_path, None):# and template_path not in frappe.local.templates_referenced:
 		template = fluorine_get_fenv().get_template(template_path)
 		frappe.local.meteor_map_templates.get(template_path).update({"template_obj": template})
