@@ -130,6 +130,8 @@ def get_meteor_configuration_file():
 
 	global meteor_config
 
+	conf = None
+
 	try:
 		config_path = os.path.join(path_reactivity, "common_site_config.json")
 		conf = frappe.get_file_json(config_path)
