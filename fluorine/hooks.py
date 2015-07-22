@@ -1,11 +1,9 @@
 app_url=["http://localhost"]
-fluorine_files_folders={"ekaiser": {"remove": ["templates/react/meteor_web/public"]}}
 app_name=["fluorine"]
 app_icon=["icon-beaker"]
 app_color=["#336600"]
 #base_template=["templates/fluorine_base.html"]
 fluorine_extras_context_method=["sidebar"]
-fluorine_apps={"ekaiser": {"remove": [0]}}
 app_description=["The most reactive app."]
 website_clear_cache=["fluorine.utils.fcache.clear_cache"]
 app_publisher=["Luis Fernandes"]
@@ -14,4 +12,4 @@ app_include_js=[]
 #home_page=["fluorine_home"]
 app_version=["0.0.1"]
 app_email=["luisfmfernandes@gmail.com"]
-web_include_js=["/assets/fluorine/js/meteor_web.js"]
+
