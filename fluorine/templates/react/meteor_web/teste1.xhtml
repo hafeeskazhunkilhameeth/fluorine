@@ -1,0 +1,45 @@
+{% extends 'templates/react/meteor_web/templates/teste3.xhtml' %}
+
+{#{% import 'templates/includes/macro_utils.xhtml' as u with context %}#}
+
+
+{% block teste2 %}
+{%- meteor teste2 -%}
+<template name="teste2">
+    <p>From Fluorine teste2 template!!!</p>
+    {{>teste10}}
+    {{ msuper("teste2")|mdom_filter("templates/react/meteor_web/templates/teste3.xhtml") }}
+    {{.if b}}
+        <p>luis</p>
+    {{else}}
+        {{% name }}
+        <p>ruben</p>
+    {{/if}}
+
+    {{>highlight}}
+
+</template>
+{%- endmeteor -%}
+{% endblock %}
+
+{#{% block teste2 %}#}
+    {#{% do mtkeep("teste2", patterns=".+\.js$") %}#}
+    {#{% do files_to_add.append({"tname": "teste2", "pattern": ".+.js$", "page": "templates/react/meteor_web/templates/teste3.xhtml"}) %}#}
+    {#{% call u.template("teste2") %}#}
+    {#{%- template name="teste2" %}#}
+        {#<p>From Fluorine teste2 template!!!</p>#}
+        {#{{ msuper("teste2")|mdom_filter("templates/react/meteor_web/templates/teste3.xhtml") }}#}
+        {#{{>teste10}}#}
+
+        {#{% mif a %}#}#}
+        {#    <p>luis</p>#}
+        {#{% melse %}#}
+        {#    <p>ruben</p>#}
+        {#{% endmif %}#}
+    {#{% endcall %}#}
+    {#{%- endtemplate %}#}
+
+{#{% endblock %}#}
+
+{% block teste20 %}
+{% endblock %}

@@ -4,11 +4,8 @@
 *.swp
 .meteor/
 meteor/
-meteor_app/
-meteor_web/
 meteor_web_temp/
 tags
-react/
 reactivity/
 meteor_web.js
 meteor.js
