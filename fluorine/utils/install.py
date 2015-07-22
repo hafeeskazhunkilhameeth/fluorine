@@ -6,10 +6,6 @@ from frappe.website import render, statics
 
 
 def before_install():
-	pass
-
-
-def after_install(rebuild_website=False):
 	import file
 
 	path_reactivity = file.get_path_reactivity()
@@ -21,6 +17,9 @@ def after_install(rebuild_website=False):
 	create_meteor_apps(path_reactivity)
 	make_public_symbolic_link(path_reactivity)
 
+
+def after_install(rebuild_website=False):
+	
 	version = frappe.utils.cint(frappe.__version__.split(".", 1)[0])
 	if version >= 5:
 		return

@@ -1,6 +1,6 @@
 app_url=["http://localhost"]
 fluorine_files_folders={"ekaiser": {"remove": ["templates/react/meteor_web/public"]}}
-app_name=["fluorines"]
+app_name=["fluorine"]
 app_icon=["icon-beaker"]
 app_color=["#336600"]
 base_template=["templates/fluorine_base.html"]
