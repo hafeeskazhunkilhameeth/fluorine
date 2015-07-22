@@ -19,8 +19,10 @@ def get_encoding():
 
 def check_dev_mode():
 	from fluorine.utils.file import get_path_reactivity, get_fluorine_conf
-	#from reactivity import meteor_config
-	get_meteor_configuration_file()
+
+	path_reactivity = get_path_reactivity()
+	if not meteor_config:
+		get_meteor_configuration_file(path_reactivity)
 
 	if meteor_config:
 		devmode = meteor_config.get("developer_mode") or 0
@@ -29,13 +31,12 @@ def check_dev_mode():
 
 		return False
 
-	path_reactivity = get_path_reactivity()
-	common_site_config = os.path.join(path_reactivity, "common_site_config.json")
-	print "path_reactivity {}".format(common_site_config)
-	if os.path.exists(common_site_config):
-		dev = get_fluorine_conf("developer_mode")
-		if dev == 1:
-			return True
+	#common_site_config = os.path.join(path_reactivity, "common_site_config.json")
+	#print "path_reactivity {}".format(common_site_config)
+	#if os.path.exists(common_site_config):
+	#	dev = get_fluorine_conf("developer_mode")
+	#	if dev == 1:
+	#		return True
 
 	return False
 
@@ -129,10 +130,9 @@ def get_Frappe_Version(version=None):
 	return sv.Version(version)
 
 
-def get_meteor_configuration_file():
-	from fluorine.utils.file import get_path_reactivity
+def get_meteor_configuration_file(path_reactivity):
 
-	path_reactivity = get_path_reactivity()
+	#path_reactivity = get_path_reactivity()
 
 	global meteor_config
 
@@ -148,7 +148,7 @@ def get_meteor_configuration_file():
 
 	return conf
 
-"""
+
 if check_dev_mode():
 	frappe_conf = frappe.get_site_config()
 	frappe_developer_mode = frappe_conf.developer_mode
@@ -157,4 +157,3 @@ if check_dev_mode():
 		print "Enter Reactivity State !!!"
 		import spacebars_template
 		import reactivity
-"""
