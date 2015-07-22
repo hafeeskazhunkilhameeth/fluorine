@@ -183,7 +183,6 @@ def get_path_reactivity():
 	#base = get_site_base_path()
 	#path = os.path.realpath(os.path.join(base, "..", "..", "apps", "reactivity"))
 	path_module = os.path.dirname(fluorine.__file__)
-	print "PATH MODULE {}".format(path_module)
 	path_reactivity = os.path.realpath(os.path.join(path_module, "..", ".."))
 	path = os.path.join(path_reactivity, "reactivity")
 	return path
@@ -370,7 +369,8 @@ def check_remove(source):
 	for rapp, rpaths in frappe.local.files_to_remove.iteritems():
 		for obj in rpaths:
 			mrm = obj.get("pattern")
-			found = mrm.match(source)
+			pattern = c(mrm)
+			found = pattern.match(source)
 			if found:
 				return True
 	return False

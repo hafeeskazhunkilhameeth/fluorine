@@ -1,0 +1,35 @@
+{
+    "meteor_dns": {
+        "meteor_web": [
+            {
+                "host": "http://localhost", 
+                "ddpurl": "192.168.1.100", 
+                "port": 3000
+            }
+        ], 
+        "meteor_app": [
+            {
+                "host": "http://localhost", 
+                "ddpurl": "192.168.1.100", 
+                "port": 3080
+            }
+        ]
+    }, 
+    "meteor_dev": {
+        "host": "http://localhost", 
+        "ddpurl": "http://192.168.1.100", 
+        "port": 3000
+    }, 
+    "meteor_mongo": {
+        "host": "http://localhost", 
+        "db": "fluorine", 
+        "port": "27017"
+    }, 
+    "meteor_folder": {
+        "compile": 1, 
+        "folder_refresh": 1
+    }, 
+    "site": "site1.local", 
+    "sites_path": "", 
+    "developer_mode": 0
+}

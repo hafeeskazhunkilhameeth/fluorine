@@ -6,6 +6,9 @@ import hashlib, os
 import copy, frappe
 
 
+
+meteor_config = None
+
 react = {"Reactive Web": "web", "Reactive App": "app", "Both": "both"}
 assets_public_path = "/assets/fluorine/js/react"
 
@@ -16,13 +19,14 @@ def get_encoding():
 def check_dev_mode():
 	import file
 	#from reactivity import meteor_config
+	get_meteor_configuration_file()
 
-	#if meteor_config:
-	#	devmode = meteor_config.get("developer_mode") or 0
-	#	if devmode:
-	#		return True
+	if meteor_config:
+		devmode = meteor_config.get("developer_mode") or 0
+		if devmode:
+			return True
 
-	#	return False
+		return False
 
 	path_reactivity = file.get_path_reactivity()
 	common_site_config = os.path.join(path_reactivity, "common_site_config.json")
@@ -119,7 +123,25 @@ def get_Frappe_Version(version=None):
 	return sv.Version(version)
 
 
+def get_meteor_configuration_file():
+	import file
+
+	path_reactivity = file.get_path_reactivity()
+
+	global meteor_config
+
+	config_path = os.path.join(path_reactivity, "common_site_config.json")
+	conf = frappe.get_file_json(config_path)
+
+	meteor_config = conf
+
+	return conf
+
 if check_dev_mode():
-	print "Enter Reactivity State !!!"
-	import spacebars_template
-	import reactivity
+	frappe_conf = frappe.get_site_config()
+	frappe_developer_mode = frappe_conf.developer_mode
+
+	if frappe_developer_mode:
+		print "Enter Reactivity State !!!"
+		import spacebars_template
+		import reactivity

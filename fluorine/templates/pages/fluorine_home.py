@@ -10,5 +10,5 @@ no_cache = 1
 def get_context(context):
 	from fluorine.utils.spacebars_template import get_web_pages
 
-	print "fluorine get_context called again 4!!! context {}".format(context)
+	print "fluorine get_context called again 5!!! context {}".format(context)
 	return get_web_pages(context)
