@@ -19,7 +19,7 @@ def before_install():
 
 
 def after_install(rebuild_website=False):
-	
+
 	version = frappe.utils.cint(frappe.__version__.split(".", 1)[0])
 	if version >= 5:
 		return
