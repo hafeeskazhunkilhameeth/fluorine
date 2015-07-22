@@ -222,7 +222,8 @@ def restart_reactivity(mthost="http://localhost", mtport=3000, mghost="http://lo
 
 def prepare_client_files(whatfor):
 	from fluorine.utils.react_file_loader import remove_directory
-
+	import file
+	
 	#fluorine_path = frappe.get_app_path("fluorine")
 	react_path = file.get_path_reactivity()
 	meteor_final_path = os.path.join(react_path, "final_%s" % (whatfor.split("_")[1],))
