@@ -214,13 +214,6 @@ def build_frappe_json_files(manifest, js_path, fluorine_path, build_json, meteor
 			src = os.path.join(meteor_final_path, path)
 			copyfile(src, dst)
 
-
-def restart_reactivity(mthost="http://localhost", mtport=3000, mghost="http://localhost", mgport=27017, mgdb="fluorine"):
-	from fluorine.utils.reactivity import run_reactivity
-	path = file.get_path_reactivity()
-	version = fluor.utils.meteor_autoupdate_version()
-	run_reactivity(path, version, mthost=mthost, mtport=mtport, mghost=mghost, mgport=mgport, mgdb=mgdb, restart=True)
-
 def prepare_client_files(whatfor):
 	from fluorine.utils.react_file_loader import remove_directory
 	from fluorine.utils.file import get_path_reactivity
