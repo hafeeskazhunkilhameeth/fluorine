@@ -18,8 +18,8 @@ def after_install(rebuild_website=False):
 
 	make_link_to_desk()
 	copy_common_config(path_reactivity)
-	create_meteor_apps()
-
+	create_meteor_apps(path_reactivity)
+	make_public_symbolic_link(path_reactivity)
 
 	version = frappe.utils.cint(frappe.__version__.split(".", 1)[0])
 	if version >= 5:
@@ -32,6 +32,17 @@ def after_install(rebuild_website=False):
 	frappe.db.commit()
 	frappe.clear_cache()
 
+def make_public_symbolic_link(path_reactivity):
+	app_path = frappe.get_app_path("fluorine")
+	public_js = os.path.join(app_path, "public", "js")
+
+	for app in ("meteor_app", "meteor_web"):
+		folder = os.path.join(public_js, app)
+		frappe.create_folder(folder)
+		source = os.path.join(path_reactivity, app, ".meteor", "local", "build", "programs", "web.browser")
+		link_name = os.path.join(folder, "webbrowser")
+
+		os.symlink(source, link_name)
 
 def make_link_to_desk():
 	frappe_path = frappe.get_app_path("frappe")
@@ -49,11 +60,10 @@ def copy_common_config(path_reactivity):
 
 	copyfile(src, dst)
 
-def create_meteor_apps():
-	import subprocess, file
+def create_meteor_apps(path_reactivity):
+	import subprocess
 
 	try:
-		path_reactivity = file.get_path_reactivity()
 		for app in ("meteor_app", "meteor_web"):
 			subprocess.Popen(["meteor create " + app], cwd=path_reactivity, shell=False, close_fds=True)
 	except:
