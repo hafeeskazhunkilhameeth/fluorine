@@ -6,9 +6,9 @@ from frappe.website import render, statics
 
 
 def before_install():
-	import file
+	from file import get_path_reactivity
 
-	path_reactivity = file.get_path_reactivity()
+	path_reactivity = get_path_reactivity()
 	if not os.path.exists(path_reactivity):
 		frappe.create_folder(path_reactivity)
 
