@@ -9,7 +9,7 @@ from frappe.model.document import Document
 class FluorineReactivity(Document):
 	def on_update(self, method=None):
 		import fluorine as fluor
-		from fluorine.utils import file
+		from fluorine.utils.file import save_custom_template
 		from fluorine.utils import fhooks
 
 		from fluorine.utils.reactivity import meteor_config
@@ -27,7 +27,7 @@ class FluorineReactivity(Document):
 
 		if self.fluorine_base_template and self.fluorine_base_template.lower() != "default":
 			page_default = False
-			file.save_custom_template(self.fluorine_base_template)
+			save_custom_template(self.fluorine_base_template)
 
 		fhooks.change_base_template(page_default=page_default, devmode=self.fluor_dev_mode)
 		save_to_common_site_config(self)
@@ -45,11 +45,12 @@ class FluorineReactivity(Document):
 def save_to_common_site_config(doc):
 	from fluorine.utils.reactivity import meteor_config
 	import os
+	from fluorine.utils.file import get_path_reactivity, save_js_file
 
 	mgconf = {}
 	mtconf = {}
 
-	path_reactivity = file.get_path_reactivity()
+	path_reactivity = get_path_reactivity()
 	config_path = os.path.join(path_reactivity, "common_site_config.json")
 
 	f = meteor_config
@@ -75,7 +76,7 @@ def save_to_common_site_config(doc):
 		f["meteor_mongo"] = mgconf
 
 
-	file.save_js_file(config_path, f)
+	save_js_file(config_path, f)
 
 @frappe.whitelist()
 def make_meteor_file(devmode, mthost, mtport, mtddpurl, mghost, mgport, mgdb, architecture, whatfor):
@@ -138,7 +139,7 @@ def prepare_compile_environment():
 def make_final_app_client(jquery=0, meteor_root_url="http://localhost", meteor_ddpurl="http://localhost", meteor_port=3000):
 
 	import json
-	import file
+	from fluorine.utils.file import get_path_reactivity, read, save_js_file
 	from fluorine.utils.meteor.utils import get_meteor_release, make_auto_update_version, get_meteor_config,\
 		save_meteor_props, save_meteor_root_prefix
 
@@ -150,7 +151,7 @@ def make_final_app_client(jquery=0, meteor_root_url="http://localhost", meteor_d
 	build_file = os.path.join(fluorine_path, "public", "build.json")
 
 	if os.path.exists(build_file):
-		build_json_file = file.read(build_file)
+		build_json_file = read(build_file)
 		build_json = json.loads(build_json_file)
 	else:
 		build_json = frappe._dict()
@@ -158,14 +159,14 @@ def make_final_app_client(jquery=0, meteor_root_url="http://localhost", meteor_d
 	build_json["js/meteor_app.js"] = []
 	build_json["js/meteor_app.css"] = []
 
-	react_path = file.get_path_reactivity()
+	react_path = get_path_reactivity()
 	meteor_final_path = os.path.join(react_path, "final_app/bundle/programs/web.browser")
 	progarm_path = os.path.join(meteor_final_path, "program.json")
 
 	star_path = os.path.join(react_path, "final_app/bundle/star.json")
 	meteorRelease = get_meteor_release(star_path)
 
-	manifest = file.read(progarm_path)
+	manifest = read(progarm_path)
 
 	manifest = json.loads(manifest).get("manifest")
 	meteor_autoupdate_version, meteor_autoupdate_version_freshable, manifest_js, manifest_css =\
@@ -191,7 +192,7 @@ def make_final_app_client(jquery=0, meteor_root_url="http://localhost", meteor_d
 	rel = os.path.relpath(meteor_root_url_prefix_path, fluorine_path)
 	build_json.get("js/meteor_app.js").append(rel)
 
-	file.save_js_file(build_file, build_json)
+	save_js_file(build_file, build_json)
 
 
 def build_frappe_json_files(manifest, js_path, fluorine_path, build_json, meteor_final_path, jquery=0):
@@ -222,10 +223,10 @@ def restart_reactivity(mthost="http://localhost", mtport=3000, mghost="http://lo
 
 def prepare_client_files(whatfor):
 	from fluorine.utils.react_file_loader import remove_directory
-	import file
-	
+	from fluorine.utils.file import get_path_reactivity
+
 	#fluorine_path = frappe.get_app_path("fluorine")
-	react_path = file.get_path_reactivity()
+	react_path = get_path_reactivity()
 	meteor_final_path = os.path.join(react_path, "final_%s" % (whatfor.split("_")[1],))
 	if os.path.exists(meteor_final_path):
 		remove_directory(meteor_final_path)
