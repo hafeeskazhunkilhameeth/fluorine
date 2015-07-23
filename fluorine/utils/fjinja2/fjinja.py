@@ -58,6 +58,7 @@ class MyEnvironment(Environment):
 		super(MyEnvironment, self).__init__(**vars)
 		self.devmode = check_dev_mode()
 
+	"""
 	def addto_meteor_templates_list(self, path):
 		#return self.get_template(path)
 		return self.loader.get_meteor_source(self, path)
@@ -67,6 +68,7 @@ class MyEnvironment(Environment):
 		if floader:
 			return floader.get_meteor_template_list()
 		return None
+	"""
 
 from fluorine.utils.Templates import Templates
 from collections import OrderedDict
@@ -93,7 +95,7 @@ class MyFileSystemLoader(FileSystemLoader):
 			self.meteor_map_path = frappe.local.meteor_map_path = OrderedDict()#frappe._dict(OrderedDict())
 
 		self.start_hook_lists()
-		self.templates = Templates(self.list_meteor_tplt_remove, apps=self.apps)
+		#self.templates = Templates(self.list_meteor_tplt_remove, apps=self.apps)
 
 
 	def start_hook_lists(self):
@@ -162,7 +164,6 @@ class MyFileSystemLoader(FileSystemLoader):
 				#contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
 				#contents, filename, uptodate = self.get_source(environment, relpath)
 				contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
-				print "find template 6 {} appname {}".format(template, app)
 				#print "content from get source template {} content {}".format(template, contents)
 				#doc, contents = self.templates.make_template(contents, appname=app, template=template, relpath_temp=relpath_temp, realpath=filepath,
 															#relpath=relpath, file_temp_path=file_temp_path, encoding=self.encoding)
@@ -195,6 +196,7 @@ class MyFileSystemLoader(FileSystemLoader):
 				addto_meteor_templates_list(referenced_template_path)
 
 
+	"""
 	def get_jinja_dependencies(self, doc):
 		from fluorine.utils.spacebars_template import fluorine_get_fenv
 
@@ -219,6 +221,7 @@ class MyFileSystemLoader(FileSystemLoader):
 				docs.append(idoc)
 
 		doc.docs.extend(docs)
+		"""
 
 	def get_source_old(self, environment, template):
 		contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, template)

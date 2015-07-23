@@ -79,16 +79,6 @@ def make_hash(path):
 		return m.hexdigest()
 """
 
-def is_open_port(ip="127.0.0.1", port=3000):
-	import socket
-	is_open = False
-	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	result = sock.connect_ex((ip,port))
-	if result == 0:
-		is_open = True
-	sock.close()
-	return is_open
-
 """
 def addjs_file(path):
 	import file
@@ -132,12 +122,11 @@ def get_meteor_configuration_file(path_reactivity):
 
 	return conf
 
-
 if check_dev_mode():
 	frappe_conf = frappe.get_site_config()
 	frappe_developer_mode = frappe_conf.developer_mode
 
 	if frappe_developer_mode:
-		print "Enter Reactivity State !!!"
+		print "Enter Reactivity State!!!"
 		import spacebars_template
 		import reactivity

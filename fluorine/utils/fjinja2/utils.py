@@ -5,7 +5,7 @@ __author__ = 'luissaguas'
 from jinja2 import contextfunction, contextfilter
 from jinja2.utils import concat
 import frappe, re
-from frappe.website.utils import scrub_relative_urls
+#from frappe.website.utils import scrub_relative_urls
 
 
 
@@ -26,7 +26,7 @@ def is_in_extend_path(doc, template):
 	return None
 
 def get_template_from_doc(doc, tname, encoding="utf-8"):
-	from file import read
+	from fluorine.utils.file import read
 
 	content = doc.content
 	if not content:
@@ -158,7 +158,8 @@ def msuper(ctx, tname, deep=1):
 		sobj = frappe.local.meteor_map_templates.get(page)
 		template = sobj.get("template_obj")
 		render = template.blocks.get(tname)
-		code = scrub_relative_urls(concat(render(template.new_context(ctx))))
+		#code = scrub_relative_urls(concat(render(template.new_context(ctx))))
+		code = concat(render(template.new_context(ctx)))
 		code = get_msuper_inner_content(ctx, code)
 
 	print "after msuper call from template code {}".format(code)

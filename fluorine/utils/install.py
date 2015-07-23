@@ -40,10 +40,10 @@ def after_install(rebuild_website=False):
 
 def make_public_symbolic_link(path_reactivity):
 	app_path = frappe.get_app_path("fluorine")
-	public_js = os.path.join(app_path, "public", "js")
+	public_folder = os.path.join(app_path, "public")
 
 	for app in ("meteor_app", "meteor_web"):
-		folder = os.path.join(public_js, app)
+		folder = os.path.join(public_folder, app)
 		frappe.create_folder(folder)
 		source = os.path.join(path_reactivity, app, ".meteor", "local", "build", "programs", "web.browser")
 		link_name = os.path.join(folder, "webbrowser")

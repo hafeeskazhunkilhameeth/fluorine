@@ -160,7 +160,7 @@ def run_reactivity(path, mthost="http://localhost", mtport=3000, mghost="http://
 
 def run_meteor(path, mthost="http://localhost", mtport=3000, mghost=None, mgport=0, mgdb=None, restart=False):
 	import os, copy
-	from . import is_open_port
+	#from . import is_open_port
 
 	if is_open_port() and not restart:
 		print "Port {} is open!".format(mtport)
@@ -178,8 +178,9 @@ def run_meteor(path, mthost="http://localhost", mtport=3000, mghost=None, mgport
 			mghost = mghost.replace("http://","").replace("mongodb://","").strip(' \t\n\r')
 			environ["MONGO_URL"] = "mongodb://" + mghost + ":" + str(mgport) + "/" + mgdb#"mongodb://localhost:27017/ekaiser"
 
-	subprocess.Popen(["meteor", "--port=" + str(mtport)], cwd=path, shell=False, close_fds=False, env=environ)
+	subprocess.Popen(["meteor", "--port=" + str(mtport)], cwd=path, shell=False, close_fds=True, env=environ)
 	#subprocess.Popen([path + "/meteor", "--port=" + str(mtport)], shell=True, env=environ)
+	#p.wait()
 
 
 def start_meteor():
@@ -366,11 +367,22 @@ def start_reactivity():
 """
 print "frappe.__file__ 2 {}".format(os.getcwd())
 
+def is_open_port(ip="127.0.0.1", port=3000):
+	import socket
+	is_open = False
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	result = sock.connect_ex((ip,port))
+	if result == 0:
+		is_open = True
+	sock.close()
+	return is_open
+
 import sys
 
-#print "any serve or start in args {} args {}" .format(any("--serve"==s or "--start"==s for s in sys.argv), sys.argv)
-if any("--serve"==s or "--start"==s for s in sys.argv):
+#print "reloader any serve or start in args {} args {}" .format(any("--serve"==s or "--start"==s for s in sys.argv), sys.executable)
+if any("--serve"==s or "--start"==s or "serve"==s for s in sys.argv):
 	import frappe
-	print "starting reactivity... {}".format(sys.argv)
+	print "starting reactivity...{}".format(sys.argv)
 	#start_reactivity()
+	#extras_context_methods.update(get_extras_context_method(frappesite))
 	start_meteor()

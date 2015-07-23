@@ -213,12 +213,12 @@ def check_refs(tname, refs):
 
 
 def prepare_common_page_context(context, whatfor):
-	import fluorine
+	from fluorine.utils import check_dev_mode, jquery_include
 	from fluorine.utils.meteor.utils import build_meteor_context
 
-	devmode = fluorine.utils.check_dev_mode()
+	devmode = check_dev_mode()
 	context.developer_mode = devmode
-	context.jquery_include = fluorine.utils.jquery_include()
+	context.jquery_include = jquery_include()
 
 	doc = frappe.get_doc("Fluorine Reactivity")
 
@@ -359,7 +359,7 @@ def process_react_templates(context, apps, whatfor):
 	#spacebars_context = []
 
 	#ignore = {"templates":list_meteor_files_remove, "files_folders":list_meteor_files_folders_remove}
-	list_apps_remove = frappe.local.meteor_ignores.get("remove").get("apps")
+	list_apps_remove = frappe.local.meteor_ignores.get("remove", {}).get("apps")
 
 	custom_pattern = get_custom_pattern(whatfor, custom_pattern=None)
 	for app in apps:
