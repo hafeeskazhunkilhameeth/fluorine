@@ -3,12 +3,10 @@ __author__ = 'luissaguas'
 
 import frappe, os, json
 
-from fluorine.utils import assets_public_path
-from fluorine.utils import fcache
-from fluorine.utils import file
 
 
 def change_base_template(hooks=None, page_default=True, devmode=1):
+	from fluorine.utils.fcache import clear_frappe_caches
 
 	def remove_meteor_include():
 		try:
@@ -37,10 +35,12 @@ def change_base_template(hooks=None, page_default=True, devmode=1):
 
 	fluorine_path = frappe.get_app_path("fluorine")
 	save_batch_hook(hooks, fluorine_path + "/hooks.py")
-	fcache.clear_frappe_caches()
+	clear_frappe_caches()
 
 #not used
 def add_react_to_hook(paths, page_default=True):
+	from fluorine.utils import assets_public_path
+	from fluorine.utils import fcache
 
 	lpaths = paths[:]
 	hooks = frappe.get_hooks(app_name="fluorine")
@@ -75,6 +75,8 @@ def add_react_to_hook(paths, page_default=True):
 
 #not used
 def remove_react_from_hook(paths, where="app", hooks=None, include_files_from_disk=True):
+	from fluorine.utils import assets_public_path
+	from fluorine.utils import fcache
 
 	lpaths = paths[:]
 
@@ -119,6 +121,8 @@ def get_hook_files_from_disk():
 
 
 def save_batch_hook_all(sessionId, objjs):
+	from fluorine.utils import fcache
+
 	save_batch_hook(objjs, frappe.get_app_path("fluorine") + "/hooks.py")
 	fcache.save_fluorine_cache(sessionId, objjs)
 
@@ -270,6 +274,8 @@ def check_includes(hook, hooks):
 
 
 def update_includes(hook, iweb):
+	from fluorine.utils import fcache
+
 	d = fcache.get_cached_value("hooks_helper")
 
 	if not d:

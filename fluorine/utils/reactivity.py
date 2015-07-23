@@ -158,7 +158,7 @@ def run_reactivity(path, mthost="http://localhost", mtport=3000, mghost="http://
 """
 
 
-def run_meteor(path, mthost="http://localhost", mtport=3000, mghost="http://localhost", mgport=27017, mgdb="fluorine", restart=False):
+def run_meteor(path, mthost="http://localhost", mtport=3000, mghost=None, mgport=0, mgdb=None, restart=False):
 	import os, copy
 	from . import is_open_port
 
@@ -174,8 +174,9 @@ def run_meteor(path, mthost="http://localhost", mtport=3000, mghost="http://loca
 		environ["PORT"] = str(mtport)
 	if not os.environ.get("FLUOR_MONGO_URL", None):
 		#os.environ["MONGO_URL"] = "mongodb://localhost:27017/ekaiser"
-		mghost = mghost.replace("http://","").replace("mongodb://","").strip(' \t\n\r')
-		environ["MONGO_URL"] = "mongodb://" + mghost + ":" + str(mgport) + "/" + mgdb#"mongodb://localhost:27017/ekaiser"
+		if mghost:
+			mghost = mghost.replace("http://","").replace("mongodb://","").strip(' \t\n\r')
+			environ["MONGO_URL"] = "mongodb://" + mghost + ":" + str(mgport) + "/" + mgdb#"mongodb://localhost:27017/ekaiser"
 
 	subprocess.Popen(["meteor", "--port=" + str(mtport)], cwd=path, shell=False, close_fds=False, env=environ)
 	#subprocess.Popen([path + "/meteor", "--port=" + str(mtport)], shell=True, env=environ)
@@ -183,9 +184,9 @@ def run_meteor(path, mthost="http://localhost", mtport=3000, mghost="http://loca
 
 def start_meteor():
 	import frappe
-	import file
+	from fluorine.utils.file import get_path_reactivity
 
-	path_reactivity = file.get_path_reactivity()
+	path_reactivity = get_path_reactivity()
 
 	conf = meteor_config
 	meteor = conf.get("meteor_dev") or {}
@@ -193,9 +194,9 @@ def start_meteor():
 	mtport_web = meteor.get("port") or 3000
 	mtport_app = mtport_web + 80
 	mthost = meteor.get("host") or "http://localhost"
-	mghost = mongo.get("host") or "http://localhost"
-	mgport = mongo.get("port") or 27017
-	mgdb = mongo.get("db") or "fluorine"
+	mghost = mongo.get("host") or None
+	mgport = mongo.get("port") or 0
+	mgdb = mongo.get("db") or None
 
 	frappesite = conf.get("site")
 
@@ -204,7 +205,8 @@ def start_meteor():
 	tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
 	fluorine_recativity = frappe.db.get_value("Fluorine Reactivity", fieldname="fluorine_reactivity")
 
-	frappe.set_user("guest")
+	if not frappe.db:
+		frappe.set_user("guest")
 
 	for app in tostart.get(fluorine_recativity):
 		meteor_path = os.path.join(path_reactivity, app)
@@ -223,11 +225,13 @@ def get_extras_context_method(site):
 	#	make_meteor_ignor_files()
 	#	hooks = get_extras_context()
 	#except:
-	user = "Administrator"
-	#with FrappeContext(site, "Administrator") as f:
-	frappe.init(site=site)
-	frappe.connect()
-	frappe.set_user(user)
+	if not frappe.db:
+		user = "Administrator"
+		#with FrappeContext(site, "Administrator") as f:
+		frappe.init(site=site)
+		frappe.connect()
+		frappe.set_user(user)
+
 	make_meteor_ignor_files()
 	hooks = get_extras_context()
 	#frappe.set_user("guest")
@@ -364,6 +368,7 @@ print "frappe.__file__ 2 {}".format(os.getcwd())
 
 import sys
 
+#print "any serve or start in args {} args {}" .format(any("--serve"==s or "--start"==s for s in sys.argv), sys.argv)
 if any("--serve"==s or "--start"==s for s in sys.argv):
 	import frappe
 	print "starting reactivity... {}".format(sys.argv)

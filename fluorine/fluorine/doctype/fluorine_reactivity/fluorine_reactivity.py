@@ -8,8 +8,8 @@ from frappe.model.document import Document
 
 class FluorineReactivity(Document):
 	def on_update(self, method=None):
-		from fluorine.utils import set_config
-		from fluorine.utils.file import save_custom_template
+		#from fluorine.utils.file import set_config
+		from fluorine.utils.file import save_custom_template, set_config
 		from fluorine.utils.fhooks import change_base_template
 
 		from fluorine.utils.reactivity import meteor_config
@@ -58,8 +58,8 @@ def save_to_common_site_config(doc):
 	mtconf["port"] = doc.fluor_meteor_port
 	mtconf["host"] = doc.fluor_meteor_host
 	mtconf["ddpurl"] = doc.ddpurl
-	mgconf["host"] = doc.fluor_mongo_host
-	mgconf["port"] = doc.fluor_mongo_port
+	mgconf["host"] = doc.fluor_mongo_host.strip()
+	mgconf["port"] = doc.fluor_mongo_port.strip() or 0
 	mgconf["db"] = doc.fluor_mongo_database
 
 	f["site"] = doc.site
@@ -70,10 +70,14 @@ def save_to_common_site_config(doc):
 	else:
 		f["meteor_dev"] = mtconf
 
-	if f.get("meteor_mongo", None):
-		f.get("meteor_mongo").update(mgconf)
-	else:
-		f["meteor_mongo"] = mgconf
+	if doc.fluor_mongo_host.strip() and doc.check_mongodb:
+		if f.get("meteor_mongo", None):
+			f.get("meteor_mongo").update(mgconf)
+		else:
+			f["meteor_mongo"] = mgconf
+
+	elif f.get("meteor_mongo", None):
+		del f["meteor_mongo"]
 
 
 	save_js_file(config_path, f)

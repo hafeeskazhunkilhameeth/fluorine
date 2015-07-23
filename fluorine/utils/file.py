@@ -439,6 +439,21 @@ def has_valid_add_templates(app, order, path, meteor_ignore=None):
 				return False
 	return False
 
+def set_config(fobj):
+	#from fluorine.utils.file import get_path_reactivity, save_js_file
+	fobj = fobj or {}
+	path_reactivity = get_path_reactivity()
+	common_site_config = os.path.join(path_reactivity, "common_site_config.json")
+	if os.path.exists(common_site_config):
+		config = frappe.get_file_json(common_site_config)
+		config.update(fobj)
+	else:
+		config = fobj
+
+	save_js_file(common_site_config, config)
+
+	return
+
 """
 This function is call before process the files of the app
 This function call reactignores.py module inside each app templates folder with the list of hook ignores

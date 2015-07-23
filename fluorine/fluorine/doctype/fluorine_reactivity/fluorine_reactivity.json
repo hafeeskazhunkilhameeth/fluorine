@@ -109,8 +109,18 @@
    "precision": ""
   }, 
   {
+   "default": "0", 
+   "description": "Check this if you want to use your own mongodb.", 
+   "fieldname": "check_mongodb", 
+   "fieldtype": "Check", 
+   "label": "Mongo DB", 
+   "permlevel": 0, 
+   "precision": ""
+  }, 
+  {
    "fieldname": "mongodb", 
    "fieldtype": "Section Break", 
+   "hidden": 1, 
    "label": "MongoDB", 
    "permlevel": 0, 
    "precision": ""
@@ -197,7 +207,7 @@
  "is_submittable": 0, 
  "issingle": 1, 
  "istable": 0, 
- "modified": "2015-07-22 15:54:00.067701", 
+ "modified": "2015-07-23 13:00:43.015309", 
  "modified_by": "Administrator", 
  "module": "Fluorine", 
  "name": "Fluorine Reactivity", 

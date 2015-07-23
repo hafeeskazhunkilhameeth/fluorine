@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
 
-from frappe.website.utils import scrub_relative_urls
+#from frappe.website.utils import scrub_relative_urls
 from jinja2.utils import concat
 import frappe
 from frappe.utils.jinja import set_filters, get_allowed_functions_for_jenv
@@ -91,7 +91,8 @@ def compile_jinja_templates(context, whatfor):
 			#	frappe.local.files_to_add[obj.get("appname")] = []
 			if template_path not in frappe.local.templates_referenced:
 				print "calling render template from compile jinja {}".format(template_path)
-				content = scrub_relative_urls(concat(template.render(template.new_context(context))))
+				#content = scrub_relative_urls(concat(template.render(template.new_context(context))))
+				content = concat(template.render(template.new_context(context)))
 			#re_file = fnmatch.translate(realpath[:-6] + "[./]*")
 			#pattern = get_pattern_path(tname[:-6], realpath)
 			#content = ""

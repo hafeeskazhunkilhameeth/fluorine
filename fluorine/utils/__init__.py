@@ -40,21 +40,6 @@ def check_dev_mode():
 
 	return False
 
-def set_config(fobj):
-	from fluorine.utils.file import get_path_reactivity, save_js_file
-	fobj = fobj or {}
-	path_reactivity = get_path_reactivity()
-	common_site_config = os.path.join(path_reactivity, "common_site_config.json")
-	if os.path.exists(common_site_config):
-		config = frappe.get_file_json(common_site_config)
-		config.update(fobj)
-	else:
-		config = fobj
-
-	save_js_file(common_site_config, config)
-
-	return
-
 """
 def get_js_paths():
 	meteor_path = "/assets/fluorine/js/meteor.devel.js" if check_dev_mode() else "/assets/js/meteor.js"
@@ -100,7 +85,6 @@ def is_open_port(ip="127.0.0.1", port=3000):
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	result = sock.connect_ex((ip,port))
 	if result == 0:
-		print "Port is open"
 		is_open = True
 	sock.close()
 	return is_open

@@ -38,6 +38,14 @@ cur_frm.cscript["fluorine_state"] = function(doc){
 	}
 }
 
+cur_frm.cscript["check_mongodb"] = function(doc){
+	if (doc.check_mongodb == 1){
+		unhide_field(["mongodb"]);
+	}else{
+		hide_field(["mongodb"]);
+	}
+}
+
 $(document).on("save", function(ev, doc){
 	var cs = cur_frm.cscript;
 	if(doc.__islocal === 1){
