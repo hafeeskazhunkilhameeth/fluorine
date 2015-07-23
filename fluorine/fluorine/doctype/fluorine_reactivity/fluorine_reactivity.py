@@ -32,6 +32,8 @@ class FluorineReactivity(Document):
 		change_base_template(page_default=page_default, devmode=self.fluor_dev_mode)
 		save_to_common_site_config(self)
 
+		save_to_procfile(self)
+
 
 	def validate(self, method=None):
 		if not self.ddpurl or self.ddpurl.strip() == "":
@@ -40,7 +42,33 @@ class FluorineReactivity(Document):
 		if not self.site or self.site.strip() == "":
 			return frappe.throw("You must provide a valid site")
 
+def save_to_procfile(doc):
+	from fluorine.utils.file import readlines, writelines
+	from fluorine.utils.fjinja2.utils import c
 
+	re_meteor_procfile = c(r"^(meteor_app:|meteor_web:)")
+
+	tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
+
+	procfile_dir = os.path.normpath(os.path.join(os.getcwd(), ".."))
+	procfile_path = os.path.join(procfile_dir, "Procfile")
+
+	meteor_apps = tostart.get(doc.fluorine_reactivity)
+
+	procfile = readlines(procfile_path)
+	procfile = [p for p in procfile if not re_meteor_procfile.match(p)]
+
+	export_mongo = ''
+	if doc.check_mongodb and doc.fluor_mongo_host.strip():
+		user_pass = "%s:%s@" % (doc.mongo_user, doc.mongo_pass) if doc.mongo_user and doc.mongo_pass else ''
+		mghost = doc.fluor_mongo_host.replace("http://","").replace("mongodb://","").strip(' \t\n\r')
+		export_mongo = "export MONGO_URL=mongodb://%s%s:%s/%s && " % (user_pass, mghost, doc.fluor_mongo_port, doc.fluor_mongo_database)
+
+	for app in meteor_apps:
+		procfile.append("%s: (%sexport ROOT_URL=%s && cd apps/reactivity/%s && meteor --port %s)\n" %\
+									(app, export_mongo, doc.fluor_meteor_host,app, int(doc.fluor_meteor_port) + (80 if app == "meteor_app" else 0)))
+
+	writelines(procfile_path, procfile)
 
 def save_to_common_site_config(doc):
 	from fluorine.utils.reactivity import meteor_config

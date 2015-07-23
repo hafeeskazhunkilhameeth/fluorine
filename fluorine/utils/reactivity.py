@@ -213,8 +213,8 @@ def start_meteor():
 		meteor_path = os.path.join(path_reactivity, app)
 		path_meteor = os.path.join(meteor_path, ".meteor")
 		mtport = mtport_web if app == "meteor_web" else mtport_app
-		if os.path.exists(path_meteor):
-			run_meteor(meteor_path, mtport=mtport, mthost=mthost, mghost=mghost, mgport=mgport, mgdb=mgdb)
+		#if os.path.exists(path_meteor):
+		#	run_meteor(meteor_path, mtport=mtport, mthost=mthost, mghost=mghost, mgport=mgport, mgdb=mgdb)
 
 extras_context_methods = set([])
 

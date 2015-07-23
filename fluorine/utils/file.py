@@ -83,13 +83,22 @@ def remove_folder_content(folder):
 
 
 def write(file_path, content):
-	import codecs
+	#import codecs
 	#print "contens to write to file file_path 5 {} content {}".format(file_path, content.decode("utf-8"))
 	with open(file_path, "w") as f:
 	#with codecs.open(file_path, "w", encoding='utf-8') as f:
 		f.write(content)
 		#print "writing files in order file_temp_path 2 {}".format(file_path)
 
+
+def writelines(file_path, content):
+	with open(file_path, "w") as f:
+		f.writelines(content)
+
+def readlines(file_path, sizehint=0):
+	with open(file_path, "r") as f:
+		content = f.readlines(sizehint)
+	return content
 
 def read(file_path):
 	with open(file_path, "r") as f:
