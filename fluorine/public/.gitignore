@@ -4,3 +4,4 @@
 *.swp
 meteor_app/
 meteor_web/
+build.json

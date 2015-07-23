@@ -19,6 +19,13 @@ def before_install():
 
 
 def after_install(rebuild_website=False):
+	from shutil import copyfile
+
+	#TODO chage the hook and build files
+	app_path = frappe.get_app_path("fluorine")
+	hooks_default = os.path.join(app_path, "templates", "hooks_default.py")
+	hooks = os.path.join(app_path, "hooks.py")
+	copyfile(hooks_default, hooks)
 
 	version = frappe.utils.cint(frappe.__version__.split(".", 1)[0])
 	if version >= 5:

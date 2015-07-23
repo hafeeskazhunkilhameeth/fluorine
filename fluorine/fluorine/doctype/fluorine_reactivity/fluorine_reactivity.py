@@ -121,8 +121,9 @@ def make_meteor_file(devmode, mthost, mtport, mtddpurl, mghost, mgport, mgdb, ar
 
 def prepare_compile_environment():
 
+	from fluorine.utils.fhooks import change_base_template
 	from fluorine.utils.reactivity import meteor_config, list_ignores
-	from fluorine.utils import set_config
+	from fluorine.utils.file import set_config
 
 	set_config({
 		"developer_mode": 0
@@ -135,6 +136,7 @@ def prepare_compile_environment():
 		}
 	}
 
+	change_base_template(page_default=True, devmode=0)
 	doc = frappe.get_doc("Fluorine Reactivity")
 	doc.fluor_dev_mode = 0
 	doc.fluorine_state = "off"
