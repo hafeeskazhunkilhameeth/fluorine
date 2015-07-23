@@ -70,6 +70,8 @@ def create_meteor_apps(path_reactivity):
 			meteor_app = os.path.join(path_reactivity, app)
 			for f in glob.glob(os.path.join(meteor_app,"meteor_*")):
 				os.remove(f)
+			#p = subprocess.Popen(["meteor", "run"], cwd=os.path.join(path_reactivity, app), shell=False, close_fds=True)
+			#p.wait()
 	except:
 		print """Error. You must install meteor and node before you can use this app. After that you must create two apps in apps/reactivity folder.
 				For that, cd to apps/reactivity and issue 'meteor create meteor_app' and 'meteor create meteor_web'.
