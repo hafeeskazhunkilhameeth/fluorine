@@ -11,3 +11,11 @@
 
 {% endmeteor %}
 {% endblock %}
+
+{% block meteorlogin %}
+{% meteor meteorlogin %}
+<template name="meteorlogin">
+    {{> loginButtons}}
+</template>
+{% endmeteor %}
+{% endblock %}

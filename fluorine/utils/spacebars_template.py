@@ -33,8 +33,26 @@ def fluorine_get_fenv():
 
 		frappe.local.fenv = fenv
 
+		add_jinja_extension(MeteorTemplate)
+		add_jinja_globals([{"msuper":msuper}, {"mself":mself}, {"mtkeep":tkeep}])
+		add_jinja_filters({"mdom_filter": mdom_filter})
+
 	return frappe.local.fenv
 
+
+def add_jinja_filters(filters):
+	frappe_env = frappe.get_jenv()
+	for k, v in filters.iteritems():
+		frappe_env.filters[k] = v
+
+def add_jinja_globals(funcs):
+	frappe_env = frappe.get_jenv()
+	for f in funcs:
+		frappe_env.globals.update(f)
+
+def add_jinja_extension(extension):
+	frappe_env = frappe.get_jenv()
+	frappe_env.add_extension(extension)
 
 def fluorine_get_floader(encoding="utf-8"):
 

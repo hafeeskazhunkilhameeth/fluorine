@@ -43,20 +43,11 @@ class FluorineReactivity(Document):
 			return frappe.throw("You must provide a valid site")
 
 def save_to_procfile(doc):
-	from fluorine.utils.file import readlines, writelines
-	from fluorine.utils.fjinja2.utils import c
+	from fluorine.utils.file import writelines
 
-	re_meteor_procfile = c(r"^(meteor_app:|meteor_web:)")
-
+	procfile, procfile_path = get_procfile()
 	tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
-
-	procfile_dir = os.path.normpath(os.path.join(os.getcwd(), ".."))
-	procfile_path = os.path.join(procfile_dir, "Procfile")
-
 	meteor_apps = tostart.get(doc.fluorine_reactivity)
-
-	procfile = readlines(procfile_path)
-	procfile = [p for p in procfile if not re_meteor_procfile.match(p)]
 
 	export_mongo = ''
 	if doc.check_mongodb and doc.fluor_mongo_host.strip():
@@ -65,10 +56,31 @@ def save_to_procfile(doc):
 		export_mongo = "export MONGO_URL=mongodb://%s%s:%s/%s && " % (user_pass, mghost, doc.fluor_mongo_port, doc.fluor_mongo_database)
 
 	for app in meteor_apps:
-		procfile.append("%s: (%sexport ROOT_URL=%s && cd apps/reactivity/%s && meteor --port %s)\n" %\
+		procfile.insert(0, "%s: (%sexport ROOT_URL=%s && cd apps/reactivity/%s && meteor --port %s)\n" %\
 									(app, export_mongo, doc.fluor_meteor_host,app, int(doc.fluor_meteor_port) + (80 if app == "meteor_app" else 0)))
 
 	writelines(procfile_path, procfile)
+
+
+def get_procfile():
+	from fluorine.utils.file import readlines
+	from fluorine.utils.fjinja2.utils import c
+
+	re_meteor_procfile = c(r"^(meteor_app:|meteor_web:)")
+	procfile_dir = os.path.normpath(os.path.join(os.getcwd(), ".."))
+	procfile_path = os.path.join(procfile_dir, "Procfile")
+
+	procfile = readlines(procfile_path)
+	procfile = [p for p in procfile if not re_meteor_procfile.match(p)]
+
+	return procfile, procfile_path
+
+def remove_from_procfile():
+	from fluorine.utils.file import writelines
+
+	procfile, procfile_path = get_procfile()
+	writelines(procfile_path, procfile)
+
 
 def save_to_common_site_config(doc):
 	from fluorine.utils.reactivity import meteor_config
@@ -129,9 +141,13 @@ def make_meteor_file(devmode, mthost, mtport, mtddpurl, mghost, mgport, mgdb, ar
 		if whatfor == "Both" and w == "meteor_app":
 			mtport = int(mtport) + 80
 			#get_app_pages(context)
+			#local = frappe.local.path
+			frappe.local.path = "mdesk"
+			#frappe.local.path = "mdesk"
 			context = get_context("mdesk")
 			frappe.get_template(context.base_template_path).render(context)
 		else:
+			frappe.local.path = "fluorine_home"
 			context = get_context("fluorine_home")
 			frappe.get_template(context.base_template_path).render(context)
 			#get_web_pages(context)
@@ -140,6 +156,7 @@ def make_meteor_file(devmode, mthost, mtport, mtddpurl, mghost, mgport, mgdb, ar
 
 	if "meteor_app" in _whatfor.get(whatfor):
 		make_final_app_client(meteor_root_url=mthost, meteor_port=int(mtport), meteor_ddpurl=mtddpurl)
+
 	#fluorine_publicjs_path = os.path.join(frappe.get_app_path("fluorine"), "public", "js", "react")
 	#file.remove_folder_content(fluorine_publicjs_path)
 	#file.make_meteor_config_file(mthost, mtport, version)
@@ -164,6 +181,7 @@ def prepare_compile_environment():
 		}
 	}
 
+	remove_from_procfile()
 	change_base_template(page_default=True, devmode=0)
 	doc = frappe.get_doc("Fluorine Reactivity")
 	doc.fluor_dev_mode = 0
