@@ -119,7 +119,7 @@ def local_tkeep(ctx, tname, page, patterns=None):
 	if not patterns:
 		#pattern = get_pattern_path(tname, realpath)
 		pattern = get_pattern_path(tname, template_path[:-6])
-		print "templates paths to add tname 3 {} template_path {} pattern {}".format(tname, template_path, pattern)
+		print "templates paths to add tname 4 {} template_path {} pattern {}".format(tname, template_path, pattern)
 		fadd.get(appname).append({"tname": page, "pattern":pattern})
 	elif tname:
 		for pattern in patterns:
