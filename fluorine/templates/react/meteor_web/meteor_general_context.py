@@ -5,9 +5,11 @@ __author__ = 'luissaguas'
 import os
 
 def get_context(context, ctx, whatfor):
-	highlight = None
+	highlight = []
 
 	if not context.developer_mode:
-		highlight = {"appname": "fluorine", "action": "remove", "pattern": "highlight/.*"}
+		highlight.append({"appname": "fluorine", "action": "remove", "pattern": "highlight/.*"})
+
+	highlight.append({"appname":"fluorine", "action":"add", "pattern":"login/.*"})
 
 	return highlight

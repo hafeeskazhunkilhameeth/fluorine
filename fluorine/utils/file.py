@@ -303,18 +303,19 @@ def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 						if f in ign_names: #or meteor_ignore_files(app, meteor_relpath, root, f, meteor_ignore=meteor_ignore):
 							continue
 
-						if tpath:
-							relative_file = os.path.relpath(root, meteorpath)
-							source = os.path.normpath(os.path.join("templates", "react", whatfor[0], relative_file, f))
-						else:
-							relative_file = os.path.relpath(root, startpath)
-							source = os.path.normpath(os.path.join("templates", relative_file, f))
+						#if tpath:
+						#	relative_file = os.path.relpath(root, meteorpath)
+							#source = os.path.normpath(os.path.join("templates", "react", whatfor[0], relative_file, f))
+						#else:
+						relative_file = os.path.relpath(root, meteorpath)
+
+						source = os.path.normpath(os.path.join("templates", "react", whatfor[0], relative_file, f))
 
 						if check_remove(source):
 							continue
 
 						found = madd.match(source) or common_pattern.match(source)
-
+						print "in make symlink found 5 {} pattern {} source {} file {} root {} relative {}".format(found, pat, source, f, root, relative_file)
 						if found:
 							try:
 								frappe.create_folder(os.path.realpath(os.path.join(destpath, relative_file)))

@@ -205,14 +205,15 @@ def get_general_context(context, apps, whatfor):
 				nctx = module.get_context(context, ctx, whatfor)
 				if not nctx:
 					continue
-				appname = nctx.get("appname")
-				pattern = nctx.get("pattern")
-				pattern = os.path.join("templates", "react", whatfor, pattern)
-				action = nctx.get("action", "add")
-				if not ctx.get(appname):
-					ctx[appname] = []
+				for nc in nctx:
+					appname = nc.get("appname")
+					pattern = nc.get("pattern")
+					pattern = os.path.join("templates", "react", whatfor, pattern)
+					action = nc.get("action", "add")
+					if not ctx.get(appname):
+						ctx[appname] = []
 
-				ctx[appname].append({"pattern": pattern, "action": action})
+					ctx[appname].append({"pattern": pattern, "action": action})
 
 	for k,v in ctx.iteritems():
 		for obj in v:
