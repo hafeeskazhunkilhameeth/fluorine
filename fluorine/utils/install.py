@@ -66,17 +66,31 @@ def copy_common_config(path_reactivity):
 
 	copyfile(src, dst)
 
+	try:
+		src = os.path.join(app_path, "templates", "permission_files.json")
+		dst = os.path.join(path_reactivity, "permission_files.json")
+		copyfile(src, dst)
+	except:
+		pass
+
 def create_meteor_apps(path_reactivity):
 	import subprocess
 	import glob
+	from fluorine.utils.file import readlines
 
 	try:
+		app_path = frappe.get_app_path("fluorine")
 		for app in ("meteor_app", "meteor_web"):
 			p = subprocess.Popen(["meteor", "create", app], cwd=path_reactivity, shell=False, close_fds=True)
 			p.wait()
 			meteor_app = os.path.join(path_reactivity, app)
 			for f in glob.glob(os.path.join(meteor_app,"meteor_*")):
 				os.remove(f)
+
+			packages_path = os.path.join(app_path, "templates", "packages_" + app)
+			packages = readlines(packages_path)
+			p = subprocess.Popen(["meteor", "add", " ".join([line for line in packages if not line.startswith("#")])], cwd=os.path.join(path_reactivity, app), shell=False, close_fds=True)
+			p.wait()
 			#p = subprocess.Popen(["meteor", "run"], cwd=os.path.join(path_reactivity, app), shell=False, close_fds=True)
 			#p.wait()
 	except:

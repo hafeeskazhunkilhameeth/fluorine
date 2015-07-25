@@ -174,6 +174,7 @@ def prepare_compile_environment():
 		"developer_mode": 0
 	})
 	meteor_config["developer_mode"] = 0
+	meteor_config["mongodb_users_ready"] = 0
 
 	list_ignores["files_folders"] = {
 		"all":{
@@ -270,6 +271,7 @@ def build_frappe_json_files(manifest, js_path, fluorine_path, build_json, meteor
 def prepare_client_files(whatfor):
 	from fluorine.utils.react_file_loader import remove_directory
 	from fluorine.utils.file import get_path_reactivity
+	from shutil import copyfile
 
 	#fluorine_path = frappe.get_app_path("fluorine")
 	react_path = get_path_reactivity()
@@ -281,6 +283,10 @@ def prepare_client_files(whatfor):
 	meteor_js_path = os.path.join(fluorine_path, "public", "js", "meteor")
 	if os.path.exists(meteor_js_path):
 		remove_directory(meteor_js_path)
+
+	src = os.path.join(react_path, whatfor, ".meteor", "packages")
+	dst = os.path.join(fluorine_path, "templates", "packages_" + whatfor)
+	copyfile(src, dst)
 	#fluorine_dst_temp_path = os.path.join(frappe.get_app_path("fluorine"), "templates", "react", "temp")
 
 	#dst = os.path.join(react_path, "app")

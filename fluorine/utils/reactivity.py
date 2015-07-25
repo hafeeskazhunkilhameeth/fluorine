@@ -185,34 +185,42 @@ def run_meteor(path, mthost="http://localhost", mtport=3000, mghost=None, mgport
 
 def start_meteor():
 	import frappe
-	from fluorine.utils.file import get_path_reactivity
+	#from fluorine.utils.file import get_path_reactivity
+	from fluorine.utils.mongodb.utils import is_mongodb_ready, get_common_config_file_json, set_frappe_users, save_mongodb_config
 
-	path_reactivity = get_path_reactivity()
+	#path_reactivity = get_path_reactivity()
 
 	conf = meteor_config
-	meteor = conf.get("meteor_dev") or {}
+	#meteor = conf.get("meteor_dev") or {}
 	mongo = conf.get("meteor_mongo") or {}
-	mtport_web = meteor.get("port") or 3000
-	mtport_app = mtport_web + 80
-	mthost = meteor.get("host") or "http://localhost"
-	mghost = mongo.get("host") or None
-	mgport = mongo.get("port") or 0
-	mgdb = mongo.get("db") or None
+	#mtport_web = meteor.get("port") or 3000
+	#mtport_app = mtport_web + 80
+	#mthost = meteor.get("host") or "http://localhost"
+	mghost = mongo.get("host") or "localhost"
+	mgport = mongo.get("port") or 3001#port of meteor local mongodb
+	mgdb = mongo.get("db") or "fluorine_test"
 
 	frappesite = conf.get("site")
 
 	extras_context_methods.update(get_extras_context_method(frappesite))
 
-	tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
-	fluorine_recativity = frappe.db.get_value("Fluorine Reactivity", fieldname="fluorine_reactivity")
+	#tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
+	#fluorine_recativity = frappe.db.get_value("Fluorine Reactivity", fieldname="fluorine_reactivity")
 
-	if not frappe.db:
+	common_file = get_common_config_file_json()
+	if not is_mongodb_ready(common_file):
+		#for app in tostart.get(fluorine_recativity):
+		set_frappe_users(mghost, mgport, mgdb)
+		common_file["mongodb_users_ready"] = 1
+		save_mongodb_config(common_file)
+
+	if frappe.db:
 		frappe.set_user("guest")
 
-	for app in tostart.get(fluorine_recativity):
-		meteor_path = os.path.join(path_reactivity, app)
-		path_meteor = os.path.join(meteor_path, ".meteor")
-		mtport = mtport_web if app == "meteor_web" else mtport_app
+	#for app in tostart.get(fluorine_recativity):
+		#meteor_path = os.path.join(path_reactivity, app)
+		#path_meteor = os.path.join(meteor_path, ".meteor")
+		#mtport = mtport_web if app == "meteor_web" else mtport_app
 		#if os.path.exists(path_meteor):
 		#	run_meteor(meteor_path, mtport=mtport, mthost=mthost, mghost=mghost, mgport=mgport, mgdb=mgdb)
 
