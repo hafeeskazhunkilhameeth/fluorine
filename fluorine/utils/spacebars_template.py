@@ -108,9 +108,9 @@ def compile_jinja_templates(context, whatfor):
 			#if not frappe.local.files_to_add.get(obj.get("appname")):
 			#	frappe.local.files_to_add[obj.get("appname")] = []
 			if template_path not in frappe.local.templates_referenced:
-				print "calling render template from compile jinja {}".format(template_path)
 				#content = scrub_relative_urls(concat(template.render(template.new_context(context))))
 				content = concat(template.render(template.new_context(context)))
+				print "calling render template from compile jinja 3 {} content {}".format(template_path, content)
 			#re_file = fnmatch.translate(realpath[:-6] + "[./]*")
 			#pattern = get_pattern_path(tname[:-6], realpath)
 			#content = ""

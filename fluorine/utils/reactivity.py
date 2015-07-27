@@ -214,8 +214,12 @@ def start_meteor():
 		common_file["mongodb_users_ready"] = 1
 		save_mongodb_config(common_file)
 
+	#frappe.local.session = frappe._dict({u'data': {}, u'user': u'guest', u'sid': u'guest'})
+
 	if frappe.db:
 		frappe.set_user("guest")
+		#frappe.db.commit()
+		#frappe.destroy()
 
 	#for app in tostart.get(fluorine_recativity):
 		#meteor_path = os.path.join(path_reactivity, app)

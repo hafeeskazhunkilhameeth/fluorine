@@ -32,7 +32,7 @@ def is_mongodb_ready(common_file):
 
 
 def save_mongodb_config(common_config):
-	from file import get_path_reactivity, save_js_file
+	from fluorine.utils.file import get_path_reactivity, save_js_file
 
 	path_reactivity = get_path_reactivity()
 	common_config_file = os.path.join(path_reactivity, "common_site_config.json")
@@ -40,7 +40,7 @@ def save_mongodb_config(common_config):
 
 
 def get_common_config_file_json():
-	from file import get_path_reactivity
+	from fluorine.utils.file import get_path_reactivity
 
 	path_reactivity = get_path_reactivity()
 	common_config_file_json = os.path.join(path_reactivity, "common_site_config.json")

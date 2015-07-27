@@ -122,20 +122,21 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 	sh2.update(rt)
 	for m in manifest:
 		if m.get("where") == "client" or m.get("where") == "internal":
-			prefix = "assets/fluorine/%s/webbrowser" % whatfor
-
+			prefix = "assets/fluorine/%s/webbrowser/" % whatfor
+			path = m.get("path")
+			mhash = m.get("hash")
 			if m.get("where") == "client":
-				url =  m.get("url").split("?")[0]
+				"""url =  m.get("url").split("?")[0]
 				app = url.split("/", 2)[1]
 				is_app = ""
-				path = m.get("path")
 				if app in frappe.get_installed_apps():
 					is_app = "/app"
-				nurl = prefix + is_app + url
+				nurl = prefix + is_app + url"""
+				nurl = prefix + path
 				if m.get("type") == "css":
 					frappe_manifest_css.append(nurl)
 					sh2.update(path)
-					sh2.update(m.get("hash"))
+					sh2.update(mhash)
 					continue
 				else:
 					if whatfor == "meteor_app":
@@ -147,8 +148,10 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 			#	sh2.update(m.get("path"))
 			#	sh2.update(m.get("hash"))
 			#	continue
-			sh1.update(m.get("path"))
-			sh1.update(m.get("hash"))
+			#sh1.update(m.get("path"))
+			sh1.update(path)
+			#sh1.update(m.get("hash"))
+			sh1.update(mhash)
 
 	return sh1.hexdigest(), sh2.hexdigest(), frappe_manifest_js, frappe_manifest_css
 

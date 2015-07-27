@@ -5,4 +5,4 @@ __author__ = 'luissaguas'
 import os
 
 def get_context(context, ctx, whatfor):
-	return {"appname": "fluorine", "action": "add", "pattern": "common/.*"}
+	return [{"appname": "fluorine", "action": "add", "pattern": "common/.*"}]
