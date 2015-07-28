@@ -4,7 +4,8 @@
 
 Template.update_password.events({
 	'submit #reset-password': function(event){
-		return false;
+		//return false;
+		event.preventDefault();
 	},
 	'click #update': function(event, template) {
 		var args = {
@@ -27,11 +28,13 @@ Template.update_password.events({
 			console.log("password update ", res);
 		});
 
-        return false;
+        //return false;
+        event.preventDefault();
 	},
 	'keypress #new_password': function(event, template){
 		if(event.which===13){
 			template.$("#update").click();
+			event.preventDefault();
 		}
 	}
 });

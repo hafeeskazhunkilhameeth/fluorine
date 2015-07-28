@@ -42,15 +42,15 @@ Accounts.registerLoginHandler(/*"frappe_login",*/ function(loginRequest) {
     return null;
   }
 
-  	try{
-  	  cookie = loginRequest.cookie;
-	  result = HTTP.post("http://localhost:8000/api/method/login", {params:{usr:loginRequest.username, pwd:loginRequest.mypassword}, headers:{"Accept":"application/json"}});
-	  //result = HTTP.post("http://localhost:8000", {params:{cmd:"login", usr:loginRequest.username, pwd:loginRequest.mypassword}, headers:{"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Accept":"application/json", "X-Requested-With": "XMLHttpRequest"}});
-//msg = result;
-	}catch(err){
-		console.log("erro: ", err);
-		return;
-	}
+	  //var args = {usr:loginRequest.username, pwd:loginRequest.mypassword};
+	  //var headers = {"Accept":"application/json"};
+	  //var options = {cmd: "login", args: args, headers: headers};
+
+	  var result = frappe.login(loginRequest.username, loginRequest.mypassword);
+
+	  if (result.error)
+			return;
+
 	  var userId = null;
 	  var user = Meteor.users.findOne({username: loginRequest.username});
 	  if(!user) {

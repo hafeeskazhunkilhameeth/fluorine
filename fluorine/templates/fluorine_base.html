@@ -15,7 +15,7 @@
                 -->
                 {% if developer_mode %}
                     {%- for link in meteor_package_css %}
-                        <link type="text/css" rel="stylesheet" class="__meteor-css__" href="{{ meteor_root_url_ports or ""}}{{ link }}">
+                        <link type="text/css" rel="stylesheet" href="{{ meteor_root_url_ports or ""}}{{ link }}">
                     {%- endfor -%}
 
                     {%- for link in meteor_package_js %}

@@ -1,1 +1,0 @@
-console.log("teste 10 in fluorine 910")

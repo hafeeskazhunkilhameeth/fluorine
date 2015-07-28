@@ -62,10 +62,14 @@ def get_meteor_release(cpath):
 
 	return ""
 
-def get_meteor_config(mthost, mtddpurlport, meteor_url_path_prefix, version, version_fresh, mrelease, whatfor):
+def get_meteor_config(mthost, mtddpurlport, meteor_url_path_prefix, version, version_fresh, mrelease, whatfor, appId):
+
+	from fluorine.utils import check_dev_mode
+
+	devmod = check_dev_mode()
 
 	meteor_config = """__meteor_runtime_config__ = {
-		"meteorRelease": "%(meteorRelease)s",
+		%(appId)s"meteorRelease": "%(meteorRelease)s",
 		"ROOT_URL": "%(meteor_root_url)s",
 		"ROOT_URL_PATH_PREFIX": "%(meteor_url_path_prefix)s",
 		"autoupdateVersion": "%(meteor_autoupdate_version)s",
@@ -73,7 +77,7 @@ def get_meteor_config(mthost, mtddpurlport, meteor_url_path_prefix, version, ver
 		"DDP_DEFAULT_CONNECTION_URL": "%(meteor_ddp_default_connection_url)s"
 	};
 	%(jquery)s
-	""" % {"meteorRelease": mrelease, "meteor_root_url": mthost, "meteor_url_path_prefix": meteor_url_path_prefix,
+	""" % {"appId": "'appId':'" + appId + "',\n\t\t" if devmod else "", "meteorRelease": mrelease, "meteor_root_url": mthost, "meteor_url_path_prefix": meteor_url_path_prefix,
 				"meteor_autoupdate_version": version, "meteor_autoupdate_version_freshable": version_fresh,
 				"meteor_ddp_default_connection_url": mtddpurlport, "jquery": """
 if (typeof Package === 'undefined')
@@ -182,7 +186,7 @@ def make_meteor_props(context, whatfor):
 	#meteor_url_path_prefix(whatfor)
 
 	props = get_meteor_config(context.meteor_root_url, context.meteor_ddp_default_connection_url, "", context.meteor_autoupdate_version,\
-							context.meteor_autoupdate_version_freshable, context.meteorRelease, whatfor)
+							context.meteor_autoupdate_version_freshable, context.meteorRelease, whatfor, context.appId)
 
 	save_meteor_props(props, meteor_runtime_path)
 

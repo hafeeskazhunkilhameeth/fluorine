@@ -10,22 +10,26 @@ from frappe.core.doctype.user.user import User
 class MyUser(User):
 
 	def send_welcome_mail_to_user(self):
-		from frappe.utils import random_string
-		from fluorine.utils import meteor_config
+
+		from frappe.utils import random_string, get_url
+		from fluorine.utils import check_dev_mode
 		import urllib
 
 		key = random_string(32)
 		self.db_set("reset_password_key", key)
-		#link = get_url("/update-password?key=" + key)
-		meteor = meteor_config.get("meteor_dev") or {}
-		ddpurl = meteor.get("ddpurl")
-		port = meteor.get("port")
-		mturl = ddpurl + ":" + str(port)
 		uri = "/?update-password=1&key=" + key
-		link = urllib.basejoin(mturl, uri)
-		#link = ddpurl + ":" + str(port) + "/" + "/update-password?key=" + key
 
-		print "my Wellcome notifications mturl {} get_url {}".format(mturl, link)
+		if check_dev_mode():
+			mturl = get_url(uri)
+		else:
+			from fluorine.utils import meteor_config
+			meteor = meteor_config.get("meteor_dev") or {}
+			ddpurl = meteor.get("ddpurl")
+			port = meteor.get("port")
+			mturl = ddpurl + ":" + str(port)
+
+		link = urllib.basejoin(mturl, uri)
+
 		self.send_login_mail(_("Verify Your Account"), "templates/emails/new_user.html",
 			{"link": link})
 

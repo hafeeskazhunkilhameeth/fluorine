@@ -1,0 +1,30 @@
+{% block ApplicationLayout %}
+{% meteor ApplicationLayout %}
+    <template name="ApplicationLayout">
+          <header>
+            <h1>{{%title}}</h1>
+          </header>
+
+          <aside>
+            {{> yield "aside"}}
+          </aside>
+
+          <article>
+            {{> yield}}
+          </article>
+
+          <footer>
+            {{> yield "footer"}}
+          </footer>
+    </template>
+{% endmeteor %}
+{% endblock %}
+
+
+{% block loading %}
+{% meteor loading %}
+    <template name="loading">
+        <p>loading....</p>
+    </template>
+{% endmeteor %}
+{% endblock %}
