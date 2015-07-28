@@ -9,12 +9,15 @@ Template.register.events({
         var firstname = event.target.firstname.value;
         var lastname = event.target.lastname.value;
 
-        var user = {'email':email,password:password,profile:{name:firstname +" "+lastname}};
+        var user = {'email':email, 'password':password, 'profile':{'name':firstname +" "+lastname}};
 
-        Accounts.createUser(user,function(err){
+        Meteor.call("frappe_register", user, function(res){
+            console.log("from return call ", res);
+        });
+        /*Accounts.createUser(user,function(err){
             if(!err) {
                 Router.go('/');
             }
-        });
+        });*/
     }
 });

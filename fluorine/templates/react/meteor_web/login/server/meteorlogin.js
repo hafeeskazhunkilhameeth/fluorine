@@ -44,8 +44,8 @@ Accounts.registerLoginHandler(/*"frappe_login",*/ function(loginRequest) {
 
   	try{
   	  cookie = loginRequest.cookie;
-	  //result = HTTP.post("http://localhost:8000/api/method/login", {params:{usr:loginRequest.username, pwd:loginRequest.mypassword}, headers:{"Cookie": cookie}});
-	  result = HTTP.post("http://localhost:8000", {params:{cmd:"login", usr:loginRequest.username, pwd:loginRequest.mypassword}, headers:{"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Accept":"application/json", "X-Requested-With": "XMLHttpRequest"}});
+	  result = HTTP.post("http://localhost:8000/api/method/login", {params:{usr:loginRequest.username, pwd:loginRequest.mypassword}, headers:{"Accept":"application/json"}});
+	  //result = HTTP.post("http://localhost:8000", {params:{cmd:"login", usr:loginRequest.username, pwd:loginRequest.mypassword}, headers:{"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Accept":"application/json", "X-Requested-With": "XMLHttpRequest"}});
 //msg = result;
 	}catch(err){
 		console.log("erro: ", err);
