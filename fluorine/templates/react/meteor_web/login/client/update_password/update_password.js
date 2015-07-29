@@ -1,7 +1,4 @@
 
-
-
-
 Template.update_password.events({
 	'submit #reset-password': function(event){
 		//return false;
@@ -24,8 +21,13 @@ Template.update_password.events({
 			return;
 		}
 
-		Meteor.call("update_password", args, function(res){
+		Meteor.call("update_password", args, function(error, res){
 			console.log("password update ", res);
+			currRouter = Router.current().route.getName();
+			console.log("current router ", currRouter);
+			if (currRouter === 'update_password'){
+				Router.go("/");
+			}
 		});
 
         //return false;

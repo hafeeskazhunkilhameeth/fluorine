@@ -33,6 +33,43 @@ class MyUser(User):
 		self.send_login_mail(_("Verify Your Account"), "templates/emails/new_user.html",
 			{"link": link})
 
+	def reset_password(self):
+		from frappe.utils import random_string, get_url
+		from fluorine.utils import check_dev_mode
+		import urllib
+
+		key = random_string(32)
+		self.db_set("reset_password_key", key)
+		uri = "/?update-password=1&key=" + key
+
+		if check_dev_mode():
+			mturl = get_url(uri)
+		else:
+			from fluorine.utils import meteor_config
+			meteor = meteor_config.get("meteor_dev") or {}
+			ddpurl = meteor.get("ddpurl")
+			port = meteor.get("port")
+			mturl = ddpurl + ":" + str(port)
+
+		link = urllib.basejoin(mturl, uri)
+
+		self.password_reset_mail(link)
+
+
+@frappe.whitelist(allow_guest=True)
+def meteor_reset_password(user):
+	if user=="Administrator":
+		return _("Not allowed to reset the password of {0}").format(user)
+
+	try:
+		user = MyUser("User", user)
+		user.validate_reset_password()
+		user.reset_password()
+
+		return _("Password reset instructions have been sent to your email")
+
+	except frappe.DoesNotExistError:
+		return _("User {0} does not exist").format(user)
 
 
 @frappe.whitelist(allow_guest=True)

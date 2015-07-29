@@ -11,8 +11,12 @@ Template.register.events({
 
         var user = {'email':email, 'password':password, 'profile':{'name':firstname +" "+lastname}};
 
-        Meteor.call("frappe_register", user, function(res){
+        Meteor.call("frappe_register", user, function(error, res){
             console.log("from return call ", res);
+            currRouter = Router.current().route.getName();
+            if (currRouter == 'register'){
+                Router.go("/");
+            }
         });
         /*Accounts.createUser(user,function(err){
             if(!err) {

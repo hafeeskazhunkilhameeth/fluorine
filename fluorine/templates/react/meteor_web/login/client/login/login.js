@@ -9,9 +9,15 @@ Template.login.events({
            console.log("user callback res ", result);
            res_cookie = Meteor.users.find().fetch()[0].profile.cookies;
           _.each(res_cookie, function(cookie){
-                document.cookie = cookie;
+                //document.cookie = cookie;
+                meteor_set_cookie(cookie);
           });
-          Router.go('/');
+          //Session.set("sid", frappe.get_cookie("sid"));
+          currRouter = Router.current().route.getName();
+          console.log("current router ", currRouter);
+          if (currRouter === 'login'){
+              Router.go("/");
+          }
         });
         /*Meteor.loginWithPassword(email,password,function(err){
             console.log("Submitting.... ", err);

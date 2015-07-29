@@ -11,6 +11,7 @@ import frappe
 c = lambda t:re.compile(t, re.S|re.M)
 STARTTEMPLATE_SUB_ALL = c(r"<\s*template\s+name\s*=\s*(['\"])(\w+)\1(.*?)\s*>(.*?)<\s*/\s*template\s*>")
 
+op_values = ["and", "or", "band"]
 
 def process_args(parser, blocktype):
 	expression = []
@@ -25,12 +26,13 @@ def process_args(parser, blocktype):
 
 	while not token.type == blocktype:
 
+		print "current token in process args {} last_token {}".format(token, last_token)
 		if stream.current.test('string'):
 			special = is_special_token(last_token)
 			last_token = stream.next()
 			expression.append(("'%s'" if special else " '%s'") % last_token.value)
 			token = stream.current
-		elif stream.current.test('name'):
+		elif stream.current.test('name') and stream.current.value not in op_values:
 			special = is_special_token(last_token)
 			last_token = stream.next()
 			expression.append(("" if special else " ") + last_token.value)

@@ -18,9 +18,14 @@ Router.route('/desk', {where: 'server'}).get(function() {
 });
 
 Router.route('/mdesk', {where: 'server'}).get(function() {
-  console.log("server router for mdesk 2");
+  //var req = this.request;
+  var code = this.params.query.code;
+  var code2 = this.request.query.code;
+  code = code? "?code=" + code : "";
+  console.log("server router for mdesk 1 ", code);
+  console.log("server router for mdesk 2 ", code2);
   this.response.writeHead(302, {
-    'Location': frappe_url + "/mdesk" //+ this.params.search
+    'Location': frappe_url + "/mdesk" + code //+ this.params.search
   });
   this.response.end();
 });

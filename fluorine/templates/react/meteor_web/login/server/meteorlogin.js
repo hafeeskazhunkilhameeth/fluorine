@@ -51,6 +51,9 @@ Accounts.registerLoginHandler(/*"frappe_login",*/ function(loginRequest) {
 	  if (result.error)
 			return;
 
+	  if (result.data.message != "Logged In")
+			return;
+
 	  var userId = null;
 	  var user = Meteor.users.findOne({username: loginRequest.username});
 	  if(!user) {
@@ -72,12 +75,12 @@ Accounts.registerLoginHandler(/*"frappe_login",*/ function(loginRequest) {
 	  Accounts._insertLoginToken(userId, stampedToken);
 
 	  console.log("frappe_login register login handler 2 ", userId, stampedToken.token);
-	  console.log("login OK ", result.headers["set-cookie"]);
+	  console.log("login OK ", result);
 	  fcookie = [];
 	  _.each(result.headers["set-cookie"], function(cookie){
 			fcookie.push(cookie);
 	  });
-	  Meteor.users.update(userId, {$set: {"profile.cookies": fcookie}});
+	  Meteor.users.update(userId, {$set: {"profile.cookies": fcookie, "profile.frappe_logout": false}});
 	  //sending token along with the userId
 	  return {
 		userId: userId,

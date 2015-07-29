@@ -6,7 +6,7 @@ frappe.call = function(options){
 
 	var frappe_url = frappe.url;
 	var args = options.args || {};
-	var headers = options.headers || {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Accept":"app	lication/json"};
+	var headers = options.headers || {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Accept":"application/json"};
 	var method = options.method || "/api/method/";
 
 	if (options.cookie){
@@ -41,6 +41,16 @@ frappe.update_password = function(args){
 	return frappe.call(options);
 }
 
+frappe.forgot_password = function(email){
+	var options = {args: {user: email}, cmd: "fluorine.utils.user.meteor_reset_password"};
+	return frappe.call(options);
+}
+
+frappe.logout = function(cookie){
+	var options = {cmd: "logout"};
+	options.headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Accept":"application/json", "Cookie": cookie};
+	return frappe.call(options);
+}
 
 var clean_url = function(url){
     return url.replace(/\/\//g, '/').replace(/http:\//, 'http://')

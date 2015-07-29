@@ -1,0 +1,16 @@
+
+{% block notFound %}
+{% meteor notFound %}
+    <template name="notFound">
+         {{.contentFor "aside"}}
+            <div class="404-content" style="margin-bottom: 100px;">
+                <p>{{_("We are very sorry for this, but the page you are looking for is missing (this could be because of a typo in the address) or moved.")}}</p>
+            </div>
+         {{/contentFor}}
+        <h1 class="text-danger" style="margin-top: 100px;">{{_("Page missing or moved From Meteor")}}</h1>
+        {{.contentFor "footer"}}
+             {{_("Not Found")}}
+        {{/contentFor}}
+    </template>
+{% endmeteor %}
+{%- endblock -%}

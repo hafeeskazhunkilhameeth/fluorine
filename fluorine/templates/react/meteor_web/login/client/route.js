@@ -28,11 +28,19 @@ Router.route('/', {
                 }
             });
         }else{
-            this.render('home');
+            this.render('home', {
+                data: function(){
+                    return {fullLogin: frappe.get_cookie("sid") !== ""  && frappe.get_cookie("sid") !== "Guest" && Meteor.user(), sid: frappe.get_cookie("sid")};
+                }
+            });
         }
     }
 });
 
 Router.route('/index', function () {
     this.render('home');
+});
+
+Router.route('/forgot', function () {
+    this.render('forgot_password');
 });

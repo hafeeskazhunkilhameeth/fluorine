@@ -1,5 +1,6 @@
 
 Router.configure({
   layoutTemplate: 'ApplicationLayout',
-  loadingTemplate: 'loading'
+  loadingTemplate: 'loading',
+  notFoundTemplate: 'notFound'
 });
