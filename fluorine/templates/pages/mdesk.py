@@ -25,9 +25,9 @@ def make_session(user=None, full_name=None, user_type=None, resume=False):
 		full_name=full_name, user_type=user_type)
 
 	# reset user if changed to Guest
-	user = frappe.local.session_obj.user
+	#user = frappe.local.session_obj.user
 	frappe.local.session = frappe.local.session_obj.data
-	#clear_active_sessions()
+	clear_active_sessions()
 
 def clear_active_sessions():
 		if not frappe.conf.get("deny_multiple_sessions"):
