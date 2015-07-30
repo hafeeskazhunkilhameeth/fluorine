@@ -26,7 +26,6 @@ def process_args(parser, blocktype):
 
 	while not token.type == blocktype:
 
-		print "current token in process args {} last_token {}".format(token, last_token)
 		if stream.current.test('string'):
 			special = is_special_token(last_token)
 			last_token = stream.next()
@@ -191,7 +190,7 @@ class MeteorTemplate(Extension):
 	def _template(self, ctx, tname, filepath, lineno, caller=None):
 		"""Helper callback."""
 
-		devmod = ctx.get("developer_mode")
+		devmod = 0#ctx.get("developer_mode")
 		source = caller()
 		if devmod:
 			template = STARTTEMPLATE_SUB_ALL.sub(self.highlight(filepath, lineno), source)

@@ -5,11 +5,11 @@ frappe.ready = false;
 Session.set("frappe_ready", false);
 
 Router.route('/register', function () {
-    this.render('register');
+    this.render();
 });
 
 Router.route('/login', function () {
-    this.render('login');
+    this.render();
 });
 
 Router.route('/', {
@@ -17,6 +17,7 @@ Router.route('/', {
         //return function(){console.log("frappe is ready in waitOn ", frappe.ready);return frappe.ready};
         //return Meteor.subscribe('users');
     },?*/
+    /*template:"meteor_home",*/
     action: function(){
         var query = this.params.query;
         var key;
@@ -28,19 +29,20 @@ Router.route('/', {
                 }
             });
         }else{
-            this.render('home', {
+            this.render( /*{
                 data: function(){
-                    return {fullLogin: frappe.get_cookie("sid") !== ""  && frappe.get_cookie("sid") !== "Guest" && Meteor.user(), sid: frappe.get_cookie("sid")};
+                    return {fullLogin: frappe.get_cookie("sid") !== ""  && frappe.get_cookie("sid") !== "Guest" && Meteor.user(), sid: frappe.get_cookie("sid"), user_id: frappe.get_cookie("user_id")};
                 }
-            });
+            }*/);
+
         }
     }
 });
 
 Router.route('/index', function () {
-    this.render('home');
+    this.render();
 });
 
-Router.route('/forgot', function () {
-    this.render('forgot_password');
+Router.route('/forgot_password', function () {
+    this.render();
 });

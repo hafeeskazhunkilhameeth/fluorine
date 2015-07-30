@@ -13,7 +13,7 @@
     "buttons"              : true,
 
     "component-animations" : false,
-    "dropdowns"            : false,
+    "dropdowns"            : true,
     "button-groups"        : true,
     "input-groups"         : true,
     "navs"                 : true,
@@ -31,7 +31,7 @@
     "media"                : false,
     "list-group"           : false,
     "panels"               : true,
-    "responsive-embed"     : true,
+    "responsive-embed"     : false,
     "wells"                : false,
     "close"                : false,
 
@@ -43,12 +43,12 @@
     "affix"                : false,
     "alert"                : false,
     "button"               : true,
-    "collapse"             : false,
+    "collapse"             : true,
     "scrollspy"            : false,
     "tab"                  : false,
     "transition"           : true,
 
     "utilities"            : true,
-    "responsive-utilities" : true
+    "responsive-utilities" : false
   }
 }

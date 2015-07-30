@@ -32,15 +32,15 @@
 })*/
 
 
-Accounts.registerLoginHandler(/*"frappe_login",*/ function(loginRequest) {
+Accounts.registerLoginHandler(function(loginRequest) {
 
-  if(!loginRequest) {
-    return undefined;
-  }
+	  if(!loginRequest) {
+		return undefined;
+	  }
 
-  if(!loginRequest.mypassword) {
-    return null;
-  }
+	  if(!loginRequest.mypassword) {
+		return null;
+	  }
 
 	  //var args = {usr:loginRequest.username, pwd:loginRequest.mypassword};
 	  //var headers = {"Accept":"application/json"};
@@ -56,6 +56,7 @@ Accounts.registerLoginHandler(/*"frappe_login",*/ function(loginRequest) {
 
 	  var userId = null;
 	  var user = Meteor.users.findOne({username: loginRequest.username});
+
 	  if(!user) {
 		//userId = Meteor.users.insert({username: loginRequest.username, system_user:true});
 		userId = Accounts.createUser({username:loginRequest.username, password:loginRequest.mypassword});
@@ -77,15 +78,25 @@ Accounts.registerLoginHandler(/*"frappe_login",*/ function(loginRequest) {
 	  console.log("frappe_login register login handler 2 ", userId, stampedToken.token);
 	  console.log("login OK ", result);
 	  fcookie = [];
-	  _.each(result.headers["set-cookie"], function(cookie){
+	  var cookies = result.headers["set-cookie"];
+
+	  _.each(cookies, function(cookie){
 			fcookie.push(cookie);
 	  });
-	  Meteor.users.update(userId, {$set: {"profile.cookies": fcookie, "profile.frappe_logout": false}});
+
+	  var sid = frappe.get_cookie("sid", fcookie.join(";"));
+	  console.log("login cookies sid: ", sid);
+	  Meteor.users.update(userId, {$set: {"profile.cookies": fcookie, "profile.frappe_logout": false, "profile.sid": sid, "stampedLoginToken": stampedToken}});
+	  //console.log("user is ", Meteor.users.findOne({username: loginRequest.username}));
+	  //console.log("hashed login token ", Accounts._hashLoginToken(stampedToken.token));
 	  //sending token along with the userId
 	  return {
 		userId: userId,
-		token: stampedToken.token,
-		tokenExpires: Accounts._tokenExpiration(stampedToken.when)
+		//token: stampedToken.token,//stampedLoginToken
+		stampedLoginToken: stampedToken,
+		//tokenExpires: Accounts._tokenExpiration(stampedToken.when),
+		options:{mytoken: stampedToken.token}
 	  }
 });
 
+//Accounts._hashLoginToken(stampedLoginToken.token)

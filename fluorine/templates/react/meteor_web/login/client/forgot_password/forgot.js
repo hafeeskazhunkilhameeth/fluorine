@@ -1,4 +1,4 @@
-Template.forgot_password.events({
+Template.forgotPassword.events({
 	'submit': function(event, template){
 		//return false;
 		event.preventDefault();

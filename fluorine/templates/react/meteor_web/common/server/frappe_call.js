@@ -25,7 +25,7 @@ frappe.call = function(options){
 
 frappe.login = function(username, password){
 	var args = {usr: username, pwd: password};
-	var headers = {"Accept":"application/json"};
+	var headers = {"Accept":"application/json", "X-Forwarded-For":"192.168.1.100:8000"};
 	var cmd = "login";
 	var options = {cmd: "login", args: args, headers: headers};
 	return frappe.call(options);

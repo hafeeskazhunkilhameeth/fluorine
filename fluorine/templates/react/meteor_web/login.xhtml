@@ -57,8 +57,8 @@
                     </div>
                     <div class="panel-footer">
                         <button type="submit" class="btn btn-primary">Login</button>
-                        <button  class="btn btn-primary btn-facebook">Facebook Login</button>
-
+                        <button class="btn btn-primary btn-facebook">Facebook Login</button>
+                        <button id="forgot_password" class="btn btn-primary">Forgot Password</button>
                     </div>
                 </div>
             </form>
@@ -71,16 +71,15 @@
 {% block home %}
 {% meteor home %}
 <template name="home">
-    <h1>Welcome {{%currentUser.profile.name}}</h1>
+    <h1>Welcome {{%currentUser.username}}</h1>
     <div class="row">
         <div class="col-md-6">
           {{.if fullLogin}}
-              <button class="btn btn-danger btn-logout">Logout {{%currentUser.profile.name}}</button>
-              <a href="mdesk?code={{%sid}}">desk</a>
+              <button class="btn btn-danger btn-logout">Logout {{%currentUser.username}}</button>
+              <a href="mdesk">desk</a>
           {{else}}
               <a href="login">Login</a>
               <a href="register">Register</a>
-              <a href="forgot">Forgot Password</a>
           {{/if}}
         </div>
     </div>
@@ -115,9 +114,9 @@
 {% endmeteor %}
 {% endblock %}
 
-{% block forgot_password %}
-{% meteor forgot_password %}
-<template name="forgot_password">
+{% block forgotPassword %}
+{% meteor forgotPassword %}
+<template name="forgotPassword">
     <div class="row" style="margin-top: 40px; margin-bottom: 20px">
         <div class="col-sm-6 col-sm-offset-3">
             <form class="form-signin form-forgot" role="form">
@@ -125,9 +124,6 @@
                     class="form-control" placeholder="{{ _('Email Id') }}" required autofocus>
                 <br>
                 <button class="btn btn-lg btn-default btn-block btn-forgot" type="submit">{{ _("Send Password") }}</button>
-                <p class="text-center small">
-                    <br><a href="#login" class="grey">{{ _("Back to Login") }}</a>
-                </p>
 
             </form>
         </div>

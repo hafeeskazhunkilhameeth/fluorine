@@ -33,6 +33,10 @@ Template.login.events({
                 Router.go('/');
             }
         });
+     },
+    'click #forgot_password':function(event){
+        event.preventDefault();
+        Router.go('/forgot_password');
      }
 });
 

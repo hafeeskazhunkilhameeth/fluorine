@@ -1,6 +1,7 @@
 
-Template.home.events({
-    'click .btn-logout':function(){
+Template.meteor_menu.events({
+    'click .logout':function(evet){
+        event.preventDefault();
         var sid = frappe.get_cookie("sid");
         var cookie = repl("sid=%(sid)s", {sid:sid});
         Meteor.call("frappe_logout", cookie, function(error, res){
@@ -20,4 +21,23 @@ Template.home.events({
             }
         });
     }
+});
+
+Template.meteor_menu.helpers({
+       fullLogin: function(){
+            return frappe.get_cookie("sid") !== ""  && frappe.get_cookie("sid") !== "Guest" && Meteor.user();
+       },
+       user_id: function(){
+            return frappe.get_cookie("user_id");
+       },
+       sid: function(){
+            return frappe.get_cookie("sid");
+       },
+       user_image: function(){
+            return decodeURIComponent(frappe.get_cookie("user_image"));
+       }
+});
+
+Template.meteor_home.onRendered(function(){
+
 });
