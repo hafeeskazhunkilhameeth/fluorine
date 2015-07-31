@@ -40,7 +40,8 @@ Router.route('/', {
 });
 
 Router.route('/index', function () {
-    this.render();
+    //this.render();
+    this.redirect("/");
 });
 
 Router.route('/forgot_password', function () {

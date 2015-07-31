@@ -111,45 +111,11 @@ def get_custom_pattern(whatfor, custom_pattern=None):
 
 	return pattern, ignored_names_any, ignored_names_top
 
-# copy the translations files from apps from the first installed to the last installed so we can replace with new ones
-# project-tap.i18n can be replaced with new data from last installed apps
-def copy_meteor_languages(start_folders, dest_folder, appname, whatfor=None, custom_pattern=None):
-	import fnmatch
-
-	pattern, ignored_names_any, ignored_names_top  = custom_pattern
-	list_meteor_files_folders_remove = frappe.local.meteor_ignores.get("remove").get("files_folders")
-	all_files_folder_remove = list_meteor_files_folders_remove.get("all")
-	appname_files_folder_remove = list_meteor_files_folders_remove.get(appname)
-
-	for st_folder in start_folders:
-		for root, dirs, files in os.walk(st_folder):
-			ign_dirs = pattern(st_folder, dirs)
-			try:
-				ign_dirs.update(ignored_names_any)
-				[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
-			except:
-				print "remove exclude 3 {} no exclude in dirs ".format(ignored_names_top)
-				pass
-
-			files = [toinclude for toinclude in files if fnmatch.fnmatch(toinclude, "*i18n.json") or fnmatch.fnmatch(toinclude, "*project-tap.i18n")]
-
-			for f in files:
-				if check_remove_files_folders(f,  all_files_folder_remove) or check_remove_files_folders(f, appname_files_folder_remove):
-					continue
-				try:
-					frappe.create_folder(dest_folder)
-					if f != "project-tap.i18n":
-						os.symlink(os.path.join(root, f), os.path.join(dest_folder, f))
-					else:
-						root_folder = dest_folder.rsplit(os.sep, 1)[0]
-						os.symlink(os.path.join(root, f), os.path.join(root_folder, f))
-				except:
-					pass
-
 
 def read_client_xhtml_files(start_folder, whatfor, appname, meteor_ignore=None, custom_pattern=None):
 	#from fluorine.utils.file import meteor_ignore_files, meteor_ignore_folders
 	import fnmatch
+	from file import check_remove_files_folders
 
 	files_to_read = []
 	files_in_lib = []
@@ -218,10 +184,3 @@ def read_client_xhtml_files(start_folder, whatfor, appname, meteor_ignore=None, 
 				files_to_read.append(obj)
 
 	return (files_in_lib, files_to_read, main_lib_files, main_files)
-
-def check_remove_files_folders(file,  files_folder_remove):
-	if files_folder_remove:
-		for pattern in files_folder_remove:
-			if pattern.match(file):
-				return True
-	return False

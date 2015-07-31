@@ -246,6 +246,69 @@ def match_path(startpath, excludes, includes):
 		for fname in files:
 			print fname
 
+def check_remove_files_folders(file,  files_folder_remove):
+	if files_folder_remove:
+		for pattern in files_folder_remove:
+			if pattern.match(file):
+				return True
+	return False
+
+# copy the translations files from apps from the first installed to the last installed so we can replace with new ones
+# project-tap.i18n can be replaced with new data from last installed apps
+def copy_meteor_languages(start_folders, dest_folder, appname, whatfor=None, custom_pattern=None):
+	import fnmatch
+
+	pattern, ignored_names_any, ignored_names_top  = custom_pattern
+	list_meteor_files_folders_remove = frappe.local.meteor_ignores.get("remove").get("files_folders")
+	all_files_folder_remove = list_meteor_files_folders_remove.get("all")
+	appname_files_folder_remove = list_meteor_files_folders_remove.get(appname)
+
+	for st_folder in start_folders:
+		for root, dirs, files in os.walk(st_folder):
+			ign_dirs = pattern(st_folder, dirs)
+			try:
+				ign_dirs.update(ignored_names_any)
+				[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
+			except:
+				print "remove exclude 3 {} no exclude in dirs ".format(ignored_names_top)
+				pass
+
+			files = [toinclude for toinclude in files if fnmatch.fnmatch(toinclude, "*i18n.json") or fnmatch.fnmatch(toinclude, "*project-tap.i18n")]
+
+			for f in files:
+				if check_remove_files_folders(f,  all_files_folder_remove) or check_remove_files_folders(f, appname_files_folder_remove):
+					continue
+				try:
+					frappe.create_folder(dest_folder)
+					#if f != "project-tap.i18n":
+					os.symlink(os.path.join(root, f), os.path.join(dest_folder, f))
+					#else:
+					#	root_folder = dest_folder.rsplit(os.sep, 1)[0]
+					#	os.symlink(os.path.join(root, f), os.path.join(root_folder, f))
+				except:
+					pass
+
+def copy_project_translation(apps, whatfor, custom_pattern=None):
+
+	path_reactivity = get_path_reactivity()
+	i18n_files_route = "tap-i18n"#"translations"
+	project_file = "project-tap.i18n"
+	destpath = os.path.join(path_reactivity, whatfor, project_file)
+
+	#from first installed to the last installed
+	for app in apps:
+		pathname = frappe.get_app_path(app)
+		path = os.path.join(pathname, "templates", "react")
+		src_project_path_root = os.path.join(path, project_file)
+		src_project_path_app = os.path.join(path, whatfor, project_file)
+
+		if os.path.exists(src_project_path_app):
+			os.symlink(src_project_path_app, destpath)
+		elif os.path.exists(src_project_path_root):
+			os.symlink(src_project_path_root, destpath)
+
+		copy_meteor_languages([os.path.join(path, i18n_files_route), os.path.join(path, whatfor, i18n_files_route)], os.path.join(path_reactivity, whatfor, i18n_files_route), app, custom_pattern=custom_pattern)
+
 
 #from profilehooks import profile, timecall, coverage
 import re

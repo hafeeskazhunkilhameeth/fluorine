@@ -306,10 +306,10 @@ def get_web_pages(context):
 
 def fluorine_build_context(context, whatfor):
 
-	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity#, save_js_file
+	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation#, save_js_file
 	from reactivity import list_ignores
 	from fluorine.utils.meteor.utils import make_meteor_props
-	from react_file_loader import get_custom_pattern, copy_meteor_languages
+	from react_file_loader import get_custom_pattern
 
 	frappe.local.context = context
 	frappe.local.fenv = None
@@ -359,22 +359,7 @@ def fluorine_build_context(context, whatfor):
 	print "context files_to_add 2 {}".format(context.files_to_add)
 	make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, custom_pattern=["*.xhtml"])
 
-	i18n_files_route = "tap-i18n"
-	project_file = "project-tap.i18n"
-	destpath = os.path.join(path_reactivity, whatfor, project_file)
-	#from first installed to the last installed
-	for app in apps:
-		pathname = frappe.get_app_path(app)
-		path = os.path.join(pathname, "templates", "react")
-		src_project_path_root = os.path.join(path, project_file)
-		src_project_path_app = os.path.join(path, whatfor, project_file)
-
-		if os.path.exists(src_project_path_app):
-			os.symlink(src_project_path_app, destpath)
-		elif os.path.exists(src_project_path_root):
-			os.symlink(src_project_path_root, destpath)
-
-		copy_meteor_languages([os.path.join(path, i18n_files_route), os.path.join(path, whatfor, i18n_files_route)], os.path.join(path_reactivity, whatfor, i18n_files_route), app, custom_pattern=custom_pattern)
+	copy_project_translation(apps, whatfor, custom_pattern)
 
 	make_meteor_props(context, whatfor)
 

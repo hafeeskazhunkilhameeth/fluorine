@@ -1,6 +1,6 @@
 
 Template.meteor_menu.events({
-    'click .logout':function(evet){
+    'click .logout':function(event){
         event.preventDefault();
         //var sid = frappe.get_cookie("sid");
         //var cookie = repl("sid=%(sid)s", {sid:sid});
