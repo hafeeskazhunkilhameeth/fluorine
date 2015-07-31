@@ -309,6 +309,7 @@ def fluorine_build_context(context, whatfor):
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity#, save_js_file
 	from reactivity import list_ignores
 	from fluorine.utils.meteor.utils import make_meteor_props
+	from react_file_loader import get_custom_pattern, copy_meteor_languages
 
 	frappe.local.context = context
 	frappe.local.fenv = None
@@ -349,7 +350,8 @@ def fluorine_build_context(context, whatfor):
 			space_compile = meteor.get("compile", True)
 
 	#if refresh or space_compile or whatfor == "meteor_app":
-	process_react_templates(context, apps[::-1], whatfor)
+	custom_pattern = get_custom_pattern(whatfor, custom_pattern=None)
+	process_react_templates(context, apps[::-1], whatfor, custom_pattern)
 
 	#if refresh:
 	fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
@@ -357,17 +359,35 @@ def fluorine_build_context(context, whatfor):
 	print "context files_to_add 2 {}".format(context.files_to_add)
 	make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, custom_pattern=["*.xhtml"])
 
+	i18n_files_route = "tap-i18n"
+	project_file = "project-tap.i18n"
+	destpath = os.path.join(path_reactivity, whatfor, project_file)
+	#from first installed to the last installed
+	for app in apps:
+		pathname = frappe.get_app_path(app)
+		path = os.path.join(pathname, "templates", "react")
+		src_project_path_root = os.path.join(path, project_file)
+		src_project_path_app = os.path.join(path, whatfor, project_file)
+
+		if os.path.exists(src_project_path_app):
+			os.symlink(src_project_path_app, destpath)
+		elif os.path.exists(src_project_path_root):
+			os.symlink(src_project_path_root, destpath)
+
+		copy_meteor_languages([os.path.join(path, i18n_files_route), os.path.join(path, whatfor, i18n_files_route)], os.path.join(path_reactivity, whatfor, i18n_files_route), app, custom_pattern=custom_pattern)
+
 	make_meteor_props(context, whatfor)
 
 	return context
 
-def process_react_templates(context, apps, whatfor):
+def process_react_templates(context, apps, whatfor, custom_pattern):
 
 	from fluorine.utils.fhooks import get_xhtml_context
-	from react_file_loader import read_client_xhtml_files, get_custom_pattern
+	from react_file_loader import read_client_xhtml_files
 	from fluorine.utils.fhooks import get_extra_context_func, get_general_context
 	from fluorine.utils.meteor.utils import compile_spacebars_templates
 	from reactivity import extras_context_methods
+
 	#from fjinja import process_hooks_apps, process_hooks_meteor_templates
 	#first installed app first
 	#list_apps_remove = process_hooks_apps(apps)
@@ -379,7 +399,6 @@ def process_react_templates(context, apps, whatfor):
 	#ignore = {"templates":list_meteor_files_remove, "files_folders":list_meteor_files_folders_remove}
 	list_apps_remove = frappe.local.meteor_ignores.get("remove", {}).get("apps")
 
-	custom_pattern = get_custom_pattern(whatfor, custom_pattern=None)
 	for app in apps:
 		if app in list_apps_remove:
 			continue
@@ -400,7 +419,6 @@ def process_react_templates(context, apps, whatfor):
 
 	#get the context from all the python files of templates
 	get_xhtml_context(context)
-
 	#get all the templates to use
 	#mtl = get_meteor_template_list()
 	#and compile them all
@@ -421,6 +439,11 @@ def process_react_templates(context, apps, whatfor):
 		arr.insert(0, "(function(){\n")
 		arr.append("})();\n")
 		context.compiled_spacebars_js = arr
+
+	#copy the translation files from apps
+
+	#path_reactivity = get_path_reactivity()
+	#os.symlink(os.path.join(fluorine_path), os.path.join(path_reactivity, ))
 
 
 def addto_meteor_templates_list(template_path):

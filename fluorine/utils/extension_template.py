@@ -88,11 +88,20 @@ class MeteorTemplate(Extension):
 		#expressions = nodes.Const(" ".join([unicode(expr) for expr in expression]))
 		#name_tag = nodes.Const(tag.value)
 
+		hightlight = nodes.Const(0)
 		tname = stream.expect('name')
 		if tname:
 			tname = nodes.Const(tname.value)
 		else:
-			parser.fail("You must provide a name")
+			parser.fail("You must provide a name.")
+
+		if stream.skip_if("comma"):
+			nameobj = stream.expect('name')
+			name = nameobj.value
+			if name == "highlight" or name == "hl":
+				hightlight = nodes.Const(1)
+			else:
+				parser.fail("You must provide a highlight after comma.")
 
 		app_path = os.path.normpath(os.path.join(frappe.get_app_path("fluorine"), "..", ".."))
 
@@ -113,7 +122,7 @@ class MeteorTemplate(Extension):
 		ctx_ref = nodes.ContextReference()
 
 		return nodes.CallBlock(
-			self.call_method('_template', args=[ctx_ref, tname, filepath, lineno]), [], [], body).\
+			self.call_method('_template', args=[ctx_ref, tname, filepath, lineno, hightlight]), [], [], body).\
 				set_lineno(tag.lineno)
 
 
@@ -143,7 +152,10 @@ class MeteorTemplate(Extension):
 					token = parser.stream.current
 					if token.test_any(*expr_tokens):
 						if token.value == "%":
-							value = ""
+							#value = ""
+							next(parser.stream)
+							token = parser.stream.current
+							value = token.value
 						elif token.value == ".":
 							value = "#"
 						else:
@@ -187,12 +199,12 @@ class MeteorTemplate(Extension):
 
 		return body
 
-	def _template(self, ctx, tname, filepath, lineno, caller=None):
+	def _template(self, ctx, tname, filepath, lineno, hightlight, caller=None):
 		"""Helper callback."""
 
-		devmod = 0#ctx.get("developer_mode")
+		devmod = ctx.get("developer_mode")
 		source = caller()
-		if devmod:
+		if devmod and hightlight:
 			template = STARTTEMPLATE_SUB_ALL.sub(self.highlight(filepath, lineno), source)
 		else:
 			template = """%s""" % (source)

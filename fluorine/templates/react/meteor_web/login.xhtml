@@ -6,26 +6,26 @@
             <form class="register-form">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h3>Registration</h3>
+                        <h3>{{%_ "Registration"}}</h3>
                     </div>
                     <div class="panel-body">
                         <div class="form-group col-lg-12">
-                            <label>Email</label>
-                            <input type=""  class="form-control" id="email" value="">
+                            <label>{{%_ "Email"}}</label>
+                            <input type="email" class="form-control" id="email" value="">
                         </div>
  
                         <div class="form-group col-lg-6">
-                            <label>Name</label>
+                            <label>{{%_ "Name"}}</label>
                             <input type="text" name="" class="form-control" id="firstname" value="">
                         </div>
  
                         <div class="form-group col-lg-6">
-                            <label>Last Name</label>
+                            <label>{{%_ "Last Name"}}</label>
                             <input type="text" name="" class="form-control" id="lastname" value="">
                         </div>
                     </div>
                     <div class="panel-footer">
-                        <button type="submit" class="btn btn-primary">Register</button>
+                        <button type="submit" class="btn btn-primary">{{%_ "Register"}}</button>
                     </div>
                 </div>
             </form>
@@ -43,22 +43,22 @@
             <form class="login-form">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h3>Login</h3>
+                        <h3>{{%_ "Login"}}</h3>
                     </div>
                     <div class="panel-body">
                         <div class="form-group col-lg-12">
-                            <label>Email</label>
-                            <input type="email"  class="form-control" id="email" value="">
+                            <label>{{%_ "Email"}}</label>
+                            <input type="text"  class="form-control" id="email" value="">
                         </div>
                         <div class="form-group col-lg-12">
-                            <label>Password</label>
+                            <label>{{%_ "Password"}}</label>
                             <input type="password" name="" class="form-control" id="password" value="">
                         </div>
                     </div>
                     <div class="panel-footer">
-                        <button type="submit" class="btn btn-primary">Login</button>
-                        <button class="btn btn-primary btn-facebook">Facebook Login</button>
-                        <button id="forgot_password" class="btn btn-primary">Forgot Password</button>
+                        <button type="submit" class="btn btn-primary">{{%_ "Login"}}</button>
+                        <button class="btn btn-primary btn-facebook">{{%_ "Facebook Login"}}</button>
+                        <button id="forgot_password" class="btn btn-primary">{{%_ "Forgot Password"}}</button>
                     </div>
                 </div>
             </form>
@@ -69,17 +69,17 @@
 {% endblock %}
 
 {% block home %}
-{% meteor home %}
+{% meteor home, hl %}
 <template name="home">
     <h1>Welcome {{%currentUser.username}}</h1>
     <div class="row">
         <div class="col-md-6">
           {{.if fullLogin}}
-              <button class="btn btn-danger btn-logout">Logout {{%currentUser.username}}</button>
-              <a href="mdesk">desk</a>
+              <button class="btn btn-danger btn-logout">{{%_ "Logout"}} {{%currentUser.username}}</button>
+              <a href="mdesk">{{%_ "desk"}}</a>
           {{else}}
-              <a href="login">Login</a>
-              <a href="register">Register</a>
+              <a href="login">{{%_ "Login"}}</a>
+              <a href="register">{{%_ "Register"}}</a>
           {{/if}}
         </div>
     </div>
@@ -96,16 +96,16 @@
                 {{.unless key}}
                     <div class="form-group">
                         <input id="old_password" type="password"
-                            class="form-control" placeholder="{{ _("Old Password") }}">
+                            class="form-control" placeholder="{{%_ "Old Password" }}">
                     </div>
                 {{/unless}}
                 <div class="form-group">
                     <input id="new_password" type="password"
-                        class="form-control" placeholder="{{ _("New Password") }}">
+                        class="form-control" placeholder="{{%_ "New Password" }}">
                 </div>
                 <div class="form-group">
                     <button type="submit" id="update"
-                        class="btn btn-primary">{{_("Update")}}</button>
+                        class="btn btn-primary">{{%_ "Update"}}</button>
                 </div>
             </form>
         </div>
@@ -121,9 +121,9 @@
         <div class="col-sm-6 col-sm-offset-3">
             <form class="form-signin form-forgot" role="form">
                 <input type="email" id="forgot_email"
-                    class="form-control" placeholder="{{ _('Email Id') }}" required autofocus>
+                    class="form-control" placeholder="{{%_ 'Email Id' }}" required autofocus>
                 <br>
-                <button class="btn btn-lg btn-default btn-block btn-forgot" type="submit">{{ _("Send Password") }}</button>
+                <button class="btn btn-lg btn-default btn-block btn-forgot" type="submit">{{%_ "Send Password" }}</button>
 
             </form>
         </div>

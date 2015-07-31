@@ -27,7 +27,7 @@ frappe.login = function(username, password){
 	var args = {usr: username, pwd: password};
 	var headers = {"Accept":"application/json", "X-Forwarded-For":"192.168.1.100:8000"};
 	var cmd = "login";
-	var options = {cmd: "login", args: args, headers: headers};
+	var options = {cmd: cmd, args: args, headers: headers};
 	return frappe.call(options);
 }
 
@@ -49,6 +49,15 @@ frappe.forgot_password = function(email){
 frappe.logout = function(cookie){
 	var options = {cmd: "logout"};
 	options.headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Accept":"application/json", "Cookie": cookie};
+	return frappe.call(options);
+}
+
+//not used
+frappe.translation = function(lang, cookies){
+	var headers = {"Accept":"application/json", "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Cookie": cookies};
+	var args = {lang: lang};
+	var cmd = "fluorine.utils.user.meteor_get_translation";
+	var options = {cmd: cmd, args: args, headers: headers};
 	return frappe.call(options);
 }
 

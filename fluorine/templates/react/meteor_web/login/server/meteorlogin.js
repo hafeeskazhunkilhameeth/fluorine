@@ -31,6 +31,15 @@
 	return true;
 })*/
 
+Accounts.validateNewUser(function(user){
+	if (validate_email(user.username)){
+		return true;
+	}
+
+	return false;
+
+});
+
 
 Accounts.registerLoginHandler(function(loginRequest) {
 
@@ -87,6 +96,10 @@ Accounts.registerLoginHandler(function(loginRequest) {
 	  var sid = frappe.get_cookie("sid", fcookie.join(";"));
 	  console.log("login cookies sid: ", sid);
 	  Meteor.users.update(userId, {$set: {"profile.cookies": fcookie, "profile.frappe_logout": false, "profile.sid": sid, "stampedLoginToken": stampedToken}});
+
+	  //var lang = frappe.get_translation_dict("pt", userId);
+	  //console.log("language ", lang);
+
 	  //console.log("user is ", Meteor.users.findOne({username: loginRequest.username}));
 	  //console.log("hashed login token ", Accounts._hashLoginToken(stampedToken.token));
 	  //sending token along with the userId

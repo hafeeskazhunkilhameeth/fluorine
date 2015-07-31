@@ -100,3 +100,9 @@ def meteor_sign_up(email, full_name):
 		user.insert()
 
 		return _("Registration Details Emailed.")
+
+
+@frappe.whitelist()
+def meteor_get_translation(lang):
+	from frappe.translate import get_full_dict
+	return get_full_dict(lang)

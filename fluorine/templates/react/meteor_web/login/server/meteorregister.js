@@ -1,6 +1,11 @@
+if (typeof frappe === 'undefined')
+	frappe = {};
 
 Meteor.methods({
 	frappe_register: function(user){
+		if (!validate_email(user.email))
+			return;
+
 		var result = frappe.register(user.email, user.profile.name);
 		if (result.error)
 			return;
@@ -21,6 +26,13 @@ Meteor.methods({
 		return "OK";
 	},
 	frappe_logout: function(cookie){
+
+		//var userId = Meteor.userId();
+		var userId = this.userId;
+		if (userId === 'undefined')
+			return;
+
+		cookie = frappe.get_frappe_cookie(userId, ["sid"]);
 		var result = frappe.logout(cookie);
 		console.log("result from logout ", result);
 		var res;

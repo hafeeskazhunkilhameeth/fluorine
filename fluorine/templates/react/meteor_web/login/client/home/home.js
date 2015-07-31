@@ -2,9 +2,9 @@
 Template.meteor_menu.events({
     'click .logout':function(evet){
         event.preventDefault();
-        var sid = frappe.get_cookie("sid");
-        var cookie = repl("sid=%(sid)s", {sid:sid});
-        Meteor.call("frappe_logout", cookie, function(error, res){
+        //var sid = frappe.get_cookie("sid");
+        //var cookie = repl("sid=%(sid)s", {sid:sid});
+        Meteor.call("frappe_logout", function(error, res){
             console.log("from return call logout 2 ", res);
             if (res && res.error || error){
                 console.log("erro in logout ", res && res.error || error);
