@@ -1,8 +1,8 @@
 if (typeof frappe === 'undefined')
 	frappe = {};
 
-frappe.ready = false;
-Session.set("frappe_ready", false);
+//frappe.ready = false;
+//Session.set("frappe_ready", false);
 
 Router.route('/register', function () {
     this.render();
