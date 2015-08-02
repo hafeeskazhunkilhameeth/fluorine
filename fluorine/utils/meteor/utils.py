@@ -44,13 +44,18 @@ def build_meteor_context(context, devmode, whatfor):
 	#	host_url = base_url
 		#port = ""
 
-	host = meteor.get("host", "http://localhost")
+	if whatfor == "meteor_web":
+		host = meteor.get("host", "http://192.168.1.100")
+	else:
+		host = meteor.get("host", "http://192.168.1.100") + "/meteordesk"
+
 	ddpurl = meteor.get("ddpurl", "http://localhost")
 	meteor_host =  host + ":" + str(context.mport)
 	if whatfor == "meteor_web":
 		ddpurl_port = ddpurl #+ ":" + str(context.mport)
 	else:
-		ddpurl_port = ddpurl + ":" + str(context.mport)
+		#ddpurl_port = ddpurl + ":" + str(context.mport)
+		ddpurl_port = ddpurl + "/meteordesk"
 	context.meteor_root_url = host
 	context.meteor_root_url_port = meteor_host
 	context.meteor_url_path_prefix = ""#meteor_url_path_prefix(whatfor)
@@ -98,11 +103,19 @@ def make_auto_update_version(path, meteorRelease, root_url, root_prefix, whatfor
 
 	runtimeCfg = OrderedDict()
 	runtimeCfg["meteorRelease"] = meteorRelease#"METEOR@1.1.0.2"
-	runtimeCfg["ROOT_URL"] = root_url#"http://localhost"
-	runtimeCfg["ROOT_URL_PATH_PREFIX"] = root_prefix
+	#if whatfor == "meteor_web":
+	runtimeCfg["ROOT_URL"] = root_url#"http://192.168.1.100"#root_url#"http://localhost"
+	#else:
+	#	runtimeCfg["ROOT_URL"] = root_url + "/meteordesk" #"http://localhost"
+	if whatfor == "meteor_web":
+		runtimeCfg["ROOT_URL_PATH_PREFIX"] = root_prefix
+	else:
+		runtimeCfg["ROOT_URL_PATH_PREFIX"] = "/meteordesk"
+
 	if appId:
 		runtimeCfg["appId"] = appId
 	#runtimeCfg["appId"] = "1uo02wweyt6o11xsntyy"
+
 	manifest = file.read(path)
 	manifest = json.loads(manifest).get("manifest")
 	autoupdateVersion, autoupdateVersionRefresh, frappe_manifest_js, frappe_manifest_css = meteor_hash_version(manifest, runtimeCfg, whatfor)
@@ -121,7 +134,6 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 	#runtimeCfg = {"meteorRelease": meteorRelease,
 	#            "ROOT_URL": 'http://localhost',
 	#             "ROOT_URL_PATH_PREFIX": ""}
-
 	#runtimeCfg = """{'meteorRelease': %s,'ROOT_URL': 'http://localhost','ROOT_URL_PATH_PREFIX': ''}""" % meteorRelease
 	rt = json.dumps(runtimeCfg).replace(" ", "").encode('utf8')
 	print "json.dumps ", rt
@@ -195,7 +207,12 @@ def make_meteor_props(context, whatfor):
 
 	#meteor_url_path_prefix(whatfor)
 
-	props = get_meteor_config(context.meteor_root_url, context.meteor_ddp_default_connection_url, "", context.meteor_autoupdate_version,\
+	if whatfor == "meteor_app":
+		url_prefix = "/meteordesk"
+	else:
+		url_prefix = ""
+
+	props = get_meteor_config(context.meteor_root_url, context.meteor_ddp_default_connection_url, url_prefix, context.meteor_autoupdate_version,\
 							context.meteor_autoupdate_version_freshable, context.meteorRelease, whatfor, context.appId)
 
 	save_meteor_props(props, meteor_runtime_path)

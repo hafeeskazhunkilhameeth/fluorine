@@ -28,6 +28,12 @@ cur_frm.cscript.refresh = function(doc){
 	}else{
 		unhide_field(["fluorine_reactivity", "fluorine_base_template"]);
 	}
+
+	if (doc.check_mongodb == 1){
+		unhide_field(["mongodb"]);
+	}else{
+		hide_field(["mongodb"]);
+	}
 }
 
 cur_frm.cscript["fluorine_state"] = function(doc){
