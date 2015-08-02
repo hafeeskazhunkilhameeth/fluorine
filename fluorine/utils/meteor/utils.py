@@ -47,7 +47,10 @@ def build_meteor_context(context, devmode, whatfor):
 	host = meteor.get("host", "http://localhost")
 	ddpurl = meteor.get("ddpurl", "http://localhost")
 	meteor_host =  host + ":" + str(context.mport)
-	ddpurl_port = ddpurl + ":" + str(context.mport)
+	if whatfor == "meteor_web":
+		ddpurl_port = ddpurl #+ ":" + str(context.mport)
+	else:
+		ddpurl_port = ddpurl + ":" + str(context.mport)
 	context.meteor_root_url = host
 	context.meteor_root_url_port = meteor_host
 	context.meteor_url_path_prefix = ""#meteor_url_path_prefix(whatfor)
@@ -126,7 +129,11 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 	sh2.update(rt)
 	for m in manifest:
 		if m.get("where") == "client" or m.get("where") == "internal":
-			prefix = "assets/fluorine/%s/webbrowser/" % whatfor
+			if whatfor == "meteor_app":
+				prefix = "assets/fluorine/%s/webbrowser/" % whatfor
+			else:
+				prefix = ""
+
 			path = m.get("path")
 			mhash = m.get("hash")
 			if m.get("where") == "client":
@@ -136,7 +143,10 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 				if app in frappe.get_installed_apps():
 					is_app = "/app"
 				nurl = prefix + is_app + url"""
-				nurl = prefix + path
+				if whatfor == "meteor_app":
+					nurl = prefix + path
+				else:
+					nurl = m.get("url")
 				if m.get("type") == "css":
 					frappe_manifest_css.append(nurl)
 					sh2.update(path)
@@ -194,7 +204,8 @@ def make_meteor_props(context, whatfor):
 
 
 def save_meteor_root_prefix(prefix, path):
-	save_meteor_props("__meteor_runtime_config__.ROOT_URL_PATH_PREFIX = '%s';" % prefix, path)
+	#save_meteor_props("__meteor_runtime_config__.ROOT_URL_PATH_PREFIX = '%s';" % prefix, path)
+	pass
 
 def save_meteor_props(props, path):
 	from fluorine.utils.file import save_file

@@ -32,7 +32,7 @@
 })*/
 
 Accounts.validateNewUser(function(user){
-	if (validate_email(user.username)){
+	if (user.username === "Administrator" || validate_email(user.username)){
 		return true;
 	}
 
@@ -69,6 +69,7 @@ Accounts.registerLoginHandler(function(loginRequest) {
 	  if(!user) {
 		//userId = Meteor.users.insert({username: loginRequest.username, system_user:true});
 		userId = Accounts.createUser({username:loginRequest.username, password:loginRequest.mypassword});
+		console.log("result ", result, userId);
 	  } else {
 		userId = user._id;
 	  }
