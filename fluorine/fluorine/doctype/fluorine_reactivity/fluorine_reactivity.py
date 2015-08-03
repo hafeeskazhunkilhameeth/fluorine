@@ -20,7 +20,7 @@ class FluorineReactivity(Document):
 			set_config({
 				"developer_mode": self.fluor_dev_mode
 			})
-			change_base_template(devmode=1)
+			change_base_template()
 			return
 
 		page_default = True
@@ -215,7 +215,7 @@ def prepare_compile_environment():
 	}
 
 	remove_from_procfile()
-	change_base_template(page_default=True, devmode=0)
+	change_base_template(page_default=True)
 	doc = frappe.get_doc("Fluorine Reactivity")
 	doc.fluor_dev_mode = 0
 	doc.fluorine_state = "off"
