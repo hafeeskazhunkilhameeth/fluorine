@@ -29,7 +29,7 @@ class FluorineReactivity(Document):
 			page_default = False
 			save_custom_template(self.fluorine_base_template)
 
-		change_base_template(page_default=page_default, devmode=self.fluor_dev_mode)
+		change_base_template(page_default=page_default)
 		save_to_common_site_config(self)
 
 		save_to_procfile(self)

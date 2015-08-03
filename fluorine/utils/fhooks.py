@@ -5,7 +5,7 @@ import frappe, os, json
 
 
 
-def change_base_template(hooks=None, page_default=True, devmode=1):
+def change_base_template(hooks=None, page_default=True):
 	from fluorine.utils.fcache import clear_frappe_caches
 
 	#def remove_meteor_include():
