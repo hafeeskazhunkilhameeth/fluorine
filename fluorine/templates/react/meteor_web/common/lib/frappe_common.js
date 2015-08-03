@@ -593,11 +593,13 @@ if (Meteor.isServer){
     frappe.get_frappe_cookie = function(userId, keys){
 	var res = "";
 	var userinfo = Meteor.users.find(userId).fetch()[0];
-	var cookies = userinfo.profile.cookies.join(";");
-	_.each(keys, function(key){
-		var val = frappe.get_cookie(key, cookies);
-		res = res + repl("%(key)s=%(sid)s;", {key: key, sid: val});
-	});
+	if (userinfo){
+		var cookies = userinfo.profile.cookies.join(";");
+		_.each(keys, function(key){
+			var val = frappe.get_cookie(key, cookies);
+			res = res + repl("%(key)s=%(sid)s;", {key: key, sid: val});
+		});
+	}
 
 	return res;
 }

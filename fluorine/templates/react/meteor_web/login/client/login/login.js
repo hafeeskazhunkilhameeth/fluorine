@@ -42,8 +42,10 @@ Template.login.events({
 
 
 Meteor.startup(function () {
+    Session.set("showLoadingIndicator", true);
     TAPi18n.setLanguage("pt")
       .done(function () {
+        Session.set("showLoadingIndicator", false);
         console.log("done");
       })
       .fail(function (error_message) {

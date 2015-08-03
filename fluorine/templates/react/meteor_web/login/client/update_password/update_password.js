@@ -6,9 +6,9 @@ Template.update_password.events({
 	},
 	'click #update': function(event, template) {
 		var args = {
+			new_password: template.$("#new_password").val(),
 			key: this.key || "",
-			old_password: template.$("#old_password").val(),
-			new_password: template.$("#new_password").val()
+			old_password: template.$("#old_password").val()
 		}
 
 		console.log("event ", args);
@@ -25,7 +25,7 @@ Template.update_password.events({
 			console.log("password update ", res);
 			currRouter = Router.current().route.getName();
 			console.log("current router ", currRouter);
-			if (currRouter === 'update_password'){
+			if (currRouter === 'update-password'){
 				Router.go("/");
 			}
 		});

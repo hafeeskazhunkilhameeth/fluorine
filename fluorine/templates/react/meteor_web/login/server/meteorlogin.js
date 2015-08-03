@@ -60,7 +60,9 @@ Accounts.registerLoginHandler(function(loginRequest) {
 	  if (result.error)
 			return;
 
-	  if (result.data.message != "Logged In")
+	  var message = result.data.message.toLowerCase();
+
+	  if (!(message == 'logged in' || message == 'no app'))
 			return;
 
 	  var userId = null;

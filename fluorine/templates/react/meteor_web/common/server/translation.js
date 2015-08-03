@@ -9,8 +9,8 @@ frappe.get_translation_dict = function(lang, uid){;
 
 	var userinfo = Meteor.users.find(userId).fetch()[0];
 	var sid = userinfo.profile.sid;
-	var cookies = frappe.get_frappe_cookie(userId, ["sid"]);
-	var trans = frappe.translation(lang, cookies);
+	//var cookies = frappe.get_frappe_cookie(userId, ["sid"]);
+	var trans = frappe.translation(lang);
 	console.log("translations ", trans);
 	return trans;
 }

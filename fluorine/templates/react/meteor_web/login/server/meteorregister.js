@@ -25,15 +25,15 @@ Meteor.methods({
 		console.log("result from forgot password ", result);
 		return "OK";
 	},
-	frappe_logout: function(cookie){
+	frappe_logout: function(){
 
 		//var userId = Meteor.userId();
 		var userId = this.userId;
 		if (userId === 'undefined')
 			return;
 
-		cookie = frappe.get_frappe_cookie(userId, ["sid"]);
-		var result = frappe.logout(cookie);
+		//cookie = frappe.get_frappe_cookie(userId, ["sid"]);
+		var result = frappe.logout();
 		console.log("result from logout ", result);
 		var res;
 		if (result.error){

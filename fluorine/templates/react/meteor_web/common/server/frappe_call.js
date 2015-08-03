@@ -6,12 +6,16 @@ frappe.call = function(options){
 
 	var frappe_url = frappe.url;
 	var args = options.args || {};
+	var cookie = frappe.get_frappe_cookie(Meteor.userId(), ["sid"]);
 	var headers = options.headers || {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Accept":"application/json"};
+	if (cookie !== "")
+		_.extend(headers, {"Cookie": cookie});
+
 	var method = options.method || "/api/method/";
 
-	if (options.cookie){
+	/*if (options.cookie){
 		headers["Cookie"] = options.cookie;
-	}
+	}*/
 
 	try{
 		var url = clean_url(frappe_url + method + options.cmd);
@@ -32,32 +36,33 @@ frappe.login = function(username, password){
 }
 
 frappe.register = function(email, full_name){
-	var options = {args: {email: email, full_name: full_name}, cmd: "fluorine.utils.user.meteor_sign_up"};
+	var options = {args: {email: email, full_name: full_name}, cmd: "frappe.core.doctype.user.user.sign_up"};
 	return frappe.call(options);
 }
 
 frappe.update_password = function(args){
 	var options = {args: args, cmd: "frappe.core.doctype.user.user.update_password"};
+	console.log("args update password ", args);
 	return frappe.call(options);
 }
 
 frappe.forgot_password = function(email){
-	var options = {args: {user: email}, cmd: "fluorine.utils.user.meteor_reset_password"};
+	var options = {args: {user: email}, cmd: "frappe.core.doctype.user.user.reset_password"};
 	return frappe.call(options);
 }
 
-frappe.logout = function(cookie){
+frappe.logout = function(){
 	var options = {cmd: "logout"};
-	options.headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Accept":"application/json", "Cookie": cookie};
+	//options.headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Accept":"application/json", "Cookie": cookie};
 	return frappe.call(options);
 }
 
 //not used
-frappe.translation = function(lang, cookies){
-	var headers = {"Accept":"application/json", "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Cookie": cookies};
+frappe.translation = function(lang){
+	//var headers = {"Accept":"application/json", "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Cookie": cookies};
 	var args = {lang: lang};
 	var cmd = "fluorine.utils.user.meteor_get_translation";
-	var options = {cmd: cmd, args: args, headers: headers};
+	var options = {cmd: cmd, args: args};
 	return frappe.call(options);
 }
 

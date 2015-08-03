@@ -25,7 +25,8 @@ Template.meteor_menu.events({
 
 Template.meteor_menu.helpers({
        fullLogin: function(){
-            return frappe.get_cookie("sid") !== ""  && frappe.get_cookie("sid") !== "Guest" && Meteor.user();
+            //return frappe.get_cookie("sid") !== ""  && frappe.get_cookie("sid") !== "Guest" && Meteor.user();
+            return  Meteor.user() && frappe.get_cookie("sid").length >= 56;
        },
        user_id: function(){
             return frappe.get_cookie("user_id");
@@ -35,9 +36,15 @@ Template.meteor_menu.helpers({
        },
        user_image: function(){
             return decodeURIComponent(frappe.get_cookie("user_image"));
-       }
+       },
+
 });
 
-Template.meteor_home.onRendered(function(){
+Template.meteor_show.onRendered(function(){
+    this.$('.carousel').carousel();
+    this.$('.carousel').carousel('next');
+});
 
+Template.meteor_show.onDestroyed(function(){
+    this.$('.carousel').carousel('pause');
 });

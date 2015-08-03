@@ -18,7 +18,7 @@ Router.route('/', {
         //return Meteor.subscribe('users');
     },?*/
     /*template:"meteor_home",*/
-    action: function(){
+    /*action: function(){
         var query = this.params.query;
         var key;
         if (query["update-password"] == 1){
@@ -29,14 +29,27 @@ Router.route('/', {
                 }
             });
         }else{
-            this.render( /*{
-                data: function(){
-                    return {fullLogin: frappe.get_cookie("sid") !== ""  && frappe.get_cookie("sid") !== "Guest" && Meteor.user(), sid: frappe.get_cookie("sid"), user_id: frappe.get_cookie("user_id")};
-                }
-            }*/);
+            this.render();
+
 
         }
+    }*/
+    /*data: function(){
+        return {myname: "luis"
+    }},*/
+    template: "meteor_home",
+    action: function(){
+        this.render();
     }
+});
+
+Router.route('/update-password', function(){
+    var query = this.params.query;
+    this.render("update_password", {
+        data: function(){
+            return {key: query.key};
+        }
+    });
 });
 
 Router.route('/index', function () {
