@@ -8,11 +8,11 @@ import frappe, os, json
 def change_base_template(hooks=None, page_default=True, devmode=1):
 	from fluorine.utils.fcache import clear_frappe_caches
 
-	def remove_meteor_include():
-		try:
-			hooks.get("app_include_js").remove("/assets/js/meteor_app.js")
-		except:
-			pass
+	#def remove_meteor_include():
+	#	try:
+	#		hooks.get("app_include_js").remove("/assets/js/meteor_app.js")
+	#	except:
+	#		pass
 
 	if not hooks:
 		hooks = frappe.get_hooks(app_name="fluorine")
@@ -23,14 +23,14 @@ def change_base_template(hooks=None, page_default=True, devmode=1):
 		hooks["base_template"] = ["templates/fluorine_base.html"]
 		hooks["home_page"] = ["fluorine_home"]
 
-	remove_meteor_include()
+	#remove_meteor_include()
 
-	if not devmode:
-		app_include_js = hooks.get("app_include_js")
-		if app_include_js:
-			app_include_js.append("/assets/js/meteor_app.js")
-		else:
-			hooks["app_include_js"] = ["/assets/js/meteor_app.js"]
+	#if not devmode:
+	#	app_include_js = hooks.get("app_include_js")
+	#	if app_include_js:
+	#		app_include_js.append("/assets/js/meteor_app.js")
+	#	else:
+	#		hooks["app_include_js"] = ["/assets/js/meteor_app.js"]
 
 
 	fluorine_path = frappe.get_app_path("fluorine")
