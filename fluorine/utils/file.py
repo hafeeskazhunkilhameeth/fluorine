@@ -10,6 +10,16 @@ from shutil import ignore_patterns
 
 
 
+def get_common_config_file_json():
+
+	path_reactivity = get_path_reactivity()
+	common_config_file_json = os.path.join(path_reactivity, "common_site_config.json")
+	if os.path.exists(common_config_file_json):
+		return frappe.get_file_json(common_config_file_json)
+
+	return
+
+
 def save_custom_template(template_path):
 	from fluorine.utils import get_encoding
 

@@ -1,4 +1,79 @@
+if (typeof frappe === 'undefined')
+	frappe = {};
 
+inList = in_list = function in_list(list, item) {
+    if (!list)
+        return false;
+    for (var i = 0, j = list.length; i < j; i++)
+        if (list[i] == item)
+            return true;
+    return false;
+};
+
+strip = function(s, chars) {
+    if (s) {
+        var s = lstrip(s, chars)
+        s = rstrip(s, chars);
+        return s;
+    }
+}
+rstrip = function(s, chars) {
+    if (!chars)
+        chars = ['\n', '\t', ' '];
+    var last_char = s.substr(s.length - 1);
+    while (in_list(chars, last_char)) {
+        var s = s.substr(0, s.length - 1);
+        last_char = s.substr(s.length - 1);
+    }
+    return s;
+}
+
+lstrip = function (s, chars){
+    if(!chars) chars=['\n','\t',' '];
+    var first_char=s.substr(0,1);
+    while(in_list(chars,first_char)){
+        var s=s.substr(1);first_char=s.substr(0,1);
+    }
+    return s;
+}
+
+cstr = function cstr(s) {
+    if (s == null)
+        return '';
+    return s + '';
+}
+
+frappe.get_cookie = function(c, cookie) {
+    var clist;
+    clist = (cookie + '').split(';');
+    var cookies = {};
+    for (var i = 0; i < clist.length; i++) {
+        var tmp = clist[i].split('=');
+        //cookies[strip(tmp[0])] = strip($.trim(tmp.slice(1).join("=")), "\"");
+        cookies[strip(tmp[0])] = strip(tmp.slice(1).join("=").trim(), "\"");
+    }
+    return cookies[c];
+}
+
+Accounts.validateLoginAttempt(function(obj){
+      var sid = frappe.get_cookie("sid");
+      console.log("validate ", obj, sid);
+      if (is_valid_sid(obj.user.profile.sid) && !obj.user.profile.frappe_logout)
+         return obj.allowed;
+
+      return false;
+});
+
+Accounts.validateNewUser(function(user){
+	return false;
+});
+
+Meteor.methods({
+	frappe_teste: function(){
+	  console.log("frappe_teste ", this.userId);
+	  return "OK";
+	}
+});
 
 Accounts.registerLoginHandler(function(loginRequest) {
 
@@ -8,7 +83,7 @@ Accounts.registerLoginHandler(function(loginRequest) {
 
   console.log("loggin in sid ", loginRequest.sid);
 
-  if(!loginRequest.sid || loginRequest.sid === "Guest" || loginRequest.sid === "") {
+  if(!is_valid_sid(loginRequest.sid)) {
     return null;
   }
 

@@ -44,6 +44,8 @@ class FluorineReactivity(Document):
 
 def save_to_procfile(doc):
 	from fluorine.utils.file import writelines
+	from fluorine.utils.reactivity import meteor_config
+	from fluorine.utils.meteor.utils import default_path_prefix, PORT
 
 	procfile, procfile_path = get_procfile()
 	tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
@@ -55,11 +57,21 @@ def save_to_procfile(doc):
 		mghost = doc.fluor_mongo_host.replace("http://","").replace("mongodb://","").strip(' \t\n\r')
 		export_mongo = "export MONGO_URL=mongodb://%s%s:%s/%s && " % (user_pass, mghost, doc.fluor_mongo_port, doc.fluor_mongo_database)
 
-	for app in meteor_apps:
-		procfile.insert(0, "%s: (%sexport ROOT_URL=%s && cd apps/reactivity/%s && meteor --port %s)\n" %\
-									(app, export_mongo, doc.fluor_meteor_host,app, int(doc.fluor_meteor_port) + (80 if app == "meteor_app" else 0)))
 
-	writelines(procfile_path, procfile)
+	meteor_dev = meteor_config.get("meteor_dev", None)
+	count = meteor_config.get("meteor_http_forwarded_count") or "1"
+	forwarded_count = "export HTTP_FORWARDED_COUNT='" + str(count) + "'"
+	if meteor_dev:
+		for app in meteor_apps:
+			meteor = meteor_dev.get(app)
+			default_prefix = default_path_prefix if app=="meteor_app" else ""
+			prefix = meteor.get("ROOT_URL_PATH_PREFIX") or ""
+			mthost = meteor_dev.get("host") + (prefix if prefix else default_prefix)
+			mtport = meteor.get("port") or PORT.get(app)
+			procfile.insert(0, "%s: (%s%s && export ROOT_URL=%s && cd apps/reactivity/%s && meteor --port %s)\n" %\
+									(app, export_mongo, forwarded_count, mthost, app, mtport))
+
+		writelines(procfile_path, procfile)
 
 
 def get_procfile():
@@ -84,41 +96,61 @@ def remove_from_procfile():
 
 def save_to_common_site_config(doc):
 	from fluorine.utils.reactivity import meteor_config
+	from fluorine.utils.meteor.utils import default_path_prefix, PORT
 	import os
 	from fluorine.utils.file import get_path_reactivity, save_js_file
-
-	mgconf = {}
-	mtconf = {}
 
 	path_reactivity = get_path_reactivity()
 	config_path = os.path.join(path_reactivity, "common_site_config.json")
 
 	f = meteor_config
 
-	mtconf["port"] = doc.fluor_meteor_port
-	mtconf["host"] = doc.fluor_meteor_host
-	mtconf["ddpurl"] = doc.ddpurl
-	mgconf["host"] = doc.fluor_mongo_host.strip()
-	mgconf["port"] = doc.fluor_mongo_port.strip() or 0
-	mgconf["db"] = doc.fluor_mongo_database
+	if not f.get("meteor_http_forwarded_count"):
+		f["meteor_http_forwarded_count"] = "1"
 
-	f["site"] = doc.site
+	if not f.get("meteor_dev", None):
+		f["meteor_dev"] = {}
+
+	meteor_dev = f.get("meteor_dev")
+
+	if not meteor_dev.get("meteor_web"):
+		meteor_dev["meteor_web"] = {}
+
+	meteor_web = meteor_dev.get("meteor_web")
+
+	if not meteor_dev.get("meteor_app"):
+		meteor_dev["meteor_app"] = {}
+
+	meteor_app = meteor_dev.get("meteor_app")
+
+	if not meteor_app.get("ROOT_URL_PATH_PREFIX"):
+		meteor_app["ROOT_URL_PATH_PREFIX"] = default_path_prefix
+
+	#mtconf.get("meteor_web")["port"] = doc.fluor_meteor_port
+	meteor_web["port"] = doc.fluor_meteor_port
+	#mtconf.get("meteor_app")["port"] = PORT["meteor_app"]
+	meteor_app["port"] = PORT["meteor_app"]
+
+	#mtconf["host"] = doc.fluor_meteor_host.strip()
+	meteor_dev["host"] = doc.fluor_meteor_host.strip()
+
+	#mtconf.get("meteor_app")["ddpurl"] = doc.ddpurl.strip()
+	meteor_app["ddpurl"] = doc.ddpurl.strip()
+
+	f["site"] = doc.site or frappe.local.site
 	f["developer_mode"] = doc.fluor_dev_mode
 
-	if f.get("meteor_dev", None):
-		f.get("meteor_dev").update(mtconf)
-	else:
-		f["meteor_dev"] = mtconf
 
 	if doc.fluor_mongo_host.strip() and doc.check_mongodb:
-		if f.get("meteor_mongo", None):
-			f.get("meteor_mongo").update(mgconf)
-		else:
-			f["meteor_mongo"] = mgconf
-
+		mongo = f.get("meteor_mongo")
+		#mgconf["host"] = doc.fluor_mongo_host.strip()
+		mongo["host"] = doc.fluor_mongo_host.strip()
+		#mgconf["port"] = doc.fluor_mongo_port or 0
+		mongo["port"] = doc.fluor_mongo_port or 0
+		#mgconf["db"] = doc.fluor_mongo_database
+		mongo["db"] = doc.fluor_mongo_database.strip()
 	elif f.get("meteor_mongo", None):
 		del f["meteor_mongo"]
-
 
 	save_js_file(config_path, f)
 

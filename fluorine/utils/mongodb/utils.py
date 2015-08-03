@@ -38,10 +38,3 @@ def save_mongodb_config(common_config):
 	common_config_file = os.path.join(path_reactivity, "common_site_config.json")
 	save_js_file(common_config_file, common_config)
 
-
-def get_common_config_file_json():
-	from fluorine.utils.file import get_path_reactivity
-
-	path_reactivity = get_path_reactivity()
-	common_config_file_json = os.path.join(path_reactivity, "common_site_config.json")
-	return frappe.get_file_json(common_config_file_json)

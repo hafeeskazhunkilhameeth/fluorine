@@ -28,22 +28,26 @@ var set_cookie = function(cookie, pos){
 }*/
 
 $(document).on('app_ready', function(ev){
+	console.log("frappe is ready!!!!");
 	var sid = frappe.get_cookie("sid");
-    if (sid !== "Guest" || sid !== ""){
-        Meteor.frappe_login(sid, function(result){
-            console.log("Result from login into meteor ", result);
+    if (is_valid_sid(sid)){
+        /*Meteor.frappe_login(sid, function(result){
+            console.log("Result from login into meteor 2 ", result);
+        });*/
+        Meteor.call("frappe_teste", function(error, res){
+        	console.log("meteor call ", error, res);
         });
     }
 });
 
 
+/*
 Meteor.frappe_login = function(sid, validate_callback) {
   //create a login request with admin: true, so our loginHandler can handle this request
   var loginRequest = {sid: sid};
 
   //send the login request methodName:
   Accounts.callLoginMethod({
-    /*methodName: "login",*/
     methodArguments: [loginRequest],
     validateResult: validate_callback
   });
@@ -52,3 +56,4 @@ Meteor.frappe_login = function(sid, validate_callback) {
 Accounts.onLoginFailure(function(){
   console.log("login error!!!");
 });
+*/

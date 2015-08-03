@@ -15,7 +15,7 @@ def fluorine_get_fenv():
 	from fluorine.utils import get_encoding
 	from jinja2 import DebugUndefined
 	from fluorine.utils.fjinja2.fjinja import MyEnvironment
-	from extension_template import MeteorTemplate
+	from fluorine.utils.fjinja2.extension_template import MeteorTemplate
 	from fluorine.utils.fjinja2.utils import mdom_filter, mself, msuper, tkeep
 
 	if not frappe.local.fenv:

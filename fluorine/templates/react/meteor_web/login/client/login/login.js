@@ -4,8 +4,7 @@ Template.login.events({
         var email = event.target.email.value;
         var password = event.target.password.value;
 
-        cookie = document.cookie;
-        Meteor.frappe_login(email, password, cookie, function(result){
+        Meteor.frappe_login(email, password, function(result){
            console.log("user callback res ", result);
            res_cookie = Meteor.users.find().fetch()[0].profile.cookies;
           _.each(res_cookie, function(cookie){
@@ -40,6 +39,22 @@ Template.login.events({
      }
 });
 
+Meteor.frappe_login = function(username, password, validate_callback) {
+  //create a login request with admin: true, so our loginHandler can handle this request
+  var loginRequest = {username: username, mypassword: password};
+
+  //send the login request methodName:
+  Accounts.callLoginMethod({
+    /*methodName: "login",*/
+    methodArguments: [loginRequest],
+    validateResult: validate_callback
+  });
+};
+
+Accounts.onLoginFailure(function(){
+  console.log("login error");
+  Router.go('/');
+});
 
 Meteor.startup(function () {
     Session.set("showLoadingIndicator", true);
@@ -53,4 +68,4 @@ Meteor.startup(function () {
         console.log(error_message);
       });
 
-})
+});

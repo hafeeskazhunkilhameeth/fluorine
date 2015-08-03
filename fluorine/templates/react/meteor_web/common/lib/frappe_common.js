@@ -1,6 +1,8 @@
 if (typeof frappe === 'undefined')
 	frappe = {};
 
+frappe.sid_length = 56;
+
 frappe.provide = function(namespace) {
     var nsl = namespace.split('.');
     var parent;

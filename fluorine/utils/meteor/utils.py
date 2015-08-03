@@ -8,57 +8,60 @@ from collections import OrderedDict
 import hashlib, json, os
 
 
+default_port = 3000
+default_host = "http://localhost"
+default_path_prefix = "/meteordesk"
+
+PORT = {"meteor_web": default_port, "meteor_app": default_port + 80}
+
 def meteor_url_path_prefix(whatfor):
-	return os.path.join("assets", "fluorine",  whatfor, "webbrowser")
+	#return os.path.join("assets", "fluorine",  whatfor, "webbrowser")
+	if whatfor == "meteor_app":
+		url_prefix = default_path_prefix
+	else:
+		url_prefix = ""
+
+	return url_prefix
 
 
 def build_meteor_context(context, devmode, whatfor):
-	#from file import get_path_reactivity
 	import random
 	from fluorine.utils.reactivity import meteor_config
 
-	#path_reactivity = get_path_reactivity()
-
-	#config_path = os.path.join(path_reactivity, "common_site_config.json")
-	#conf = frappe.get_file_json(config_path)
 	conf = meteor_config
 
 	if not devmode:
-		add = 0
 		meteor_dns = conf.get("meteor_dns") or {}
 		all_dns = meteor_dns.get(whatfor)
 		n = random.randint(0, len(all_dns) - 1)
 		meteor = all_dns[n]
 	else:
 		meteor = conf.get("meteor_dev") or {}
-		add = 80 if whatfor == "meteor_app" else 0
 
-	context.mport = meteor.get("port", 3000) + add
+	meteor_conf = meteor.get(whatfor) or {}
+	context.mport = meteor_conf.get("port") or PORT.get(whatfor)
 
-	#base_url = frappe.local.request.url
-	#burl = base_url.rsplit(":",1)
-	#if burl > 1:
-		#port = burl[1]
-	#	host_url = burl[0]
-	#else:
-	#	host_url = base_url
-		#port = ""
-
+	prefix = meteor_conf.get("ROOT_URL_PATH_PREFIX")
 	if whatfor == "meteor_web":
-		host = meteor.get("host", "http://192.168.1.100")
+		host = meteor.get("host", default_host) + (prefix if prefix else "")
 	else:
-		host = meteor.get("host", "http://192.168.1.100") + "/meteordesk"
+		host = meteor.get("host", default_host) + (prefix if prefix else default_path_prefix)
 
-	ddpurl = meteor.get("ddpurl", "http://localhost")
+	ddpurl = meteor_conf.get("ddpurl")
+
 	meteor_host =  host + ":" + str(context.mport)
-	if whatfor == "meteor_web":
-		ddpurl_port = ddpurl #+ ":" + str(context.mport)
-	else:
-		#ddpurl_port = ddpurl + ":" + str(context.mport)
-		ddpurl_port = ddpurl + "/meteordesk"
+	ddpurl_port = None
+	if whatfor == "meteor_web" and ddpurl:
+		ddpurl_port = ddpurl + (prefix if prefix else "")
+	elif whatfor == "meteor_app":
+		if not ddpurl:
+			ddpurl = default_host
+
+		ddpurl_port = ddpurl + (prefix if prefix else default_path_prefix)
+
 	context.meteor_root_url = host
 	context.meteor_root_url_port = meteor_host
-	context.meteor_url_path_prefix = ""#meteor_url_path_prefix(whatfor)
+	context.meteor_url_path_prefix = meteor_url_path_prefix(whatfor)
 	context.meteor_ddp_default_connection_url = ddpurl_port
 
 
@@ -81,13 +84,12 @@ def get_meteor_config(mthost, mtddpurlport, meteor_url_path_prefix, version, ver
 		"ROOT_URL": "%(meteor_root_url)s",
 		"ROOT_URL_PATH_PREFIX": "%(meteor_url_path_prefix)s",
 		"autoupdateVersion": "%(meteor_autoupdate_version)s",
-		"autoupdateVersionRefreshable": "%(meteor_autoupdate_version_freshable)s",
-		"DDP_DEFAULT_CONNECTION_URL": "%(meteor_ddp_default_connection_url)s"
+		"autoupdateVersionRefreshable": "%(meteor_autoupdate_version_freshable)s"%(meteor_ddp_default_connection_url)s
 	};
 	%(jquery)s
 	""" % {"appId": "'appId':'" + appId + "',\n\t\t" if devmod else "", "meteorRelease": mrelease, "meteor_root_url": mthost, "meteor_url_path_prefix": meteor_url_path_prefix,
 				"meteor_autoupdate_version": version, "meteor_autoupdate_version_freshable": version_fresh,
-				"meteor_ddp_default_connection_url": mtddpurlport, "jquery": """
+				"meteor_ddp_default_connection_url": ",\n\t\t'DDP_DEFAULT_CONNECTION_URL': '" + mtddpurlport + "'" if whatfor == "meteor_app" else "", "jquery": """
 if (typeof Package === 'undefined')
 	Package = {};
 Package.jquery = {
@@ -201,28 +203,27 @@ def make_meteor_props(context, whatfor):
 	meteor_root_url_prefix = os.path.join(app_path, "public", whatfor, "meteor_url_prefix.js")
 	#meteor_root_url_prefix = os.path.join(app_path, "public", "js", "meteor_url_prefix.js")
 
-	context.meteor_package_js = [os.path.join("assets", "fluorine", whatfor, "meteor_runtime_config.js")] + manifest_js + [os.path.join("assets", "fluorine", whatfor, "meteor_url_prefix.js")]
+	if whatfor == "meteor_app":
+		context.meteor_package_js = [os.path.join("assets", "fluorine", whatfor, "meteor_runtime_config.js")] + manifest_js + [os.path.join("assets", "fluorine", whatfor, "meteor_url_prefix.js")]
+	else:
+		context.meteor_package_js = [os.path.join("assets", "fluorine", whatfor, "meteor_runtime_config.js")] + manifest_js
 	context.meteor_package_css = manifest_css
 	context.meteor_runtime_config = True
 
-	#meteor_url_path_prefix(whatfor)
+	url_prefix = meteor_url_path_prefix(whatfor)
 
-	if whatfor == "meteor_app":
-		url_prefix = "/meteordesk"
-	else:
-		url_prefix = ""
 
 	props = get_meteor_config(context.meteor_root_url, context.meteor_ddp_default_connection_url, url_prefix, context.meteor_autoupdate_version,\
 							context.meteor_autoupdate_version_freshable, context.meteorRelease, whatfor, context.appId)
 
 	save_meteor_props(props, meteor_runtime_path)
 
-	save_meteor_root_prefix(meteor_url_path_prefix(whatfor), meteor_root_url_prefix)
+	#save_meteor_root_prefix(meteor_url_path_prefix(whatfor), meteor_root_url_prefix)
+	save_meteor_root_prefix(os.path.join("assets", "fluorine",  whatfor, "webbrowser"), meteor_root_url_prefix)
 
 
 def save_meteor_root_prefix(prefix, path):
-	#save_meteor_props("__meteor_runtime_config__.ROOT_URL_PATH_PREFIX = '%s';" % prefix, path)
-	pass
+	save_meteor_props("__meteor_runtime_config__.ROOT_URL_PATH_PREFIX = '%s';" % prefix, path)
 
 def save_meteor_props(props, path):
 	from fluorine.utils.file import save_file

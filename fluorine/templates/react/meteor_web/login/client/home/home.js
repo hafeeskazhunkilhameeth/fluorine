@@ -26,7 +26,7 @@ Template.meteor_menu.events({
 Template.meteor_menu.helpers({
        fullLogin: function(){
             //return frappe.get_cookie("sid") !== ""  && frappe.get_cookie("sid") !== "Guest" && Meteor.user();
-            return  Meteor.user() && frappe.get_cookie("sid").length >= 56;
+            return  Meteor.user() && is_valid_sid();
        },
        user_id: function(){
             return frappe.get_cookie("user_id");
