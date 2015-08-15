@@ -3,16 +3,18 @@
     <template name="ApplicationLayout">
         {{.if app_ready}}
               <nav class="{{%header_classes}}" role="{{%header_roles}}">
-                  <div calss="container-fluid">
-                      <!--<div class="row">
-                          <div class="col-sm-8 col-sm-offset-2">
-                            {{> yield "header"}}
-                          </div>
-                      </div>-->
-                      <!--{{> yield "header"}}-->
+                  <div class="container">
+                      <div class="container-fluid">
+                          <!--<div class="row">
+                              <div class="col-sm-8 col-sm-offset-2">
+                                {{> yield "header"}}
+                              </div>
+                          </div>-->
+                          <!--{{> yield "header"}}-->
 
-                        {{> meteor_menu}}
+                            {{> meteor_menu}}
 
+                      </div>
                   </div>
               </nav>
         {{/if}}

@@ -9,7 +9,7 @@ import hashlib, json, os
 
 
 default_port = 3000
-default_host = "http://localhost"
+default_host = "http://127.0.0.1"
 default_path_prefix = "/meteordesk"
 
 PORT = {"meteor_web": default_port, "meteor_app": default_port + 80}
@@ -25,18 +25,18 @@ def meteor_url_path_prefix(whatfor):
 
 
 def build_meteor_context(context, devmode, whatfor):
-	import random
+	#import random
 	from fluorine.utils.reactivity import meteor_config
 
 	conf = meteor_config
 
-	if not devmode:
-		meteor_dns = conf.get("meteor_dns") or {}
-		all_dns = meteor_dns.get(whatfor)
-		n = random.randint(0, len(all_dns) - 1)
-		meteor = all_dns[n]
-	else:
-		meteor = conf.get("meteor_dev") or {}
+	#if not devmode:
+	#	meteor_dns = conf.get("meteor_dns") or {}
+	#	all_dns = meteor_dns.get(whatfor)
+	#	n = random.randint(0, len(all_dns) - 1)
+	#	meteor = all_dns[n]
+	#else:
+	meteor = conf.get("meteor_dev") or {}
 
 	meteor_conf = meteor.get(whatfor) or {}
 	context.mport = meteor_conf.get("port") or PORT.get(whatfor)
@@ -59,7 +59,7 @@ def build_meteor_context(context, devmode, whatfor):
 
 		ddpurl_port = ddpurl + (prefix if prefix else default_path_prefix)
 
-	context.meteor_root_url = host
+	context.meteor_root_url = host#"http://127.0.0.1/meteordesk"
 	context.meteor_root_url_port = meteor_host
 	context.meteor_url_path_prefix = meteor_url_path_prefix(whatfor)
 	context.meteor_ddp_default_connection_url = ddpurl_port
@@ -73,7 +73,7 @@ def get_meteor_release(cpath):
 
 	return ""
 
-def get_meteor_config(mthost, mtddpurlport, meteor_url_path_prefix, version, version_fresh, mrelease, whatfor, appId):
+def get_meteor_config(mthost, mtddpurlport, meteor_url_path_prefix, version, version_fresh, mrelease, whatfor, appId=None):
 
 	from fluorine.utils import check_dev_mode
 
@@ -144,7 +144,8 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 	for m in manifest:
 		if m.get("where") == "client" or m.get("where") == "internal":
 			if whatfor == "meteor_app":
-				prefix = "assets/fluorine/%s/webbrowser/" % whatfor
+				#prefix = "assets/fluorine/%s/webbrowser/" % whatfor
+				prefix = "/meteordesk"
 			else:
 				prefix = ""
 
@@ -158,7 +159,7 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 					is_app = "/app"
 				nurl = prefix + is_app + url"""
 				if whatfor == "meteor_app":
-					nurl = prefix + path
+					nurl = prefix + m.get("url") #path
 				else:
 					nurl = m.get("url")
 				if m.get("type") == "css":
@@ -183,14 +184,21 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 
 	return sh1.hexdigest(), sh2.hexdigest(), frappe_manifest_js, frappe_manifest_css
 
-def make_meteor_props(context, whatfor):
+def make_meteor_props(context, whatfor, production=0):
 	from fluorine.utils.file import get_path_reactivity
 
 	path_reactivity = get_path_reactivity()
-	progarm_path = os.path.join(path_reactivity, whatfor, ".meteor/local/build/programs/web.browser/program.json")
-	config_path = os.path.join(path_reactivity, whatfor, ".meteor/local/build/programs/server/config.json")
+
+	appId = ""
+	if not production:
+		progarm_path = os.path.join(path_reactivity, whatfor, ".meteor/local/build/programs/web.browser/program.json")
+		config_path = os.path.join(path_reactivity, whatfor, ".meteor/local/build/programs/server/config.json")
+		appId = get_meteor_appId(os.path.join(path_reactivity, whatfor, ".meteor/.id"))
+	else:
+		progarm_path = os.path.join(path_reactivity, whatfor.replace("meteor", "final"), "bundle/programs/web.browser/program.json")
+		config_path = os.path.join(path_reactivity, whatfor.replace("meteor", "final"), "bundle/programs/server/config.json")
+
 	context.meteorRelease = get_meteor_release(config_path)
-	appId = get_meteor_appId(os.path.join(path_reactivity, whatfor, ".meteor/.id"))
 	context.appId = appId.replace(" ","").replace("\n","")
 
 	context.meteor_autoupdate_version, context.meteor_autoupdate_version_freshable, manifest_js, manifest_css =\
@@ -213,7 +221,7 @@ def make_meteor_props(context, whatfor):
 	url_prefix = meteor_url_path_prefix(whatfor)
 
 
-	props = get_meteor_config(context.meteor_root_url, context.meteor_ddp_default_connection_url, url_prefix, context.meteor_autoupdate_version,\
+	props = get_meteor_config(context.meteor_root_url, context.meteor_ddp_default_connection_url, url_prefix, context.meteor_autoupdate_version,
 							context.meteor_autoupdate_version_freshable, context.meteorRelease, whatfor, context.appId)
 
 	save_meteor_props(props, meteor_runtime_path)

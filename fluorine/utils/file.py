@@ -55,15 +55,18 @@ def make_meteor_file(packages=None, jquery=0, client_only=0, mtport=3000, mthost
 	#with cd(path):
 		#subprocess.call(['./build-meteor-client.sh', js_path, str(frappe.conf.developer_mode), " ".join(packages)])
 	#if whatfor == "meteor_web":
-	args = shlex.split("meteor build --directory %s --server %s --architecture %s %s" % (os.path.join(path, "final_" + whatfor.split("_")[1]), mthost + ':' + str(mtport), architecture,\
-																						"--debug" if whatfor == "meteor_app" else ""))
-	#proc = subprocess.Popen([os.path.join(path, whatfor, "meteor"), "build", "--server " + mthost + ':' + str(mtport), "--directory " + os.path.join(path, "final_web"),
-	#						"--architecture " + architecture], cwd=os.path.join(path, whatfor), close_fds=True)
-	proc = subprocess.Popen(args, cwd=os.path.join(path, whatfor), close_fds=True)
+	#args = shlex.split("meteor build --directory %s --server %s --architecture %s %s" % (os.path.join(path, "final_" + whatfor.split("_")[1]), mthost + ':' + str(mtport), architecture,\
+	#																					"--debug" if whatfor == "meteor_app" else ""))
+	args = shlex.split("meteor build --directory %s --server %s --architecture %s" % (os.path.join(path, "final_" + whatfor.split("_")[1]),
+																						 mthost + ':' + str(mtport), architecture))
+	print "start make meteor... {}".format(whatfor)
+	#proc = subprocess.Popen(args, cwd=os.path.join(path, whatfor), close_fds=False, stdout=subprocess.PIPE)
+	subprocess.call(args, cwd=os.path.join(path, whatfor), close_fds=True)
+	#print subprocess.check_output(args, cwd=os.path.join(path, whatfor), close_fds=True)
 #else:
 #	proc = subprocess.Popen([path + '/build-meteor-client.sh', js_path, 0, " ".join(packages), str(jquery), str(client_only), w[whatfor]], cwd=path, close_fds=True)
-
-	proc.wait()
+	#print proc.communicate()
+	#proc.wait()
 	#observe_dir(get_path_server_observe())
 
 
@@ -348,7 +351,7 @@ def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 	pattern = ignore_patterns(*custom_pattern)
 
 	for app, paths in frappe.local.files_to_add.iteritems():#context.files_to_add.iteritems():
-		print "apps in frappe.local.files_to_add 2 {}".format(frappe.local.files_to_add)
+		#print "apps in frappe.local.files_to_add 2 {}".format(frappe.local.files_to_add)
 		pathname = frappe.get_app_path(app)
 		meteorpath = os.path.join(pathname, "templates", "react", whatfor[0])
 		app_path = frappe.get_app_path(app)
@@ -388,7 +391,7 @@ def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 							continue
 
 						found = madd.match(source) or common_pattern.match(source)
-						print "in make symlink found 5 {} pattern {} source {} file {} root {} relative {}".format(found, pat, source, f, root, relative_file)
+						#print "in make symlink found 5 {} pattern {} source {} file {} root {} relative {}".format(found, pat, source, f, root, relative_file)
 						if found:
 							try:
 								frappe.create_folder(os.path.realpath(os.path.join(destpath, relative_file)))
@@ -414,7 +417,7 @@ def process_pubpriv_folder(meteorpath, dst, app, app_folders, pattern, meteor_ig
 		#start with templates/react
 		#meteor_relpath = os.path.relpath(root, os.path.join(meteorpath, "..", "..", ".."))
 		meteor_relpath = os.path.relpath(root, frappe.get_app_path(app))
-		print "meteor_relpath in make all app 8 {} links {}".format(app, meteor_relpath)
+		#print "meteor_relpath in make all app 8 {} links {}".format(app, meteor_relpath)
 		meteor_ignore_folders(app, meteor_relpath, root, dirs, meteor_ignore=meteor_ignore)
 		ign_names = pattern(meteorpath, files)
 		meteor_relpath = os.path.relpath(root, meteorpath)

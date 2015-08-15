@@ -5,12 +5,18 @@ import os
 from . import meteor_config
 
 
+def check_mongodb(conf):
+	if not conf.get("meteor_mongo"):
+		return False
+
 def start_meteor():
 	import frappe
 	from fluorine.utils.mongodb.utils import is_mongodb_ready, set_frappe_users, save_mongodb_config
 	from file import get_common_config_file_json
 
 	conf = meteor_config
+	check_mongodb(conf)
+	#make_mongodb_default(conf)
 	mongo = conf.get("meteor_mongo") or {}
 	mghost = mongo.get("host") or "localhost"
 	mgport = mongo.get("port") or 3001#port of meteor local mongodb
@@ -20,11 +26,11 @@ def start_meteor():
 
 	extras_context_methods.update(get_extras_context_method(frappesite))
 
-	common_file = get_common_config_file_json()
-	if not is_mongodb_ready(common_file):
-		set_frappe_users(mghost, mgport, mgdb)
-		common_file["mongodb_users_ready"] = 1
-		save_mongodb_config(common_file)
+	#common_file = get_common_config_file_json()
+	#if not is_mongodb_ready(common_file):
+	#	set_frappe_users(mghost, mgport, mgdb)
+	#	common_file["mongodb_users_ready"] = 1
+	#	save_mongodb_config(common_file)
 
 
 	if frappe.db and start_db:

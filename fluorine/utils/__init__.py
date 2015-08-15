@@ -44,11 +44,9 @@ def get_meteor_configuration_file():
 
 	global meteor_config
 
-	conf = None
-
 	meteor_config = get_common_config_file_json()
 
-	return conf
+	return meteor_config
 
 if check_dev_mode():
 	frappe_conf = frappe.get_site_config()

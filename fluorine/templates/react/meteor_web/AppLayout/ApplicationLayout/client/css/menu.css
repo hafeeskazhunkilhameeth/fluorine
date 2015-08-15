@@ -13,5 +13,5 @@ body { padding-top: 0px; }
 
 #iron-router-progress {
     background-color : #FF9966;
-    box-shadow       : 0 0 5px <COLOR>;
+    box-shadow       : 0 0 5px #FF9966;
 }

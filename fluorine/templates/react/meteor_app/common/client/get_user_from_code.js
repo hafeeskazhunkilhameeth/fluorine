@@ -27,8 +27,14 @@ var set_cookie = function(cookie, pos){
 	document.cookie = c;
 }*/
 
+//Router.options.autoStart = false;
+
+var pathname = window.location.pathname;
+
 $(document).on('app_ready', function(ev){
 	console.log("frappe is ready!!!!");
+	$("#toolbar-user").prepend(repl("<li><a href='%(pathname)s/admin'>Admin</a></li><li class='divider'></li>", {"pathname": pathname}));
+	//$(".offcanvas-container").hide();
 	var sid = frappe.get_cookie("sid");
     if (is_valid_sid(sid)){
         /*Meteor.frappe_login(sid, function(result){
@@ -40,6 +46,41 @@ $(document).on('app_ready', function(ev){
     }
 });
 
+
+var deskSection = FlowRouter.group({
+    prefix: pathname
+});
+
+deskSection.route('/', {
+    action: function(params, queryParams) {
+    	$(".offcanvas-container").show();
+    	console.log("Yeah! We are or were on the admin page: ", params, queryParams);
+    	if (queryParams.page){
+    	    FlowRouter.go(repl("/mdesk/%(page)s", {"page": queryParams.page}));
+    	}
+    }
+});
+
+deskSection.route('/admin', {
+    action: function(params, queryParams) {
+        console.log("Yeah! We are on the post:", params);
+        $(".offcanvas-container").hide();
+    }
+});
+
+/*FlowRouter.route('/mdesk', {
+    action: function(params, queryParams){
+        var hash = FlowRouter.current().context.hash;
+        if (hash === "admin" ){
+            $(".offcanvas-container").hide();
+            console.log("mdesk router ", FlowRouter.current().context.hash);
+        }else{
+            $(".offcanvas-container").show();
+            console.log("mdesk router ", FlowRouter.current().context.hash);
+        }
+
+    }
+});*/
 
 /*
 Meteor.frappe_login = function(sid, validate_callback) {

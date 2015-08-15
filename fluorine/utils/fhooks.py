@@ -3,7 +3,32 @@ __author__ = 'luissaguas'
 
 import frappe, os, json
 
+"""
+hook_helper_json = "hook_helper.json"
 
+def change_base_template(devmod=1, page_default=True):
+	from fluorine.utils.file import save_js_file
+
+	fluorine_path = frappe.get_app_path("fluorine")
+	hook_helper = os.path.join(fluorine_path, hook_helper_json)
+	if os.path.exists(hook_helper):
+		hook = frappe._dict(frappe.get_file_json(hook_helper))
+	else:
+		hook = frappe._dict()
+
+	if not page_default:
+		hook["base_template"] = ["templates/fluorine_base.html"]
+		hook["home_page"] = ["fluorine_home"]
+	else:
+		if hook.base_template:
+			del hook["base_template"]
+		if hook.home_page:
+			del hook["home_page"]
+
+	hook.devmod = devmod
+
+	save_js_file(hook_helper, hook)
+"""
 
 def change_base_template(hooks=None, page_default=True):
 	from fluorine.utils.fcache import clear_frappe_caches
