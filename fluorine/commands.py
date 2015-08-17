@@ -39,7 +39,6 @@ def setState(site=None, state=None, debug=None):
 	"""Prepare Frappe for meteor."""
 	_setState(site=site, state=state, debug=debug)
 
-
 def _setState(site=None, state=None, debug=False):
 
 	if site == None:
@@ -117,13 +116,44 @@ def start_meteor_production_mode(doc, devmode, state, debug=False):
 		app_include_js, app_include_css = get_meteor_app_files()
 		hook_app_include(app_include_js, app_include_css)
 
+		#common_site_config.json must have meteor_dns for production mode or use default
+		make_nginx_conf_file(doc)
+
 		if not debug:
 			click.echo("Run frappe setup production.")
 			make_supervisor(doc)
 
+
 	else:
 		click.echo("You must set state to off in fluorine doctype.")
 
+
+def make_nginx_conf_file(doc):
+	from fluorine.utils.meteor.utils import default_path_prefix, PORT
+	from fluorine.utils.file import get_path_reactivity
+
+	#CONFIG FILE
+	path_reactivity = get_path_reactivity()
+	meteor_config = frappe.get_file_json(os.path.join(path_reactivity, "common_site_config.json"))
+
+	meteor_dns = meteor_config.get("meteor_dns")
+	hosts_web = []
+	hosts_app = []
+	if meteor_dns:
+		meteor_web = meteor_dns.get("meteor_web")
+		for obj in meteor_web:
+			hosts_web.append(["%s:%s" % (obj.get("host"), obj.get("port"))])
+
+		meteor_app = meteor_dns.get("meteor_app")
+		for obj in meteor_app:
+			hosts_app.append(["%s:%s" % (obj.get("host"), obj.get("port"))])
+	else:
+		mthost = doc.fluor_meteor_host.strip() or "http://127.0.0.1"
+		port = doc.fluor_meteor_port or PORT.meteor_web
+		hosts_web.append(["%s:%s" % (mthost, port)])
+		hosts_app.append(["%s:%s" % (mthost, PORT.meteor_app)])
+
+	_generate_nginx_conf(hosts_web=hosts_web, hosts_app=hosts_app, production=True)
 
 def make_supervisor(doc):
 	import getpass
@@ -291,8 +321,9 @@ def nginx_conf(hosts_web=None, hosts_app=None, production=None):
 
 
 def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None):
-	from fluorine.utils.file import save_file, readlines
+	from fluorine.utils.file import save_file, readlines, get_path_reactivity
 	import re
+
 
 	#config_path = os.path.join(os.path.abspath(".."), "config")
 	config_path = os.path.join(os.path.abspath(".."), "config")
