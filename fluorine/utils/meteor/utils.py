@@ -12,7 +12,7 @@ default_port = 3070
 default_host = "http://127.0.0.1"
 default_path_prefix = "/meteordesk"
 
-PORT = {"meteor_web": default_port, "meteor_app": default_port + 10}
+PORT = frappe._dict({"meteor_web": default_port, "meteor_app": default_port + 10})
 
 def meteor_url_path_prefix(whatfor):
 	#return os.path.join("assets", "fluorine",  whatfor, "webbrowser")

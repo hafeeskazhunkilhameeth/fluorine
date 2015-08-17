@@ -101,16 +101,124 @@ def start_meteor_production_mode(doc, devmode, state, debug=False):
 	from fluorine.utils.fhooks import hook_app_include
 
 	if state == "off":
+		#If debug then do not run frappe setup production and test only meteor in production mode.
+		click.echo("Make meteor bundle for Desk APP")
 		#make_meteor_file(doc.fluor_meteor_host, doc.fluor_meteor_port, doc.ddpurl, doc.meteor_target_arch, doc.fluorine_reactivity)
 		#Patch: run twice for fix nemo64:bootstrap less problem
 		print "Run twice to patch nemo64:bootstrap less problem"
+		click.echo("Make meteor bundle for WEB")
 		#make_meteor_file(doc.fluor_meteor_host, doc.fluor_meteor_port, doc.ddpurl, doc.meteor_target_arch, doc.fluorine_reactivity)
+		click.echo("Run npm install for meteor server:")
+		run_npm()
 		stop_meteor(doc, devmode, state)
+		click.echo("Make production links.")
 		make_production_link()
+		click.echo("Make js and css hooks.")
 		app_include_js, app_include_css = get_meteor_app_files()
 		hook_app_include(app_include_js, app_include_css)
+
+		if not debug:
+			click.echo("Run frappe setup production.")
+			make_supervisor(doc)
+
 	else:
 		click.echo("You must set state to off in fluorine doctype.")
+
+
+def make_supervisor(doc):
+	import getpass
+	from fluorine.utils.file import writelines, readlines, get_path_reactivity
+
+	#m = get_bench_module("production_setup")
+	#run_bench_module(m, "setup_production")
+
+	#TODO REMOVE
+	m = get_bench_module("config")
+	run_bench_module(m, "generate_supervisor_config")
+
+	conf = frappe._dict()
+	conf.user = getpass.getuser()
+	conf.bench_dir = os.path.abspath("..")
+	#sites_dir = os.path.abspath(".")
+	config_path = os.path.join(conf.bench_dir, "config")
+	config_file = os.path.join(config_path, 'supervisor.conf')
+	content = readlines(config_file)
+	content.append("\n")
+	path_reactivity = get_path_reactivity()
+
+	for final in ("final_app", "final_web"):
+		conf.meteorenv = get_meteor_environment(doc, final.replace("final", "meteor"))
+		conf.progname = "meteor_" + final
+		conf.final_server_path = os.path.join(path_reactivity, final, "bundle")
+		content.extend(supervisor_meteor_conf.format(**conf))
+		#final_web_path = os.path.join(path_reactivity, "final_web", "bundle")
+		#conf.final_server_path = final_app_path
+
+	writelines(config_file, content)
+
+
+def get_meteor_environment(doc, whatfor):
+	from fluorine.utils.meteor.utils import default_path_prefix, PORT
+	from fluorine.utils.file import get_path_reactivity
+
+	conf = frappe._dict()
+
+	#CONFIG FILE
+	path_reactivity = get_path_reactivity()
+	meteor_config = frappe.get_file_json(os.path.join(path_reactivity, "common_site_config.json"))
+
+	#METEOR MAIL
+	if hasattr(doc, "mailurl"):
+		conf.mail_url = ", MAIL_URL='{mail_url}'".format(doc.mailurl)
+	else:
+		conf.mail_url = ""
+
+	#MONGODB
+	mongodb_conf = meteor_config.get("meteor_mongo")
+	if mongodb_conf and mongodb_conf.get("type") != "default":
+		user_pass = "%s:%s@" % (doc.mongo_user, doc.mongo_pass) if doc.mongo_user and doc.mongo_pass else ''
+		mghost = doc.fluor_mongo_host.replace("http://","").replace("mongodb://","").strip(' \t\n\r')
+		mgport = doc.fluor_mongo_port
+		dbname = doc.fluor_mongo_database
+	else:
+		user_pass = ''
+		mghost = "127.0.0.1"
+		mgport = 27017
+		dbname = "fluorine"
+
+	conf.mongo_url = "mongodb://{user_pass}{host}:{port}/{databasename}".format(user_pass=user_pass, host=mghost, port=mgport, databasename=dbname)
+
+	#METEOR
+	mthost = doc.fluor_meteor_host.strip() or "http://127.0.0.1"
+	port = doc.fluor_meteor_port or PORT.meteor_web
+	conf.port = port if whatfor == "meteor_web" else PORT.meteor_app
+	default_prefix = default_path_prefix if whatfor=="meteor_app" else ""
+	meteor_dev = meteor_config.get("meteor_dev", None)
+	meteor = meteor_dev.get(whatfor)
+	prefix = meteor.get("ROOT_URL_PATH_PREFIX") or ""
+	conf.root_url = mthost + (prefix if prefix else default_prefix)
+
+	#NGINX
+	count = meteor_config.get("meteor_http_forwarded_count") or "1"
+	conf.forwarded_count = ", HTTP_FORWARDED_COUNT='" + str(count) + "'"
+
+	#SUPERVISOR
+	env = "PORT={port}, ROOT_URL='{root_url}', MONGO_URL='{mongo_url}'{mail_url}{forwarded_count}".format(**conf)
+
+	return env
+
+#Run npm install for meteor server
+def run_npm():
+	from fluorine.utils.file import get_path_reactivity
+	import subprocess
+
+	path_reactivity = get_path_reactivity()
+	final_app_path = os.path.join(path_reactivity, "final_app", "bundle", "programs", "server")
+	final_web_path = os.path.join(path_reactivity, "final_web", "bundle", "programs", "server")
+	click.echo("npm install meteor server Desk APP")
+	subprocess.call(["npm", "install"], cwd=final_app_path)
+	click.echo("npm install meteor server WEB")
+	subprocess.call(["npm", "install"], cwd=final_web_path)
 
 
 def make_production_link():
@@ -345,6 +453,20 @@ location_meteor = """
 		}
 """.split("\n")
 
+
+
+supervisor_meteor_conf = """
+[program: {progname}]
+command=node main.js
+autostart=true
+autorestart=true
+stopsignal=QUIT
+stdout_logfile={bench_dir}/logs/%s.log
+stderr_logfile={bench_dir}/logs/%s.error.log
+user={user}
+directory={final_server_path}
+environment={meteorenv}
+"""
 
 
 commands = [

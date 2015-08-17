@@ -1,8 +1,0 @@
-{
-    "css/meteor_app.css": [], 
-    "js/meteor_app.js": [
-        "public/js/meteor/meteor_runtime_config.js", 
-        "public/js/meteor/506db34a93bf316199b32127a59a73bcb5db8325.js", 
-        "public/js/meteor/meteor_url_prefix.js"
-    ]
-}
