@@ -4,13 +4,52 @@ __author__ = 'luissaguas'
 
 import frappe
 import click
+import os
+import importlib
+
+
+class FluorineError(Exception):
+	def __init__(self, message):
+		super(FluorineError, self).__init__(message)
+
+
+def run_bench_module(module, func, *args, **kwargs):
+	cwd = os.getcwd()
+	os.chdir("../")
+	f = getattr(module, func)
+	res = f(*args, **kwargs)
+	os.chdir(cwd)
+
+	return res
+
+
+def get_bench_module(module):
+	import sys
+	bench_path = os.path.abspath("../../bench-repo/")
+	sys.path.append(bench_path)
+	m = importlib.import_module("bench." + module)
+
+	return m
 
 
 @click.command('setState')
-@click.argument('site')
+@click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
 @click.option('--state', default="start", help='Use start|stop|production to start, stop or set meteor in production mode.')
-def setState(site, state=None):
+@click.option('--debug', is_flag=True)
+def setState(site=None, state=None, debug=None):
 	"""Prepare Frappe for meteor."""
+	_setState(site=site, state=state, debug=debug)
+
+
+def _setState(site=None, state=None, debug=False):
+
+	if site == None:
+		try:
+			with open("currentsite.txt") as f:
+				site = f.read().strip()
+		except IOError:
+			raise FluorineError("There is no default site. Check if sites/currentsite.txt exist or provide the site with --site option.")
+
 	if not frappe.db:
 		frappe.init(site=site)
 		frappe.connect()
@@ -25,33 +64,92 @@ def setState(site, state=None):
 	elif what == "stop":
 		stop_meteor(doc, devmode, fluor_state)
 	elif what == "production":
-		start_meteor_production_mode(doc, devmode, fluor_state)
+		import sys
+		start_meteor_production_mode(doc, devmode, fluor_state, debug=debug)
+		m = get_bench_module("config")
+		run_bench_module(m, "generate_nginx_config")
+		#m.generate_nginx_config()
 
 
 def start_meteor(doc, devmode, state):
-	from fluorine.utils.fhooks import change_base_template
+	from fluorine.utils.fhooks import change_base_template, remove_hook_app_include
+	from fluorine.utils.file import save_custom_template
+	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile
 
 	if devmode and state == "on":
+		save_to_procfile(doc)
 		if doc.fluorine_base_template and doc.fluorine_base_template.lower() != "default":
-			pass
+			save_custom_template(doc.fluorine_base_template)
 
 		change_base_template(page_default=False)
+		remove_hook_app_include()
+
 
 def stop_meteor(doc, devmode, state):
-	from fluorine.utils.fhooks import change_base_template
+	from fluorine.utils.fhooks import change_base_template, remove_hook_app_include
+	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile
 
 	if state == "off":
+		remove_from_procfile()
 		change_base_template(page_default=True)
+		remove_hook_app_include()
+	else:
+		raise FluorineError("You must set state to off in fluorine doctype.")
 
-def start_meteor_production_mode(doc, devmode, state):
+
+def start_meteor_production_mode(doc, devmode, state, debug=False):
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import make_meteor_file
+	from fluorine.utils.fhooks import hook_app_include
 
 	if state == "off":
-		make_meteor_file(doc.fluor_meteor_host, doc.fluor_meteor_port, doc.ddpurl, doc.meteor_target_arch, doc.fluorine_reactivity)
+		#make_meteor_file(doc.fluor_meteor_host, doc.fluor_meteor_port, doc.ddpurl, doc.meteor_target_arch, doc.fluorine_reactivity)
 		#Patch: run twice for fix nemo64:bootstrap less problem
 		print "Run twice to patch nemo64:bootstrap less problem"
-		make_meteor_file(doc.fluor_meteor_host, doc.fluor_meteor_port, doc.ddpurl, doc.meteor_target_arch, doc.fluorine_reactivity)
+		#make_meteor_file(doc.fluor_meteor_host, doc.fluor_meteor_port, doc.ddpurl, doc.meteor_target_arch, doc.fluorine_reactivity)
 		stop_meteor(doc, devmode, state)
+		make_production_link()
+		app_include_js, app_include_css = get_meteor_app_files()
+		hook_app_include(app_include_js, app_include_css)
+	else:
+		raise FluorineError("You must set state to off in fluorine doctype.")
+
+
+def make_production_link():
+	from fluorine.utils.file import get_path_reactivity
+
+	path_reactivity = get_path_reactivity()
+	final_app_path = os.path.join(path_reactivity, "final_app", "bundle", "programs", "web.browser")
+	meteordesk_path = os.path.join(os.path.abspath("."), "assets", "js", "meteor_app", "meteordesk")
+	if os.path.exists(final_app_path) and not os.path.exists(meteordesk_path):
+		frappe.create_folder(os.path.join(os.path.abspath("."), "assets", "js", "meteor_app"))
+		os.symlink(final_app_path, meteordesk_path)
+
+
+def get_meteor_app_files():
+	from shutil import copyfile
+
+	meteor_app_path = os.path.join(os.path.abspath("."), "assets", "js", "meteor_app")
+	meteordesk_path = os.path.join(meteor_app_path, "meteordesk")
+	app_include_js = []
+	app_include_css = []
+
+	if os.path.exists(meteordesk_path):
+		app_include_js.append("assets/js/meteor_app/meteor_runtime_config.js")
+		progfile = frappe.get_file_json(os.path.join(meteordesk_path, "program.json"))
+		manifest = progfile.get("manifest")
+		for obj in manifest:
+			if obj.get("type") == "js" and obj.get("where") == "client":
+				app_include_js.append("assets/js/meteor_app/meteordesk" + obj.get("url"))
+			elif obj.get("type") == "css" and obj.get("where") == "client":
+				app_include_css.append("assets/js/meteor_app/meteordesk" + obj.get("url"))
+
+		fluorine_path = frappe.get_app_path("fluorine")
+		src = os.path.join(fluorine_path, "public", "meteor_app", "meteor_runtime_config.js")
+		dst = os.path.join(meteor_app_path, "meteor_runtime_config.js")
+		copyfile(src, dst)
+
+	return app_include_js, app_include_css
+
 
 
 @click.command('mongodb-conf')
@@ -75,22 +173,29 @@ def mongodb_conf(site, db_name, username, password, host=None, port=None):
 
 
 @click.command('nginx-conf')
-@click.option('--hosts_web', default=["127.0.0.1:3000"], help='Hosts name or ip with port.')
+@click.option('--hosts_web', default=["127.0.0.1:3070"], help='Hosts name or ip with port.')
 @click.option('--hosts_app', default=["127.0.0.1:3080"], help='Hosts name or ip with port.')
-@click.option('--meteor_port', default=3000, help='Port where meteor is listen.')
 @click.option('--production', default=False, help='production True or False.')
-def nginx_conf(hosts_web=None, hosts_app=None, meteor_port=None, production=None):
+def nginx_conf(hosts_web=None, hosts_app=None, production=None):
 	"""make config file for meteor.
 		Make config file for nginx with meteor support.
 	"""
-	from fluorine.utils.file import save_file, readlines
-	import os, subprocess, re
+	_generate_nginx_conf(hosts_web=hosts_web, hosts_app=hosts_app, production=production)
 
+
+def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None):
+	from fluorine.utils.file import save_file, readlines
+	import re
+
+	#config_path = os.path.join(os.path.abspath(".."), "config")
 	config_path = os.path.join(os.path.abspath(".."), "config")
 	config_file = os.path.join(config_path, "nginx.conf")
-	if not os.path.exists(config_file):
-		p = subprocess.Popen(["bench", "setup", "nginx"], cwd=os.path.abspath(".."))
-		p.wait()
+	#if not os.path.exists(config_file):
+	#p = subprocess.Popen(["bench", "setup", "nginx"], cwd=os.path.abspath(".."))
+	#p.wait()
+	m = get_bench_module("config")
+	#m.generate_nginx_config()
+	run_bench_module(m, "generate_nginx_config")
 
 	frappe_nginx_file = readlines(config_file)
 	inside_server = False
@@ -162,7 +267,7 @@ def nginx_conf(hosts_web=None, hosts_app=None, meteor_port=None, production=None
 	ll = l.split("\n")
 
 	ll.extend(new_frappe_nginx_file)
-	save_file(os.path.join(config_path, "meteor_nginx.conf"), "\n".join(ll))
+	save_file(os.path.join(config_path, "nginx.conf"), "\n".join(ll))
 
 
 def make_nginx_replace(m):

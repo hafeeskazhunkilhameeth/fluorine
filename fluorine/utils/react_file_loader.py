@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
-import frappe, os, re
+import frappe, os
 
 from fluorine.utils import file
 from fluorine.utils import assets_public_path

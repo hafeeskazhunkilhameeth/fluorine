@@ -33,7 +33,7 @@ def save_custom_template(template_path):
 	save_file(tplt, content)
 
 
-def make_meteor_file(packages=None, jquery=0, client_only=0, mtport=3000, mthost="http://localhost", architecture="os.linux.x86_64", whatfor="meteor_web"):
+def make_meteor_file(packages=None, jquery=0, client_only=0, mtport=3070, mthost="http://127.0.0.1", architecture="os.linux.x86_64", whatfor="meteor_web"):
 	import shlex
 	#module_path = os.path.dirname(fluorine.__file__)
 	#path = os.path.realpath(os.path.join(module_path, "..", "reactivity"))

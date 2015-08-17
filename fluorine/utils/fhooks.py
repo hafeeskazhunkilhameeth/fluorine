@@ -62,6 +62,71 @@ def change_base_template(hooks=None, page_default=True):
 	save_batch_hook(hooks, fluorine_path + "/hooks.py")
 	clear_frappe_caches()
 
+def hook_app_include(ijs, icss):
+	from fluorine.utils.fcache import clear_frappe_caches
+
+	hooks = frappe.get_hooks(app_name="fluorine")
+
+	app_include_js = hooks.get("app_include_js") or []
+	app_include_css = hooks.get("app_include_css") or []
+
+	itemp = app_include_js[:]
+
+	for file in itemp:
+		if file.startswith("assets/js/meteor_app/meteordesk") or "assets/js/meteor_app/meteor_runtime_config.js" == file:
+			app_include_js.remove(file)
+
+	itemp = app_include_css[:]
+
+	for file in itemp:
+		if file.startswith("assets/js/meteor_app/meteordesk"):
+			app_include_css.remove(file)
+
+	if app_include_js:
+		app_include_js.extend(ijs)
+	else:
+		hooks["app_include_js"] = ijs
+
+	if app_include_css:
+		app_include_css.extend(icss)
+	else:
+		hooks["app_include_css"] = icss
+
+	fluorine_path = frappe.get_app_path("fluorine")
+	save_batch_hook(hooks, fluorine_path + "/hooks.py")
+	clear_frappe_caches()
+
+
+def remove_hook_app_include():
+	from fluorine.utils.fcache import clear_frappe_caches
+
+	hooks = frappe.get_hooks(app_name="fluorine")
+
+	app_include_js = hooks.get("app_include_js") or []
+	app_include_css = hooks.get("app_include_css") or []
+
+	itemp = app_include_js[:]
+
+	for file in itemp:
+		if file.startswith("assets/js/meteor_app/meteordesk") or "assets/js/meteor_app/meteor_runtime_config.js" == file:
+			app_include_js.remove(file)
+
+	itemp = app_include_css[:]
+
+	for file in itemp:
+		if file.startswith("assets/js/meteor_app/meteordesk"):
+			app_include_css.remove(file)
+
+	if not app_include_js:
+		hooks.pop("app_include_js", None)
+
+	if not app_include_css:
+		hooks.pop("app_include_css", None)
+
+	fluorine_path = frappe.get_app_path("fluorine")
+	save_batch_hook(hooks, fluorine_path + "/hooks.py")
+	clear_frappe_caches()
+
 #not used
 def add_react_to_hook(paths, page_default=True):
 	from fluorine.utils import assets_public_path

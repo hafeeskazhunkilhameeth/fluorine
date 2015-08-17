@@ -18,7 +18,7 @@ def start_meteor():
 	check_mongodb(conf)
 	#make_mongodb_default(conf)
 	mongo = conf.get("meteor_mongo") or {}
-	mghost = mongo.get("host") or "localhost"
+	mghost = mongo.get("host") or "127.0.0.1"
 	mgport = mongo.get("port") or 3001#port of meteor local mongodb
 	mgdb = mongo.get("db") or "fluorine_test"
 
@@ -128,7 +128,7 @@ def make_meteor_ignor_files():
 	#print "list apps to remove {}".format(list_ignores)
 
 """
-def is_open_port(ip="127.0.0.1", port=3000):
+def is_open_port(ip="127.0.0.1", port=3070):
 	import socket
 	is_open = False
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

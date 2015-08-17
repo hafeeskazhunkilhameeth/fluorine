@@ -5,6 +5,7 @@ cur_frm.cscript.onload = function(doc){
 	cur_frm.cscript.devmode = doc.fluor_dev_mode;
 }
 
+/*
 cur_frm.cscript.fluor_make_meteor_file_btn = function(doc){
 	var cs = cur_frm.cscript;
 
@@ -20,6 +21,7 @@ cur_frm.cscript.fluor_make_meteor_file_btn = function(doc){
 		msgprint(__("Fluorine State is Off. You must turn it On."), __("Fluorine Reactivity"));
      }
 }
+*/
 
 cur_frm.cscript.refresh = function(doc){
 	var cs = cur_frm.cscript;
