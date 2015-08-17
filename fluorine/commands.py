@@ -5,7 +5,6 @@ __author__ = 'luissaguas'
 import frappe
 import click
 import os
-import importlib
 
 
 class FluorineError(Exception):
@@ -24,7 +23,7 @@ def run_bench_module(module, func, *args, **kwargs):
 
 
 def get_bench_module(module):
-	import sys
+	import sys, importlib
 	bench_path = os.path.abspath("../../bench-repo/")
 	sys.path.append(bench_path)
 	m = importlib.import_module("bench." + module)
@@ -48,7 +47,7 @@ def _setState(site=None, state=None, debug=False):
 			with open("currentsite.txt") as f:
 				site = f.read().strip()
 		except IOError:
-			raise FluorineError("There is no default site. Check if sites/currentsite.txt exist or provide the site with --site option.")
+			click.echo("There is no default site. Check if sites/currentsite.txt exist or provide the site with --site option.")
 
 	if not frappe.db:
 		frappe.init(site=site)
@@ -57,7 +56,6 @@ def _setState(site=None, state=None, debug=False):
 	doc = frappe.get_doc("Fluorine Reactivity")
 	devmode = doc.fluor_dev_mode
 	fluor_state = doc.fluorine_state
-	print "state {} fluor_state {}".format(state, fluor_state)
 	what = state.lower()
 	if what == "start":
 		start_meteor(doc, devmode, fluor_state)
@@ -68,7 +66,6 @@ def _setState(site=None, state=None, debug=False):
 		start_meteor_production_mode(doc, devmode, fluor_state, debug=debug)
 		m = get_bench_module("config")
 		run_bench_module(m, "generate_nginx_config")
-		#m.generate_nginx_config()
 
 
 def start_meteor(doc, devmode, state):
@@ -83,6 +80,8 @@ def start_meteor(doc, devmode, state):
 
 		change_base_template(page_default=False)
 		remove_hook_app_include()
+	else:
+		click.echo("You must set state to on and activate developer mode in fluorine doctype.")
 
 
 def stop_meteor(doc, devmode, state):
@@ -94,7 +93,7 @@ def stop_meteor(doc, devmode, state):
 		change_base_template(page_default=True)
 		remove_hook_app_include()
 	else:
-		raise FluorineError("You must set state to off in fluorine doctype.")
+		click.echo("You must set state to off in fluorine doctype.")
 
 
 def start_meteor_production_mode(doc, devmode, state, debug=False):
@@ -111,7 +110,7 @@ def start_meteor_production_mode(doc, devmode, state, debug=False):
 		app_include_js, app_include_css = get_meteor_app_files()
 		hook_app_include(app_include_js, app_include_css)
 	else:
-		raise FluorineError("You must set state to off in fluorine doctype.")
+		click.echo("You must set state to off in fluorine doctype.")
 
 
 def make_production_link():
