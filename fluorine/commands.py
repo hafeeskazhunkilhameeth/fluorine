@@ -31,28 +31,41 @@ def get_bench_module(module):
 	return m
 
 
+def get_doctype(name, site):
+
+	if not frappe.db:
+		frappe.init(site=site)
+		frappe.connect()
+
+	doc = frappe.get_doc(name)
+
+	return doc
+
+def get_default_site():
+
+	try:
+		with open("currentsite.txt") as f:
+			site = f.read().strip()
+			return site
+	except IOError:
+		click.echo("There is no default site. Check if sites/currentsite.txt exist or provide the site with --site option.")
+
+
 @click.command('setState')
 @click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
 @click.option('--state', default="start", help='Use start|stop|production to start, stop or set meteor in production mode.')
 @click.option('--debug', is_flag=True)
 def setState(site=None, state=None, debug=None):
 	"""Prepare Frappe for meteor."""
+	if site == None:
+		site = get_default_site()
+	
 	_setState(site=site, state=state, debug=debug)
 
 def _setState(site=None, state=None, debug=False):
 
-	if site == None:
-		try:
-			with open("currentsite.txt") as f:
-				site = f.read().strip()
-		except IOError:
-			click.echo("There is no default site. Check if sites/currentsite.txt exist or provide the site with --site option.")
+	doc = get_doctype("Fluorine Reactivity", site)
 
-	if not frappe.db:
-		frappe.init(site=site)
-		frappe.connect()
-
-	doc = frappe.get_doc("Fluorine Reactivity")
 	devmode = doc.fluor_dev_mode
 	fluor_state = doc.fluorine_state
 	what = state.lower()
@@ -117,7 +130,8 @@ def start_meteor_production_mode(doc, devmode, state, debug=False):
 		hook_app_include(app_include_js, app_include_css)
 
 		#common_site_config.json must have meteor_dns for production mode or use default
-		make_nginx_conf_file(doc)
+		hosts_web, hosts_app = get_hosts(doc)
+		_generate_nginx_conf(hosts_web=hosts_web, hosts_app=hosts_app, production=True)
 
 		if not debug:
 			click.echo("Run frappe setup production.")
@@ -128,7 +142,7 @@ def start_meteor_production_mode(doc, devmode, state, debug=False):
 		click.echo("You must set state to off in fluorine doctype.")
 
 
-def make_nginx_conf_file(doc):
+def get_hosts(doc):
 	from fluorine.utils.meteor.utils import default_path_prefix, PORT
 	from fluorine.utils.file import get_path_reactivity
 
@@ -153,7 +167,7 @@ def make_nginx_conf_file(doc):
 		hosts_web.append(["%s:%s" % (mthost, port)])
 		hosts_app.append(["%s:%s" % (mthost, PORT.meteor_app)])
 
-	_generate_nginx_conf(hosts_web=hosts_web, hosts_app=hosts_app, production=True)
+	return hosts_web, hosts_app
 
 def make_supervisor(doc):
 	import getpass
@@ -324,6 +338,16 @@ def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None):
 	from fluorine.utils.file import save_file, readlines, get_path_reactivity
 	import re
 
+	if not hosts_web or not hosts_app:
+		site = get_default_site()
+		doc = get_doctype("Fluorine Reactivity", site)
+
+		if not hosts_web and not hosts_app:
+			hosts_web, hosts_app = get_hosts(doc)
+		elif not hosts_web:
+			hosts_web= get_hosts(doc)
+		else:
+			hosts_app = get_hosts(doc)
 
 	#config_path = os.path.join(os.path.abspath(".."), "config")
 	config_path = os.path.join(os.path.abspath(".."), "config")
