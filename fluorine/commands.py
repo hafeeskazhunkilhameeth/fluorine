@@ -51,6 +51,36 @@ def get_default_site():
 		click.echo("There is no default site. Check if sites/currentsite.txt exist or provide the site with --site option.")
 
 
+def remove_public_symbolic_link():
+	from fluorine.utils.react_file_loader import remove_directory
+	app_path = frappe.get_app_path("fluorine")
+	public_folder = os.path.join(app_path, "public")
+
+	for app in ("meteor_app", "meteor_web"):
+		folder = os.path.join(public_folder, app)
+		if os.path.exists(folder):
+			link_name = os.path.join(folder, "webbrowser")
+			remove_directory(link_name)
+
+
+def make_public_symbolic_link():
+	from fluorine.utils.file import get_path_reactivity
+
+	#CONFIG FILE
+	path_reactivity = get_path_reactivity()
+
+	app_path = frappe.get_app_path("fluorine")
+	public_folder = os.path.join(app_path, "public")
+
+	for app in ("meteor_app", "meteor_web"):
+		folder = os.path.join(public_folder, app)
+		if not os.path.exists(folder):
+			frappe.create_folder(folder)
+			source = os.path.join(path_reactivity, app, ".meteor", "local", "build", "programs", "web.browser")
+			link_name = os.path.join(folder, "webbrowser")
+			os.symlink(source, link_name)
+
+
 @click.command('setState')
 @click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
 @click.option('--state', default="start", help='Use start|stop|production to start, stop or set meteor in production mode.')
@@ -59,7 +89,7 @@ def setState(site=None, state=None, debug=None):
 	"""Prepare Frappe for meteor."""
 	if site == None:
 		site = get_default_site()
-	
+
 	_setState(site=site, state=state, debug=debug)
 
 def _setState(site=None, state=None, debug=False):
@@ -86,6 +116,7 @@ def start_meteor(doc, devmode, state):
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile
 
 	if devmode and state == "on":
+		make_public_symbolic_link()
 		save_to_procfile(doc)
 		if doc.fluorine_base_template and doc.fluorine_base_template.lower() != "default":
 			save_custom_template(doc.fluorine_base_template)
@@ -132,6 +163,7 @@ def start_meteor_production_mode(doc, devmode, state, debug=False):
 		#common_site_config.json must have meteor_dns for production mode or use default
 		hosts_web, hosts_app = get_hosts(doc)
 		_generate_nginx_conf(hosts_web=hosts_web, hosts_app=hosts_app, production=True)
+		remove_public_symbolic_link()
 
 		if not debug:
 			click.echo("Run frappe setup production.")
