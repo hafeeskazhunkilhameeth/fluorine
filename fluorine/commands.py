@@ -51,23 +51,23 @@ def get_default_site():
 		click.echo("There is no default site. Check if sites/currentsite.txt exist or provide the site with --site option.")
 
 
-def remove_public_symbolic_link():
+def remove_public_link():
 	from fluorine.utils.react_file_loader import remove_directory
 	app_path = frappe.get_app_path("fluorine")
 	public_folder = os.path.join(app_path, "public")
 
 	for app in ("meteor_app", "meteor_web"):
 		folder = os.path.join(public_folder, app)
-		if os.path.exists(folder):
-			link_name = os.path.join(folder, "webbrowser")
-			remove_directory(link_name)
+		#if os.path.exists(folder):
+		#	link_name = os.path.join(folder, "webbrowser")
+		remove_directory(folder)
 
 
-def make_public_symbolic_link():
-	from fluorine.utils.file import get_path_reactivity
+def make_public_link():
+	#from fluorine.utils.file import get_path_reactivity
 
 	#CONFIG FILE
-	path_reactivity = get_path_reactivity()
+	#path_reactivity = get_path_reactivity()
 
 	app_path = frappe.get_app_path("fluorine")
 	public_folder = os.path.join(app_path, "public")
@@ -76,23 +76,24 @@ def make_public_symbolic_link():
 		folder = os.path.join(public_folder, app)
 		if not os.path.exists(folder):
 			frappe.create_folder(folder)
-			source = os.path.join(path_reactivity, app, ".meteor", "local", "build", "programs", "web.browser")
-			link_name = os.path.join(folder, "webbrowser")
-			os.symlink(source, link_name)
+			#source = os.path.join(path_reactivity, app, ".meteor", "local", "build", "programs", "web.browser")
+			#link_name = os.path.join(folder, "webbrowser")
+			#os.symlink(source, link_name)
 
 
 @click.command('setState')
 @click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
 @click.option('--state', default="start", help='Use start|stop|production to start, stop or set meteor in production mode.')
 @click.option('--debug', is_flag=True)
-def setState(site=None, state=None, debug=None):
+@click.option('--force', is_flag=True)
+def setState(site=None, state=None, debug=None, force=None):
 	"""Prepare Frappe for meteor."""
 	if site == None:
 		site = get_default_site()
 
-	_setState(site=site, state=state, debug=debug)
+	_setState(site=site, state=state, debug=debug, force=force)
 
-def _setState(site=None, state=None, debug=False):
+def _setState(site=None, state=None, debug=False, force=False):
 
 	doc = get_doctype("Fluorine Reactivity", site)
 
@@ -100,50 +101,72 @@ def _setState(site=None, state=None, debug=False):
 	fluor_state = doc.fluorine_state
 	what = state.lower()
 	if what == "start":
-		start_meteor(doc, devmode, fluor_state)
+		start_meteor(doc, devmode, fluor_state, site=site)
 	elif what == "stop":
-		stop_meteor(doc, devmode, fluor_state)
+		stop_meteor(doc, devmode, fluor_state, force=force, site=site)
 	elif what == "production":
 		import sys
 		start_meteor_production_mode(doc, devmode, fluor_state, debug=debug)
 		m = get_bench_module("config")
 		run_bench_module(m, "generate_nginx_config")
 
+	if frappe.db:
+		frappe.destroy()
 
-def start_meteor(doc, devmode, state):
-	from fluorine.utils.fhooks import change_base_template, remove_hook_app_include
+
+def start_meteor(doc, devmode, state, site=None):
+	from fluorine.utils.fhooks import FluorineHooks
 	from fluorine.utils.file import save_custom_template
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile
+	import platform
 
 	if devmode and state == "on":
-		make_public_symbolic_link()
+		#fh = FluorineHooks(site=site)
+		make_public_link()
 		save_to_procfile(doc)
 		if doc.fluorine_base_template and doc.fluorine_base_template.lower() != "default":
 			save_custom_template(doc.fluorine_base_template)
 
-		change_base_template(page_default=False)
-		remove_hook_app_include()
+		with FluorineHooks(site=site) as fh:
+			fh.change_base_template(page_default=False)
+			fh.remove_hook_app_include()
+			#fh.save_hook()
+		_generate_nginx_conf(production=False)
+		try:
+			src = os.path.abspath(os.path.join("..", 'config', 'nginx.conf'))
+			if platform.system() == 'Darwin':
+				frappe.create_folder('/usr/local/etc/nginx/sites-enabled/')
+				if not os.path.exists('/usr/local/etc/nginx/sites-enabled/frappe.conf'):
+					os.symlink(src, '/usr/local/etc/nginx/sites-enabled/frappe.conf')
+			else:
+				if not os.path.exists('/etc/nginx/conf.d/frappe.conf'):
+					os.symlink(src, '/etc/nginx/conf.d/frappe.conf')
+		except:
+			click.echo("nginx link not set. You must make a symlink to frappe-bench/config/nginx.conf from nginx conf folder.")
 	else:
 		click.echo("You must set state to on and activate developer mode in fluorine doctype.")
 
 
-def stop_meteor(doc, devmode, state):
-	from fluorine.utils.fhooks import change_base_template, remove_hook_app_include
+def stop_meteor(doc, devmode, state, force=False, site=None):
+	from fluorine.utils.fhooks import FluorineHooks
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile
 
-	if state == "off":
+	if state == "off" or force:
 		remove_from_procfile()
-		change_base_template(page_default=True)
-		remove_hook_app_include()
+		with FluorineHooks(site=site) as fh:
+			fh.change_base_template(page_default=True)
+			fh.remove_hook_app_include()
+		#fh.save_hook()
 	else:
 		click.echo("You must set state to off in fluorine doctype.")
 
 
 def start_meteor_production_mode(doc, devmode, state, debug=False):
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import make_meteor_file
-	from fluorine.utils.fhooks import hook_app_include
+	from fluorine.utils.fhooks import FluorineHooks
 
 	if state == "off":
+		#fh = FluorineHooks()
 		#If debug then do not run frappe setup production and test only meteor in production mode.
 		click.echo("Make meteor bundle for Desk APP")
 		#make_meteor_file(doc.fluor_meteor_host, doc.fluor_meteor_port, doc.ddpurl, doc.meteor_target_arch, doc.fluorine_reactivity)
@@ -158,12 +181,13 @@ def start_meteor_production_mode(doc, devmode, state, debug=False):
 		make_production_link()
 		click.echo("Make js and css hooks.")
 		app_include_js, app_include_css = get_meteor_app_files()
-		hook_app_include(app_include_js, app_include_css)
-
+		with FluorineHooks() as fh:
+			fh.hook_app_include(app_include_js, app_include_css)
+		#fh.save_hook()
 		#common_site_config.json must have meteor_dns for production mode or use default
-		hosts_web, hosts_app = get_hosts(doc)
+		hosts_web, hosts_app = get_hosts(doc, production=True)
 		_generate_nginx_conf(hosts_web=hosts_web, hosts_app=hosts_app, production=True)
-		remove_public_symbolic_link()
+		remove_public_link()
 
 		if not debug:
 			click.echo("Run frappe setup production.")
@@ -174,7 +198,7 @@ def start_meteor_production_mode(doc, devmode, state, debug=False):
 		click.echo("You must set state to off in fluorine doctype.")
 
 
-def get_hosts(doc):
+def get_hosts(doc, production=False):
 	from fluorine.utils.meteor.utils import default_path_prefix, PORT
 	from fluorine.utils.file import get_path_reactivity
 
@@ -185,19 +209,19 @@ def get_hosts(doc):
 	meteor_dns = meteor_config.get("meteor_dns")
 	hosts_web = []
 	hosts_app = []
-	if meteor_dns:
+	if meteor_dns and production==True:
 		meteor_web = meteor_dns.get("meteor_web")
 		for obj in meteor_web:
-			hosts_web.append(["%s:%s" % (obj.get("host"), obj.get("port"))])
+			hosts_web.append("%s:%s" % (obj.get("host").replace("http://", ""), obj.get("port")))
 
 		meteor_app = meteor_dns.get("meteor_app")
 		for obj in meteor_app:
-			hosts_app.append(["%s:%s" % (obj.get("host"), obj.get("port"))])
+			hosts_app.append("%s:%s" % (obj.get("host").replace("http://", ""), obj.get("port")))
 	else:
-		mthost = doc.fluor_meteor_host.strip() or "http://127.0.0.1"
+		mthost = doc.fluor_meteor_host.strip().replace("http://", "") or "127.0.0.1"
 		port = doc.fluor_meteor_port or PORT.meteor_web
-		hosts_web.append(["%s:%s" % (mthost, port)])
-		hosts_app.append(["%s:%s" % (mthost, PORT.meteor_app)])
+		hosts_web.append("%s:%s" % (mthost, port))
+		hosts_app.append("%s:%s" % (mthost, PORT.meteor_app))
 
 	return hosts_web, hosts_app
 
@@ -367,7 +391,7 @@ def nginx_conf(hosts_web=None, hosts_app=None, production=None):
 
 
 def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None):
-	from fluorine.utils.file import save_file, readlines, get_path_reactivity
+	from fluorine.utils.file import save_file, readlines
 	import re
 
 	if not hosts_web or not hosts_app:
@@ -375,11 +399,11 @@ def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None):
 		doc = get_doctype("Fluorine Reactivity", site)
 
 		if not hosts_web and not hosts_app:
-			hosts_web, hosts_app = get_hosts(doc)
+			hosts_web, hosts_app = get_hosts(doc, production=production)
 		elif not hosts_web:
-			hosts_web= get_hosts(doc)
+			hosts_web= get_hosts(doc, production=production)
 		else:
-			hosts_app = get_hosts(doc)
+			hosts_app = get_hosts(doc, production=production)
 
 	#config_path = os.path.join(os.path.abspath(".."), "config")
 	config_path = os.path.join(os.path.abspath(".."), "config")
@@ -416,7 +440,11 @@ def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None):
 		elif inside_location and line.strip().startswith("try_files"):
 			named_location_group = re.search(r"@(.*);$", line)
 			named_location = named_location_group.group(1)
-			line = re.sub(r"@(.*);$", "/assets/js/meteor_web/$uri $uri @meteor;", line)
+			if production:
+				line = re.sub(r"@(.*);$", "/assets/js/meteor_web/$uri $uri @meteor;", line)
+			else:
+				line = re.sub(r"@(.*);$", "$uri @meteor;", line)
+
 			inside_location = False
 		elif re.match(r"location\s*@%s\s*{" % (named_location or "magic"), line.strip()):
 			inside_location_magic = True
@@ -457,7 +485,7 @@ def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None):
 	for hosta in hosts_app:
 		host_app = host_app + "server " + hosta + " fail_timeout=0;\n\t"
 
-	l = nginx_conf_top % (host_web, host_app)
+	l = nginx_conf_top % (host_app, host_web)
 	ll = l.split("\n")
 
 	ll.extend(new_frappe_nginx_file)

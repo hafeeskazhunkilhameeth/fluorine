@@ -23,7 +23,6 @@ def get_context(context):
 	#	print "key and value for request {} v {}".format(k,v)
 	print "getting context in mdesk.py 10 dict {} user {} req args {}".format(frappe.local.form_dict, frappe.local.session.user, frappe.local.request.args.get("user_id"))
 	"""
-	print "getting context for desk"
 	return get_app_pages(context)
 
 """

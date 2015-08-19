@@ -6,7 +6,7 @@
  "custom": 0, 
  "docstatus": 0, 
  "doctype": "DocType", 
- "document_type": "Master", 
+ "document_type": "Setup", 
  "fields": [
   {
    "allow_on_submit": 0, 
@@ -139,7 +139,7 @@
   }, 
   {
    "allow_on_submit": 0, 
-   "default": "http://localhost", 
+   "default": "http://127.0.0.1", 
    "description": "Enter the url/ip to use for meteor host.", 
    "fieldname": "fluor_meteor_host", 
    "fieldtype": "Data", 
@@ -161,8 +161,8 @@
   }, 
   {
    "allow_on_submit": 0, 
-   "default": "3000", 
-   "description": "Enter the port where meteor should connect.", 
+   "default": "3070", 
+   "description": "Enter the port where meteor should connect. Note: frappe socketio.js is listen on port 3000.", 
    "fieldname": "fluor_meteor_port", 
    "fieldtype": "Int", 
    "hidden": 0, 
@@ -183,7 +183,7 @@
   }, 
   {
    "allow_on_submit": 0, 
-   "default": "http://localhost", 
+   "default": "http://127.0.0.1", 
    "description": "This must be the url or ip (without port) where meteor is running. If url is http://localhost or ip is http://127.0.0.1 then you only can test meteor from localhost.\nThis will be used in developer mode. In production mode it will be used in app mode (desk requests).", 
    "fieldname": "ddpurl", 
    "fieldtype": "Data", 
@@ -270,7 +270,7 @@
   }, 
   {
    "allow_on_submit": 0, 
-   "default": "http://localhost", 
+   "default": "http://127.0.0.1", 
    "description": "Enter the url of mongoldb.", 
    "fieldname": "fluor_mongo_host", 
    "fieldtype": "Data", 
@@ -465,7 +465,7 @@
  "is_submittable": 0, 
  "issingle": 1, 
  "istable": 0, 
- "modified": "2015-08-13 17:44:03.644225", 
+ "modified": "2015-08-19 14:36:43.199482", 
  "modified_by": "Administrator", 
  "module": "Fluorine", 
  "name": "Fluorine Reactivity", 

@@ -206,15 +206,14 @@ def make_meteor_props(context, whatfor, production=0):
 
 	app_path = frappe.get_app_path("fluorine")
 	#meteor_runtime_path = os.path.join(app_path, "public", whatfor, "meteor_runtime_web_config.js")
-	meteor_runtime_path = os.path.join(app_path, "public", whatfor, "meteor_runtime_config.js")
-
-	meteor_root_url_prefix = os.path.join(app_path, "public", whatfor, "meteor_url_prefix.js")
+	#if not production or whatfor=="meteor_app":
+	#meteor_root_url_prefix = os.path.join(app_path, "public", whatfor, "meteor_url_prefix.js")
 	#meteor_root_url_prefix = os.path.join(app_path, "public", "js", "meteor_url_prefix.js")
 
-	if whatfor == "meteor_app":
-		context.meteor_package_js = [os.path.join("assets", "fluorine", whatfor, "meteor_runtime_config.js")] + manifest_js + [os.path.join("assets", "fluorine", whatfor, "meteor_url_prefix.js")]
-	else:
-		context.meteor_package_js = [os.path.join("assets", "fluorine", whatfor, "meteor_runtime_config.js")] + manifest_js
+	#if whatfor == "meteor_app":
+	context.meteor_package_js = [os.path.join("assets", "fluorine", whatfor, "meteor_runtime_config.js")] + manifest_js #+ [os.path.join("assets", "fluorine", whatfor, "meteor_url_prefix.js")]
+	#else:
+	#	context.meteor_package_js = [os.path.join("assets", "fluorine", whatfor, "meteor_runtime_config.js")] + manifest_js
 	context.meteor_package_css = manifest_css
 	context.meteor_runtime_config = True
 
@@ -224,14 +223,22 @@ def make_meteor_props(context, whatfor, production=0):
 	props = get_meteor_config(context.meteor_root_url, context.meteor_ddp_default_connection_url, url_prefix, context.meteor_autoupdate_version,
 							context.meteor_autoupdate_version_freshable, context.meteorRelease, whatfor, context.appId)
 
-	save_meteor_props(props, meteor_runtime_path)
+	meteor_runtime_path = os.path.join(app_path, "public", whatfor, "meteor_runtime_config.js")
+	if not production or whatfor=="meteor_app":
+		save_meteor_props(props, meteor_runtime_path)
+	else:
+		try:
+			os.unlink(meteor_runtime_path)
+		except:
+			pass
 
 	#save_meteor_root_prefix(meteor_url_path_prefix(whatfor), meteor_root_url_prefix)
-	save_meteor_root_prefix(os.path.join("assets", "fluorine",  whatfor, "webbrowser"), meteor_root_url_prefix)
+	#save_meteor_root_prefix(os.path.join("assets", "fluorine",  whatfor, "webbrowser"), meteor_root_url_prefix)
 
-
+"""
 def save_meteor_root_prefix(prefix, path):
 	save_meteor_props("__meteor_runtime_config__.ROOT_URL_PATH_PREFIX = '%s';" % prefix, path)
+"""
 
 def save_meteor_props(props, path):
 	from fluorine.utils.file import save_file

@@ -207,7 +207,7 @@ def save_to_common_site_config(doc):
 		#mgconf["db"] = doc.fluor_mongo_database
 		mongo["db"] = doc.fluor_mongo_database.strip()
 	else:
-		if f.get("meteor_mongo", None) and not f.get("meteor_mongo").get("type") == "default":
+		if f.get("meteor_mongo", None): #and not f.get("meteor_mongo").get("type") == "default":
 			del f["meteor_mongo"]
 		make_mongodb_default(f, meteor_web.get("port"))
 

@@ -30,102 +30,122 @@ def change_base_template(devmod=1, page_default=True):
 	save_js_file(hook_helper, hook)
 """
 
-def change_base_template(hooks=None, page_default=True):
-	from fluorine.utils.fcache import clear_frappe_caches
+class FluorineHooks(object):
 
-	#def remove_meteor_include():
-	#	try:
-	#		hooks.get("app_include_js").remove("/assets/js/meteor_app.js")
-	#	except:
-	#		pass
+	def __init__(self, site=None):
+		self.hooks = frappe.get_hooks(app_name="fluorine")
+		self.site = site
 
-	if not hooks:
-		hooks = frappe.get_hooks(app_name="fluorine")
-		hooks.pop("base_template", None)
-		hooks.pop("home_page", None)
+	def __enter__(self):
+		return self
 
-	if not page_default:
-		hooks["base_template"] = ["templates/fluorine_base.html"]
-		hooks["home_page"] = ["fluorine_home"]
+	def __exit__(self, type, value, trace):
+		self.save_hook()
 
-	#remove_meteor_include()
+	#def change_base_template(self, hooks=None, page_default=True, site=None):
+	def change_base_template(self, page_default=True):
+		from fluorine.utils.fcache import clear_frappe_caches
 
-	#if not devmode:
-	#	app_include_js = hooks.get("app_include_js")
-	#	if app_include_js:
-	#		app_include_js.append("/assets/js/meteor_app.js")
-	#	else:
-	#		hooks["app_include_js"] = ["/assets/js/meteor_app.js"]
+		#def remove_meteor_include():
+		#	try:
+		#		hooks.get("app_include_js").remove("/assets/js/meteor_app.js")
+		#	except:
+		#		pass
+		#if not hooks:
+			#hooks = frappe.get_hooks(app_name="fluorine")
+		self.hooks.pop("base_template", None)
+		self.hooks.pop("home_page", None)
 
+		if not page_default:
+			self.hooks["base_template"] = ["templates/fluorine_base.html"]
+			self.hooks["home_page"] = ["fluorine_home"]
 
-	fluorine_path = frappe.get_app_path("fluorine")
-	save_batch_hook(hooks, fluorine_path + "/hooks.py")
-	clear_frappe_caches()
+		#remove_meteor_include()
 
-def hook_app_include(ijs, icss):
-	from fluorine.utils.fcache import clear_frappe_caches
-
-	hooks = frappe.get_hooks(app_name="fluorine")
-
-	app_include_js = hooks.get("app_include_js") or []
-	app_include_css = hooks.get("app_include_css") or []
-
-	itemp = app_include_js[:]
-
-	for file in itemp:
-		if file.startswith("assets/js/meteor_app/meteordesk") or "assets/js/meteor_app/meteor_runtime_config.js" == file:
-			app_include_js.remove(file)
-
-	itemp = app_include_css[:]
-
-	for file in itemp:
-		if file.startswith("assets/js/meteor_app/meteordesk"):
-			app_include_css.remove(file)
-
-	if app_include_js:
-		app_include_js.extend(ijs)
-	else:
-		hooks["app_include_js"] = ijs
-
-	if app_include_css:
-		app_include_css.extend(icss)
-	else:
-		hooks["app_include_css"] = icss
-
-	fluorine_path = frappe.get_app_path("fluorine")
-	save_batch_hook(hooks, fluorine_path + "/hooks.py")
-	clear_frappe_caches()
+		#if not devmode:
+		#	app_include_js = hooks.get("app_include_js")
+		#	if app_include_js:
+		#		app_include_js.append("/assets/js/meteor_app.js")
+		#	else:
+		#		hooks["app_include_js"] = ["/assets/js/meteor_app.js"]
 
 
-def remove_hook_app_include():
-	from fluorine.utils.fcache import clear_frappe_caches
+		#fluorine_path = frappe.get_app_path("fluorine")
+		#save_batch_hook(hooks, os.path.join(fluorine_path, "hooks.py"))
+		#clear_frappe_caches(site=site)
+		#return hooks
 
-	hooks = frappe.get_hooks(app_name="fluorine")
+	def hook_app_include(self, ijs, icss):
+		from fluorine.utils.fcache import clear_frappe_caches
 
-	app_include_js = hooks.get("app_include_js") or []
-	app_include_css = hooks.get("app_include_css") or []
+		#if not hooks:
+		#hooks = frappe.get_hooks(app_name="fluorine")
 
-	itemp = app_include_js[:]
+		app_include_js = self.hooks.get("app_include_js") or []
+		app_include_css = self.hooks.get("app_include_css") or []
 
-	for file in itemp:
-		if file.startswith("assets/js/meteor_app/meteordesk") or "assets/js/meteor_app/meteor_runtime_config.js" == file:
-			app_include_js.remove(file)
+		itemp = app_include_js[:]
 
-	itemp = app_include_css[:]
+		for file in itemp:
+			if file.startswith("assets/js/meteor_app/meteordesk") or "assets/js/meteor_app/meteor_runtime_config.js" == file:
+				app_include_js.remove(file)
 
-	for file in itemp:
-		if file.startswith("assets/js/meteor_app/meteordesk"):
-			app_include_css.remove(file)
+		itemp = app_include_css[:]
 
-	if not app_include_js:
-		hooks.pop("app_include_js", None)
+		for file in itemp:
+			if file.startswith("assets/js/meteor_app/meteordesk"):
+				app_include_css.remove(file)
 
-	if not app_include_css:
-		hooks.pop("app_include_css", None)
+		if app_include_js:
+			app_include_js.extend(ijs)
+		else:
+			self.hooks["app_include_js"] = ijs
 
-	fluorine_path = frappe.get_app_path("fluorine")
-	save_batch_hook(hooks, fluorine_path + "/hooks.py")
-	clear_frappe_caches()
+		if app_include_css:
+			app_include_css.extend(icss)
+		else:
+			self.hooks["app_include_css"] = icss
+
+		#fluorine_path = frappe.get_app_path("fluorine")
+		#save_batch_hook(hooks, fluorine_path + "/hooks.py")
+		#clear_frappe_caches(site=site)
+
+
+	def remove_hook_app_include(self):
+		from fluorine.utils.fcache import clear_frappe_caches
+
+		#if not hooks:
+		#	hooks = frappe.get_hooks(app_name="fluorine")
+
+		app_include_js = self.hooks.get("app_include_js") or []
+		app_include_css = self.hooks.get("app_include_css") or []
+
+		itemp = app_include_js[:]
+
+		for file in itemp:
+			if file.startswith("assets/js/meteor_app/meteordesk") or "assets/js/meteor_app/meteor_runtime_config.js" == file:
+				app_include_js.remove(file)
+
+		itemp = app_include_css[:]
+
+		for file in itemp:
+			if file.startswith("assets/js/meteor_app/meteordesk"):
+				app_include_css.remove(file)
+
+		if not app_include_js:
+			self.hooks.pop("app_include_js", None)
+
+		if not app_include_css:
+			self.hooks.pop("app_include_css", None)
+
+		#fluorine_path = frappe.get_app_path("fluorine")
+		#save_batch_hook(hooks, fluorine_path + "/hooks.py")
+		#clear_frappe_caches(site=site)
+
+
+	def save_hook(self):
+		fluorine_path = frappe.get_app_path("fluorine")
+		save_batch_hook(self.hooks, os.path.join(fluorine_path, "hooks.py"))
 
 #not used
 def add_react_to_hook(paths, page_default=True):
@@ -220,10 +240,12 @@ def save_batch_hook(objjs, file_path):
 	#module_path = os.path.dirname(fluorine.__file__)
 	#file_path = file.get_path_fluorine("hook_help.txt")
 	#with open(os.path.join(module_path, "hook_help.txt"), "w") as f:
+	print "objjs {}".format(objjs)
 	with open(file_path, "w") as f:
-		for key in objjs:
-			value = objjs.get(key)
+		for key, value in objjs.iteritems():
+			#value = objjs.get(key)
 			#if isinstance(value, (list,dict,tuple)):
+			print "before save {}".format(key + '=' + json.dumps(value) + os.linesep)
 			f.write(key + '=' + json.dumps(value) + os.linesep)
 			#else:
 			#	f.write(key + '=' + json.dumps(value) + os.linesep)

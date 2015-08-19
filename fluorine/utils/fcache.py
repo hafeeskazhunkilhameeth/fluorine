@@ -25,9 +25,16 @@ def clear_cache(path):
 
 
 
-def clear_frappe_caches():
+def clear_frappe_caches(site=None):
+
+	if not frappe.db:
+		if not site:
+			site = frappe.local.site
+		frappe.connect(site)
+
 	frappe.clear_cache()
 	frappe.website.render.clear_cache()
+
 
 def clear_fluorine_cache(sessionId):
 	delete_fluorine_session(sessionId)
