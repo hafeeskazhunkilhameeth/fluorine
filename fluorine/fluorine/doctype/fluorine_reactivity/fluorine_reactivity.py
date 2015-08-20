@@ -74,8 +74,7 @@ class FluorineReactivity(Document):
 
 		#if not self.fluor_dev_mode:
 			#prepare_make_meteor_file(self.fluor_meteor_port, self.fluorine_reactivity)
-
-		save_to_common_site_config(self)
+		save_to_common_site_config(self, meteor_config)
 
 		#if self.fluor_dev_mode:
 		#	save_to_procfile(self)
@@ -151,9 +150,9 @@ def remove_from_procfile():
 	writelines(procfile_path, procfile)
 
 
-def save_to_common_site_config(doc):
+def save_to_common_site_config(doc, meteor_config=None):
 	import os
-	from fluorine.utils.reactivity import meteor_config
+	#from fluorine.utils.reactivity import meteor_config
 	from fluorine.utils.meteor.utils import default_path_prefix, PORT
 	from fluorine.utils.file import get_path_reactivity, save_js_file
 
@@ -199,6 +198,9 @@ def save_to_common_site_config(doc):
 
 
 	if doc.check_mongodb and doc.fluor_mongo_host.strip():
+		if not f.get("meteor_mongo"):
+			f["meteor_mongo"] = {}
+
 		mongo = f.get("meteor_mongo")
 		#mgconf["host"] = doc.fluor_mongo_host.strip()
 		mongo["host"] = doc.fluor_mongo_host.strip()
@@ -206,6 +208,7 @@ def save_to_common_site_config(doc):
 		mongo["port"] = doc.fluor_mongo_port or 0
 		#mgconf["db"] = doc.fluor_mongo_database
 		mongo["db"] = doc.fluor_mongo_database.strip()
+		mongo.pop("type", None)
 	else:
 		if f.get("meteor_mongo", None): #and not f.get("meteor_mongo").get("type") == "default":
 			del f["meteor_mongo"]
@@ -265,7 +268,7 @@ def prepare_make_meteor_file(mtport, whatfor):
 	prepare_compile_environment()
 
 	for w in _whatfor.get(whatfor):
-		prepare_client_files(w)
+		#prepare_client_files(w)
 
 		if whatfor == "Both" and w == "meteor_app":
 			#from fluorine.templates.pages.mdesk import get_context
@@ -390,26 +393,34 @@ def build_frappe_json_files(manifest, js_path, fluorine_path, build_json, meteor
 			copyfile(src, dst)
 """
 
-def prepare_client_files(whatfor):
+def prepare_client_files():
 	from fluorine.utils.react_file_loader import remove_directory
 	from fluorine.utils.file import get_path_reactivity
 	from shutil import copyfile
 
 	#fluorine_path = frappe.get_app_path("fluorine")
 	react_path = get_path_reactivity()
-	#meteor_final_path = os.path.join(react_path, "final_%s" % (whatfor.split("_")[1],))
-	meteor_final_path = os.path.join(react_path, whatfor.replace("meteor", "final"))
-	if os.path.exists(meteor_final_path):
-		remove_directory(os.path.join(meteor_final_path, "bundle"))
-
 	fluorine_path = frappe.get_app_path("fluorine")
 	meteor_js_path = os.path.join(fluorine_path, "public", "js", "meteor")
-	if os.path.exists(meteor_js_path):
-		remove_directory(meteor_js_path)
 
-	src = os.path.join(react_path, whatfor, ".meteor", "packages")
-	dst = os.path.join(fluorine_path, "templates", "packages_" + whatfor)
-	copyfile(src, dst)
+	for whatfor in ("meteor_web", "meteor_app"):
+	#meteor_final_path = os.path.join(react_path, "final_%s" % (whatfor.split("_")[1],))
+		meteor_final_path = os.path.join(react_path, whatfor.replace("meteor", "final"))
+		if os.path.exists(meteor_final_path):
+			try:
+				remove_directory(os.path.join(meteor_final_path, "bundle"))
+			except:
+				pass
+
+		if os.path.exists(meteor_js_path):
+			try:
+				remove_directory(meteor_js_path)
+			except:
+				pass
+
+		src = os.path.join(react_path, whatfor, ".meteor", "packages")
+		dst = os.path.join(fluorine_path, "templates", "packages_" + whatfor)
+		copyfile(src, dst)
 	#fluorine_dst_temp_path = os.path.join(frappe.get_app_path("fluorine"), "templates", "react", "temp")
 
 	#dst = os.path.join(react_path, "app")
@@ -429,6 +440,8 @@ def remove_tmp_app_dir(src, dst):
 		pass
 
 def make_mongodb_default(conf, port=3070):
+	if is_open_port(port=port):
+		return
 	if not conf.get("meteor_mongo"):
 		import subprocess
 		from fluorine.utils import file
@@ -458,3 +471,13 @@ def make_mongodb_default(conf, port=3070):
 				"db": db,
 				"type": "default"
 			}
+
+def is_open_port(ip="127.0.0.1", port=3070):
+	import socket
+	is_open = False
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	result = sock.connect_ex((ip,port))
+	if result == 0:
+		is_open = True
+	sock.close()
+	return is_open

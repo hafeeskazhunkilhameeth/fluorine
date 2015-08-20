@@ -98,14 +98,15 @@ class FluorineHooks(object):
 
 		if app_include_js:
 			app_include_js.extend(ijs)
-		else:
+		elif ijs:
 			self.hooks["app_include_js"] = ijs
 
 		if app_include_css:
 			app_include_css.extend(icss)
-		else:
+		elif icss:
 			self.hooks["app_include_css"] = icss
 
+		print "hooks {}".format(self.hooks)
 		#fluorine_path = frappe.get_app_path("fluorine")
 		#save_batch_hook(hooks, fluorine_path + "/hooks.py")
 		#clear_frappe_caches(site=site)
