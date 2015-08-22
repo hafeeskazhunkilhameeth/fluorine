@@ -223,7 +223,8 @@ def make_meteor_props(context, whatfor, production=0):
 	props = get_meteor_config(context.meteor_root_url, context.meteor_ddp_default_connection_url, url_prefix, context.meteor_autoupdate_version,
 							context.meteor_autoupdate_version_freshable, context.meteorRelease, whatfor, context.appId)
 
-	meteor_runtime_path = os.path.join(app_path, "public", whatfor, "meteor_runtime_config.js")
+	public_app_folder = os.path.join(app_path, "public", whatfor)
+	meteor_runtime_path = os.path.join(public_app_folder, "meteor_runtime_config.js")
 	if not production or whatfor=="meteor_app":
 		save_meteor_props(props, meteor_runtime_path)
 	else:

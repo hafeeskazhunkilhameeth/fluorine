@@ -233,6 +233,7 @@ def check_refs(tname, refs):
 def prepare_common_page_context(context, whatfor):
 	from fluorine.utils import check_dev_mode, jquery_include
 	from fluorine.utils.meteor.utils import build_meteor_context
+	from fluorine.utils.file import set_config
 
 	devmode = check_dev_mode()
 	context.developer_mode = devmode
@@ -245,11 +246,14 @@ def prepare_common_page_context(context, whatfor):
 	context.meteor_web = True
 	context.custom_template = doc.fluorine_base_template
 
+	set_config({
+		"production_mode": 0
+	})
+
 	return fluorine_build_context(context, whatfor), devmode
 
 
 def get_app_pages(context):
-
 	from fluorine.utils.module import get_app_context
 
 	def get_frappe_context(context):
@@ -269,7 +273,7 @@ def get_app_pages(context):
 		include_css = fcontext.get("include_css", [])
 		#TODO ver se é preciso remove tb o css gerado
 		try:
-			include_js.remove("/assets/js/meteor_app.js")
+			include_js.remove("/assets/js/meteor_app.min.js")
 		except:
 			pass
 		finally:

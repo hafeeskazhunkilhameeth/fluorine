@@ -40,7 +40,8 @@ class FluorineHooks(object):
 		return self
 
 	def __exit__(self, type, value, trace):
-		self.save_hook()
+		return self.save_hook()
+		#print "value {}".format(type)
 
 	#def change_base_template(self, hooks=None, page_default=True, site=None):
 	def change_base_template(self, page_default=True):
@@ -87,13 +88,13 @@ class FluorineHooks(object):
 		itemp = app_include_js[:]
 
 		for file in itemp:
-			if file.startswith("assets/js/meteor_app/meteordesk") or "assets/js/meteor_app/meteor_runtime_config.js" == file:
+			if file == "/assets/js/meteor_app.min.js":
 				app_include_js.remove(file)
 
 		itemp = app_include_css[:]
 
 		for file in itemp:
-			if file.startswith("assets/js/meteor_app/meteordesk"):
+			if file == "/assets/css/meteor_app.css":
 				app_include_css.remove(file)
 
 		if app_include_js:
@@ -113,7 +114,7 @@ class FluorineHooks(object):
 
 
 	def remove_hook_app_include(self):
-		from fluorine.utils.fcache import clear_frappe_caches
+		#from fluorine.utils.fcache import clear_frappe_caches
 
 		#if not hooks:
 		#	hooks = frappe.get_hooks(app_name="fluorine")
@@ -124,13 +125,13 @@ class FluorineHooks(object):
 		itemp = app_include_js[:]
 
 		for file in itemp:
-			if file.startswith("assets/js/meteor_app/meteordesk") or "assets/js/meteor_app/meteor_runtime_config.js" == file:
+			if file == "/assets/js/meteor_app.min.js":
 				app_include_js.remove(file)
 
 		itemp = app_include_css[:]
 
 		for file in itemp:
-			if file.startswith("assets/js/meteor_app/meteordesk"):
+			if file == "/assets/css/meteor_app.css":
 				app_include_css.remove(file)
 
 		if not app_include_js:
@@ -241,13 +242,14 @@ def save_batch_hook(objjs, file_path):
 	#module_path = os.path.dirname(fluorine.__file__)
 	#file_path = file.get_path_fluorine("hook_help.txt")
 	#with open(os.path.join(module_path, "hook_help.txt"), "w") as f:
-	print "objjs {}".format(objjs)
+	print "objjs file_path {} {}".format(file_path, objjs)
 	with open(file_path, "w") as f:
 		for key, value in objjs.iteritems():
 			#value = objjs.get(key)
 			#if isinstance(value, (list,dict,tuple)):
 			print "before save {}".format(key + '=' + json.dumps(value) + os.linesep)
 			f.write(key + '=' + json.dumps(value) + os.linesep)
+			f.flush()
 			#else:
 			#	f.write(key + '=' + json.dumps(value) + os.linesep)
 

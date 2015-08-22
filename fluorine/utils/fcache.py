@@ -28,8 +28,13 @@ def clear_cache(path):
 def clear_frappe_caches(site=None):
 
 	if not frappe.db:
-		if not site:
-			site = frappe.local.site
+		if not site:#TODO get default site from file
+			try:
+				with open("currentsite.txt") as f:
+					site = f.read().strip()
+			except IOError:
+				site = None
+			#site = frappe.local.site
 		frappe.connect(site)
 
 	frappe.clear_cache()

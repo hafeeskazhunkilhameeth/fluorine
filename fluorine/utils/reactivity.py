@@ -3,24 +3,26 @@ __author__ = 'luissaguas'
 
 import os
 from . import meteor_config
+import frappe
 
+start_db = False
 
 def check_mongodb(conf):
 	if not conf.get("meteor_mongo"):
 		return False
 
 def start_meteor():
-	import frappe
+	#import frappe
 	from fluorine.utils.mongodb.utils import is_mongodb_ready, set_frappe_users, save_mongodb_config
 	from file import get_common_config_file_json
 
 	conf = meteor_config
 	check_mongodb(conf)
 	#make_mongodb_default(conf)
-	mongo = conf.get("meteor_mongo") or {}
-	mghost = mongo.get("host") or "127.0.0.1"
-	mgport = mongo.get("port") or 3001#port of meteor local mongodb
-	mgdb = mongo.get("db") or "fluorine_test"
+	#mongo = conf.get("meteor_mongo") or {}
+	#mghost = mongo.get("host") or "127.0.0.1"
+	#mgport = mongo.get("port") or 3001#port of meteor local mongodb
+	#mgdb = mongo.get("db") or "fluorine_test"
 
 	frappesite = conf.get("site")
 
@@ -32,15 +34,14 @@ def start_meteor():
 	#	common_file["mongodb_users_ready"] = 1
 	#	save_mongodb_config(common_file)
 
+	global start_db
 
 	if frappe.db and start_db:
 		frappe.set_user("guest")
 		frappe.db.commit()
 		frappe.destroy()
-		global start_db
 		start_db = False
 
-start_db = False
 extras_context_methods = set([])
 
 def get_extras_context_method(site):
@@ -77,6 +78,7 @@ def process_permission_apps(apps):
 	return list_apps_remove
 
 def process_permission_files_folders(ff):
+	#import frappe
 	from fluorine.utils.fjinja2.utils import c
 
 	list_ff_add = frappe._dict()
@@ -100,7 +102,7 @@ def process_permission_files_folders(ff):
 	return list_ff_add, list_ff_remove
 
 def make_meteor_ignor_files():
-	import file
+	import file#, frappe
 	path_reactivity = file.get_path_reactivity()
 	perm_path = os.path.join(path_reactivity, "permission_files.json")
 
@@ -142,6 +144,6 @@ def is_open_port(ip="127.0.0.1", port=3070):
 import sys
 
 if any("--serve"==s or "--start"==s or "serve"==s for s in sys.argv):
-	import frappe
+	#import frappe
 	print "starting reactivity...{}".format(sys.argv)
 	start_meteor()

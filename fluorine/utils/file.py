@@ -55,10 +55,10 @@ def make_meteor_file(packages=None, jquery=0, client_only=0, mtport=3070, mthost
 	#with cd(path):
 		#subprocess.call(['./build-meteor-client.sh', js_path, str(frappe.conf.developer_mode), " ".join(packages)])
 	#if whatfor == "meteor_web":
-	#args = shlex.split("meteor build --directory %s --server %s --architecture %s %s" % (os.path.join(path, "final_" + whatfor.split("_")[1]), mthost + ':' + str(mtport), architecture,\
-	#																					"--debug" if whatfor == "meteor_app" else ""))
-	args = shlex.split("meteor build --directory %s --server %s --architecture %s" % (os.path.join(path, "final_" + whatfor.split("_")[1]),
-																						 mthost + ':' + str(mtport), architecture))
+	args = shlex.split("meteor build --directory %s --server %s --architecture %s %s" % (os.path.join(path, whatfor.replace("meteor", "final")), mthost + ':' + str(mtport), architecture,\
+																						"--debug" if whatfor == "meteor_app" else ""))
+	#args = shlex.split("meteor build --directory %s --server %s --architecture %s" % (os.path.join(path, "final_" + whatfor.split("_")[1]),
+	#																					 mthost + ':' + str(mtport), architecture))
 	print "start make meteor... {}".format(whatfor)
 	#proc = subprocess.Popen(args, cwd=os.path.join(path, whatfor), close_fds=False, stdout=subprocess.PIPE)
 	subprocess.call(args, cwd=os.path.join(path, whatfor), close_fds=True)

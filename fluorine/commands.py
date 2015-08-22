@@ -87,8 +87,8 @@ def remove_from_assets():
 
 	#for app in ("meteor_app", "meteor_web"):
 	try:
-		meteor_path = os.path.join(os.path.abspath("."), "assets", "js", "meteor_app")
-		remove_directory(meteor_path)
+		#meteor_path = os.path.join(os.path.abspath("."), "assets", "js", "meteor_app")
+		#remove_directory(meteor_path)
 		meteor_path = os.path.join(os.path.abspath("."), "assets", "js", "meteor_web")
 		#remove_directory(meteor_path)
 		os.unlink(meteor_path)
@@ -97,20 +97,74 @@ def remove_from_assets():
 	except:
 		pass
 
+def copy_meteor_runtime_config():
+	from shutil import copyfile
+
+	app_path = frappe.get_app_path("fluorine")
+	public_folder = os.path.join(app_path, "public")
+	meteor_runtime_file = os.path.join(public_folder, "meteor_app", "meteor_runtime_config.js")
+	copyfile(meteor_runtime_file, os.path.join(public_folder, "js", "meteor_runtime_config.js"))
+
+
+def make_public_folders():
+
+	for whatfor in ("meteor_app", "meteor_web"):
+		app_path = frappe.get_app_path("fluorine")
+		public_app_folder = os.path.join(app_path, "public", whatfor)
+		frappe.create_folder(public_app_folder)
+
+
+def check_prod_mode():
+	from fluorine.utils.reactivity import meteor_config
+
+	prod_mode = meteor_config.get("production_mode")
+
+	return prod_mode
+
+
+def make_start_meteor_script(doc):
+	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import get_mongo_exports, get_root_exports
+	from fluorine.utils.file import get_path_reactivity, save_file
+
+	tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
+	meteor_apps = tostart.get(doc.fluorine_reactivity)
+
+	react_path = get_path_reactivity()
+
+	for app in meteor_apps:
+		meteor_final_path = os.path.join(react_path, app.replace("meteor", "final"), "bundle/exec_meteor")
+		exp_mongo, mongo_default = get_mongo_exports(doc)
+		mthost, mtport, forwarded_count = get_root_exports(doc, app)
+		script =\
+"""#!/bin/bash
+export ROOT_URL=%s
+export PORT=%s
+%s
+%s
+node main.js""" % (mthost, mtport, forwarded_count, exp_mongo)
+		save_file(meteor_final_path, script)
+		import stat
+
+		st = os.stat(meteor_final_path)
+		os.chmod(meteor_final_path, st.st_mode | stat.S_IEXEC)
+
 
 @click.command('setState')
 @click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
 @click.option('--state', default="start", help='Use start|stop|production to start, stop or set meteor in production mode.')
+@click.option('--mongo-custom', help='Set False to use custom mongo. Set mongo custom options in folder reactivity/common_site_config.json. By default is True.', is_flag=True)
 @click.option('--debug', is_flag=True)
 @click.option('--force', is_flag=True)
-def setState(site=None, state=None, debug=None, force=None):
+def setState(site=None, state=None, debug=None, force=None, mongo_custom=None):
 	"""Prepare Frappe for meteor."""
 	if site == None:
 		site = get_default_site()
 
-	_setState(site=site, state=state, debug=debug, force=force)
+	_setState(site=site, state=state, debug=debug, force=force, mongo_custom=mongo_custom)
 
-def _setState(site=None, state=None, debug=False, force=False):
+
+def _setState(site=None, state=None, debug=False, force=False, mongo_custom=False):
+	from fluorine.utils.fcache import clear_frappe_caches
 
 	doc = get_doctype("Fluorine Reactivity", site)
 
@@ -118,53 +172,59 @@ def _setState(site=None, state=None, debug=False, force=False):
 	fluor_state = doc.fluorine_state
 	what = state.lower()
 	if what == "start":
-		start_meteor(doc, devmode, fluor_state, site=site)
+		start_meteor(doc, devmode, fluor_state, site=site, mongo_custom=mongo_custom)
 	elif what == "stop":
 		stop_meteor(doc, devmode, fluor_state, force=force, site=site)
 	elif what == "production":
 		import sys
-		start_meteor_production_mode(doc, devmode, fluor_state, debug=debug)
+		start_meteor_production_mode(doc, devmode, fluor_state, site=site, debug=debug, force=force)
 		#m = get_bench_module("config")
 		#run_bench_module(m, "generate_nginx_config")
 
+	clear_frappe_caches()
+
 	if frappe.db:
+		frappe.db.commit()
 		frappe.destroy()
 
 
-def start_meteor(doc, devmode, state, site=None, mongo_default=True):
-	from fluorine.utils.fhooks import FluorineHooks
-	from fluorine.utils.file import save_custom_template
-	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile, make_mongodb_default
+def start_meteor(doc, devmode, state, site=None, mongo_custom=False):
 	from fluorine.utils.file import get_path_reactivity, save_js_file
+	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile, make_mongodb_default
+	from fluorine.utils.meteor.utils import PORT
 	import platform
 
-
+	from fluorine.utils.reactivity import meteor_config
 	path_reactivity = get_path_reactivity()
 	config_file_path = os.path.join(path_reactivity, "common_site_config.json")
-	meteor_config = frappe.get_file_json(config_file_path)
-
-	#meteor_dev = meteor_config.get("meteor_dev") or {}
+	#meteor_config = frappe.get_file_json(config_file_path)
 
 	if not devmode or state != "on":
 		doc.fluor_dev_mode = 1
 		doc.fluorine_state = "on"
-		doc.save()
 
-	if mongo_default:
+	_change_hook(state="start", site=site)
+
+	if not mongo_custom:
 		meteor_config.pop("meteor_mongo", None)
-		make_mongodb_default(meteor_config, doc.fluor_meteor_port or 3070)
+		make_mongodb_default(meteor_config, doc.fluor_meteor_port or PORT.meteor_web)
 		save_js_file(config_file_path, meteor_config)
+		mongo_default = 0
+	else:
+		mongo_conf = meteor_config.get("meteor_mongo", None)
+		if not mongo_conf or mongo_conf.get("type", None) == "default":
+			click.echo("You must set mongo custom in reactivity/common_site_config.json or remove --mongo-custom option to use the mongo default.")
+			_change_hook(state="stop", site=site)
+			return
+		mongo_default = 1
+
+	doc.check_mongodb = mongo_default
+	doc.save()
 
 	make_public_link()
 	remove_from_assets()
 	save_to_procfile(doc)
-	if doc.fluorine_base_template and doc.fluorine_base_template.lower() != "default":
-		save_custom_template(doc.fluorine_base_template)
 
-	with FluorineHooks(site=site) as fh:
-		fh.change_base_template(page_default=False)
-		fh.remove_hook_app_include()
-		#fh.save_hook()
 	_generate_nginx_conf(production=False)
 	try:
 		src = os.path.abspath(os.path.join("..", 'config', 'nginx.conf'))
@@ -175,36 +235,90 @@ def start_meteor(doc, devmode, state, site=None, mongo_default=True):
 		else:
 			if not os.path.exists('/etc/nginx/conf.d/frappe.conf'):
 				os.symlink(src, '/etc/nginx/conf.d/frappe.conf')
+
 	except:
 		click.echo("nginx link not set. You must make a symlink to frappe-bench/config/nginx.conf from nginx conf folder.")
-	#else:
-	#	click.echo("You must set state to on and activate developer mode in fluorine doctype.")
+		return
+
+	click.echo("Please restart nginx.")
 
 
 def stop_meteor(doc, devmode, state, force=False, site=None, production=False):
+	#from fluorine.utils.file import set_config
+	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile, prepare_make_meteor_file
+
+	#if state != "off" or force:
+	#	doc.fluorine_state = "off"
+
+	#if production:
+		#doc.fluor_dev_mode = 0
+		#doc.check_mongodb = 1
+	#	set_config({
+	#		"developer_mode": 0
+	#	})
+
+	#doc.save()
+
+	remove_from_procfile()
+	#if not production:
+	_change_hook(state="stop", site=site)
+	#else:
+	#	prepare_make_meteor_file(doc.fluor_meteor_port, doc.fluorine_reactivity)
+
+
+def _change_hook(site=None, state="start"):
 	from fluorine.utils.fhooks import FluorineHooks
-	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile
 
-	if state == "off" or force:
-		remove_from_procfile()
-		with FluorineHooks(site=site) as fh:
+	with FluorineHooks(site=site) as fh:
+		if state == "start":
+			fh.change_base_template(page_default=False)
+			fh.remove_hook_app_include()
+		elif state == "stop":
 			fh.change_base_template(page_default=True)
-			if production:
-				app_include_js, app_include_css = get_meteor_app_files()
-				print "app_files {}".format(app_include_js)
-				fh.hook_app_include(app_include_js, app_include_css)
-			else:
-				fh.remove_hook_app_include()
-		#fh.save_hook()
+			fh.remove_hook_app_include()
+		elif state == "production":
+			fh.change_base_template(page_default=True)
+			#app_include_js, app_include_css = get_meteor_app_files()
+			fh.hook_app_include(["/assets/js/meteor_app.min.js"], ["/assets/css/meteor_app.css"])
+
+
+def _check_custom_mongodb(doc):
+	from fluorine.utils.file import get_path_reactivity, save_js_file
+
+	path_reactivity = get_path_reactivity()
+	config_file_path = os.path.join(path_reactivity, "common_site_config.json")
+	meteor_config = frappe.get_file_json(config_file_path)
+	mongo_conf = meteor_config.get("meteor_mongo", None)
+	if not mongo_conf or mongo_conf.get("type", None) == "default":
+		#click.echo("You must set mongo custom in reactivity/common_site_config.json.")
+		click.echo("Using mongodb with localhost, port 27017 and db fluorine.")
+		mghost = doc.fluor_mongo_host.strip()
+		mgport = doc.fluor_mongo_port or 27017
+		mgdb = doc.fluor_mongo_database.strip() or "fluorine"
+		meteor_config["meteor_mongo"] = {
+			"host": mghost,
+			"port": mgport,
+			"db": mgdb,
+		}
+		save_js_file(config_file_path, meteor_config)
 	else:
-		click.echo("You must set state to off in fluorine doctype.")
+		click.echo("Using mongodb with host {}, port {} and db {}.".format(mongo_conf.get("host"), mongo_conf.get("port"), mongo_conf.get("db")))
+
+	return True
+
+def start_meteor_production_mode(doc, devmode, state, site=None, debug=False, force=False):
+	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import make_meteor_file, prepare_client_files, remove_from_procfile, make_final_app_client
+	from fluorine.utils.meteor.utils import build_meteor_context, make_meteor_props
 
 
-def start_meteor_production_mode(doc, devmode, state, debug=False):
-	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import make_meteor_file, prepare_client_files
-	#from fluorine.utils.fhooks import FluorineHooks
+	if doc.fluorine_state == "off" and doc.fluor_dev_mode == 0 and check_prod_mode() or force==True:
 
-	if state == "off":
+		if force==True:
+			make_public_folders()
+
+		_check_custom_mongodb(doc)
+		#stop_meteor(doc, devmode, state, production=True)
+		remove_from_procfile()
 		prepare_client_files()
 		#If debug then do not run frappe setup production and test only meteor in production mode.
 		click.echo("Make meteor bundle for Desk APP")
@@ -213,12 +327,20 @@ def start_meteor_production_mode(doc, devmode, state, debug=False):
 		print "Run twice to patch nemo64:bootstrap less problem"
 		click.echo("Make meteor bundle for WEB")
 		make_meteor_file(doc.fluor_meteor_host, doc.fluor_meteor_port, doc.ddpurl, doc.meteor_target_arch, doc.fluorine_reactivity)
+
+		context = frappe._dict()
+		build_meteor_context(context, 0, "meteor_app")
+		make_meteor_props(context, "meteor_app", production=1)
+
+		copy_meteor_runtime_config()
+		click.echo("Make build.json for meteor_app")
+		make_final_app_client()
 		click.echo("Run npm install for meteor server:")
 		run_npm()
 		click.echo("Make production links.")
 		make_production_link()
 		click.echo("Make js and css hooks.")
-		stop_meteor(doc, devmode, state, production=True)
+		_change_hook(state="production", site=site)
 		#common_site_config.json must have meteor_dns for production mode or use default
 		hosts_web, hosts_app = get_hosts(doc, production=True)
 		_generate_nginx_conf(hosts_web=hosts_web, hosts_app=hosts_app, production=True)
@@ -227,10 +349,16 @@ def start_meteor_production_mode(doc, devmode, state, debug=False):
 		if not debug:
 			click.echo("Run frappe setup production.")
 			make_supervisor(doc)
+			click.echo("Please restart nginx and supervisor.")
+		else:
+			make_start_meteor_script(doc)
+			click.echo("Please restart nginx.")
 
 
 	else:
-		click.echo("You must set state to off in fluorine doctype.")
+		click.echo("You must set state to off in fluorine doctype and remove developer mode.")
+		return
+
 
 
 def get_hosts(doc, production=False):
@@ -360,17 +488,19 @@ def make_production_link():
 	from fluorine.utils.file import get_path_reactivity
 
 	path_reactivity = get_path_reactivity()
-	final_app_path = os.path.join(path_reactivity, "final_app", "bundle", "programs", "web.browser")
-	meteordesk_path = os.path.join(os.path.abspath("."), "assets", "js", "meteor_app", "meteordesk")
-	if os.path.exists(final_app_path) and not os.path.exists(meteordesk_path):
-		frappe.create_folder(os.path.join(os.path.abspath("."), "assets", "js", "meteor_app"))
-		os.symlink(final_app_path, meteordesk_path)
+	#final_app_path = os.path.join(path_reactivity, "final_app", "bundle", "programs", "web.browser")
+	#meteordesk_path = os.path.join(os.path.abspath("."), "assets", "js", "meteor_app", "meteordesk")
+	#if os.path.exists(final_app_path) and not os.path.exists(meteordesk_path):
+	#	frappe.create_folder(os.path.join(os.path.abspath("."), "assets", "js", "meteor_app"))
+	#	os.symlink(final_app_path, meteordesk_path)
 
 	final_web_path = os.path.join(path_reactivity, "final_web", "bundle", "programs", "web.browser")
 	meteor_web_path = os.path.join(os.path.abspath("."), "assets", "js", "meteor_web")
 	if os.path.exists(final_web_path):
-		#frappe.create_folder(os.path.join(os.path.abspath("."), "assets", "js", "meteor_web"))
-		os.symlink(final_web_path, meteor_web_path)
+		try:
+			os.symlink(final_web_path, meteor_web_path)
+		except:
+			pass
 
 
 def get_meteor_app_files():
@@ -572,7 +702,7 @@ rewrite_for_bread = """
 		rewrite ^/m/(.*)$ http://$remote_addr/$1 last;""".split("\n")
 
 location_api = """
-		location ~* "^/api|^/desk|^/mdesk|^/index$" {
+		location ~* "^/api|^/desk|^/mdesk|^/index.html$" {
 			#to support flowrouter while in development
 			rewrite ^/mdesk/(.*)$ http://$remote_addr/mdesk?page=$1 last;
 			rewrite ^/desk/(.*)$ http://$remote_addr/desk?page=$1 last;
