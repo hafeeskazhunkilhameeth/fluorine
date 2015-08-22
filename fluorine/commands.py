@@ -159,7 +159,7 @@ def exec_cmd(cmd, cwd=".", with_password=False):
 	echo = None
 
 	if with_password:
-		password = getpass.getpass("To finish enter root password.\n")
+		password = getpass.getpass("Please enter root password.\n")
 		echo = subprocess.Popen(['echo', password], stdout=stdout,)
 
 	p = subprocess.Popen(cmd, cwd=cwd, shell=True, stdin=echo.stdout if echo else None)
@@ -189,26 +189,8 @@ def restart_service(service):
 	return exec_cmd
 
 
-@click.command('mproduction')
-@click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
-@click.option('--debug', is_flag=True)
-@click.option('--force', is_flag=True)
-def setup_production(site=None, debug=None, force=False):
-	"""Prepare Frappe for meteor."""
-	from fluorine.utils.fcache import clear_frappe_caches
+def start_services(debug=False):
 	import platform
-
-	if site == None:
-		site = get_default_site()
-
-	doc = get_doctype("Fluorine Reactivity", site)
-
-	devmode = doc.fluor_dev_mode
-	fluor_state = doc.fluorine_state
-
-	start_meteor_production_mode(doc, devmode, fluor_state, site=site, debug=debug, force=force)
-
-	clear_frappe_caches()
 
 	if platform.system() == 'Darwin':
 		try:
@@ -227,6 +209,43 @@ def setup_production(site=None, debug=None, force=False):
 	if not debug:
 		click.echo("restarting supervisor...")
 		exec_cmd("sudo -S supervisorctl reload", with_password=True)
+
+
+def _setup_production(user=None):
+	import getpass
+
+	if not user:
+		user = getpass.getuser()
+
+	cwd = os.getcwd()
+	os.chdir("../")
+	exec_cmd("sudo -S bench setup production %s" % user, with_password=True)
+	os.chdir(cwd)
+	
+
+@click.command('mproduction')
+@click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
+@click.option('--debug', is_flag=True)
+@click.option('--force', is_flag=True)
+def setup_production(site=None, debug=None, force=False):
+	"""Prepare Frappe for meteor."""
+	from fluorine.utils.fcache import clear_frappe_caches
+
+	#_setup_production()
+	#return
+	if site == None:
+		site = get_default_site()
+
+	doc = get_doctype("Fluorine Reactivity", site)
+
+	devmode = doc.fluor_dev_mode
+	fluor_state = doc.fluorine_state
+
+	start_meteor_production_mode(doc, devmode, fluor_state, site=site, debug=debug, force=force)
+
+	clear_frappe_caches()
+
+	start_services()
 
 	if frappe.db:
 		frappe.db.commit()
@@ -440,6 +459,8 @@ def start_meteor_production_mode(doc, devmode, state, site=None, debug=False, fo
 			click.echo("Please restart nginx.")
 
 		build()
+
+		start_services()
 
 	else:
 		click.echo("You must set state to off in fluorine doctype and remove developer mode.")
