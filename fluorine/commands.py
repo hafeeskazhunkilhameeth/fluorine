@@ -136,7 +136,7 @@ def make_start_meteor_script(doc):
 		exp_mongo, mongo_default = get_mongo_exports(doc)
 		mthost, mtport, forwarded_count = get_root_exports(doc, app)
 		script =\
-"""#!/bin/bash
+"""#!/usr/bin/env bash
 export ROOT_URL=%s
 export PORT=%s
 %s
