@@ -196,7 +196,7 @@ def save_js_file(file_path, p, indent=4):
 def save_file(file_path, p, mode="w"):
 	with open(file_path, mode) as f:
 		f.write(p)
-
+		f.flush()
 
 def empty_directory(folder, ignore=None):
 	import os, shutil

@@ -7,6 +7,9 @@ import click
 import os
 
 
+class CommandFailedError(Exception):
+	pass
+
 class FluorineError(Exception):
 	def __init__(self, message):
 		super(FluorineError, self).__init__(message)
@@ -125,6 +128,7 @@ def check_prod_mode():
 def make_start_meteor_script(doc):
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import get_mongo_exports, get_root_exports
 	from fluorine.utils.file import get_path_reactivity, save_file
+	import stat
 
 	tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
 	meteor_apps = tostart.get(doc.fluorine_reactivity)
@@ -143,10 +147,90 @@ export PORT=%s
 %s
 node main.js""" % (mthost, mtport, forwarded_count, exp_mongo)
 		save_file(meteor_final_path, script)
-		import stat
 
 		st = os.stat(meteor_final_path)
 		os.chmod(meteor_final_path, st.st_mode | stat.S_IEXEC)
+
+
+def exec_cmd(cmd, cwd=".", with_password=False):
+	import subprocess, getpass
+
+	stdout=subprocess.PIPE
+	echo = None
+
+	if with_password:
+		password = getpass.getpass("To finish enter root password.\n")
+		echo = subprocess.Popen(['echo', password], stdout=stdout,)
+
+	p = subprocess.Popen(cmd, cwd=cwd, shell=True, stdin=echo.stdout if echo else None)
+
+	return_code = p.wait()
+	if return_code > 0:
+		raise CommandFailedError("restarting nginx...")
+
+def is_running_systemd(module):
+	m = get_bench_module(module)
+	res = run_bench_module(m, "is_running_systemd")
+	return res
+
+def get_program(module, p):
+	m = get_bench_module(module)
+	res = run_bench_module(m, "get_program", p)
+	return res
+
+def restart_service(service):
+	if os.path.basename(get_program("utils", ['systemctl']) or '') == 'systemctl' and is_running_systemd("production_setup"):
+		exec_cmd = "{prog} restart {service}".format(prog='systemctl', service=service)
+	elif os.path.basename(get_program("utils", ['service']) or '') == 'service':
+		exec_cmd = "{prog} {service} restart ".format(prog='service', service=service)
+	else:
+		raise Exception, 'No service manager found'
+
+	return exec_cmd
+
+
+@click.command('mproduction')
+@click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
+@click.option('--debug', is_flag=True)
+@click.option('--force', is_flag=True)
+def setup_production(site=None, debug=None, force=False):
+	"""Prepare Frappe for meteor."""
+	from fluorine.utils.fcache import clear_frappe_caches
+	import platform
+
+	if site == None:
+		site = get_default_site()
+
+	doc = get_doctype("Fluorine Reactivity", site)
+
+	devmode = doc.fluor_dev_mode
+	fluor_state = doc.fluorine_state
+
+	start_meteor_production_mode(doc, devmode, fluor_state, site=site, debug=debug, force=force)
+
+	clear_frappe_caches()
+
+	if platform.system() == 'Darwin':
+		try:
+			click.echo("restarting nginx...")
+			exec_cmd("sudo -S nginx -s reload", with_password=True)
+		except:
+			click.echo("nginx not running. Starting nginx...")
+			exec_cmd("sudo -S nginx", with_password=True)
+			#os.popen("sudo -S %s"%("sudo -S nginx"), 'w').write(password)
+
+	else:
+		click.echo("restarting nginx...")
+		cmd = "sudo -S " + restart_service('nginx')
+		exec_cmd(cmd, with_password=True)
+
+	if not debug:
+		click.echo("restarting supervisor...")
+		exec_cmd("sudo -S supervisorctl reload", with_password=True)
+
+	if frappe.db:
+		frappe.db.commit()
+		frappe.destroy()
 
 
 @click.command('setState')
@@ -176,7 +260,7 @@ def _setState(site=None, state=None, debug=False, force=False, mongo_custom=Fals
 	elif what == "stop":
 		stop_meteor(doc, devmode, fluor_state, force=force, site=site)
 	elif what == "production":
-		import sys
+		#import sys
 		start_meteor_production_mode(doc, devmode, fluor_state, site=site, debug=debug, force=force)
 		#m = get_bench_module("config")
 		#run_bench_module(m, "generate_nginx_config")
@@ -248,8 +332,8 @@ def stop_meteor(doc, devmode, state, force=False, site=None, production=False):
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile, prepare_make_meteor_file
 
 	#if state != "off" or force:
-	#	doc.fluorine_state = "off"
-
+	doc.fluorine_state = "off"
+	doc.fluor_dev_mode = 1
 	#if production:
 		#doc.fluor_dev_mode = 0
 		#doc.check_mongodb = 1
@@ -257,7 +341,7 @@ def stop_meteor(doc, devmode, state, force=False, site=None, production=False):
 	#		"developer_mode": 0
 	#	})
 
-	#doc.save()
+	doc.save()
 
 	remove_from_procfile()
 	#if not production:
@@ -307,7 +391,7 @@ def _check_custom_mongodb(doc):
 	return True
 
 def start_meteor_production_mode(doc, devmode, state, site=None, debug=False, force=False):
-	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import make_meteor_file, prepare_client_files, remove_from_procfile, make_final_app_client
+	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import make_meteor_file, prepare_client_files, remove_from_procfile, make_final_app_client, save_to_procfile
 	from fluorine.utils.meteor.utils import build_meteor_context, make_meteor_props
 
 
@@ -352,13 +436,20 @@ def start_meteor_production_mode(doc, devmode, state, site=None, debug=False, fo
 			click.echo("Please restart nginx and supervisor.")
 		else:
 			make_start_meteor_script(doc)
+			save_to_procfile(doc, production_debug=True)
 			click.echo("Please restart nginx.")
 
+		build()
 
 	else:
 		click.echo("You must set state to off in fluorine doctype and remove developer mode.")
 		return
 
+
+def build(make_copy=False, verbose=False):
+	"Minify + concatenate JS and CSS files, build translations"
+	import frappe.build
+	frappe.build.bundle(False, make_copy=make_copy, verbose=verbose)
 
 
 def get_hosts(doc, production=False):
@@ -392,6 +483,7 @@ def make_supervisor(doc):
 	import getpass
 	from fluorine.utils.file import writelines, readlines, get_path_reactivity
 
+	#TODO ADD
 	#m = get_bench_module("production_setup")
 	#run_bench_module(m, "setup_production")
 
@@ -421,14 +513,16 @@ def make_supervisor(doc):
 
 
 def get_meteor_environment(doc, whatfor):
-	from fluorine.utils.meteor.utils import default_path_prefix, PORT
-	from fluorine.utils.file import get_path_reactivity
+	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import get_mongo_exports, get_root_exports
+	#from fluorine.utils.meteor.utils import default_path_prefix, PORT
+	#from fluorine.utils.file import get_path_reactivity
+
 
 	conf = frappe._dict()
 
 	#CONFIG FILE
-	path_reactivity = get_path_reactivity()
-	meteor_config = frappe.get_file_json(os.path.join(path_reactivity, "common_site_config.json"))
+	#path_reactivity = get_path_reactivity()
+	#meteor_config = frappe.get_file_json(os.path.join(path_reactivity, "common_site_config.json"))
 
 	#METEOR MAIL
 	if hasattr(doc, "mailurl"):
@@ -437,6 +531,7 @@ def get_meteor_environment(doc, whatfor):
 		conf.mail_url = ""
 
 	#MONGODB
+	"""
 	mongodb_conf = meteor_config.get("meteor_mongo")
 	if mongodb_conf and mongodb_conf.get("type") != "default":
 		user_pass = "%s:%s@" % (doc.mongo_user, doc.mongo_pass) if doc.mongo_user and doc.mongo_pass else ''
@@ -450,8 +545,12 @@ def get_meteor_environment(doc, whatfor):
 		dbname = "fluorine"
 
 	conf.mongo_url = "mongodb://{user_pass}{host}:{port}/{databasename}".format(user_pass=user_pass, host=mghost, port=mgport, databasename=dbname)
+	"""
+	mongo_url, mongo_default = get_mongo_exports(doc)
 
+	conf.mongo_url = mongo_url.replace("export MONGO_URL=", "").strip()
 	#METEOR
+	"""
 	mthost = doc.fluor_meteor_host.strip() or "http://127.0.0.1"
 	port = doc.fluor_meteor_port or PORT.meteor_web
 	conf.port = port if whatfor == "meteor_web" else PORT.meteor_app
@@ -464,9 +563,11 @@ def get_meteor_environment(doc, whatfor):
 	#NGINX
 	count = meteor_config.get("meteor_http_forwarded_count") or "1"
 	conf.forwarded_count = ", HTTP_FORWARDED_COUNT='" + str(count) + "'"
-
+	"""
+	conf.root_url, conf.port, forwarded_count = get_root_exports(doc, whatfor)
+	conf.forwarded_count = forwarded_count.replace("export", "").strip()
 	#SUPERVISOR
-	env = "PORT={port}, ROOT_URL='{root_url}', MONGO_URL='{mongo_url}'{mail_url}{forwarded_count}".format(**conf)
+	env = "PORT={port}, ROOT_URL='{root_url}', MONGO_URL='{mongo_url}'{mail_url}, {forwarded_count}".format(**conf)
 
 	return env
 
@@ -758,5 +859,6 @@ environment={meteorenv}
 commands = [
 	mongodb_conf,
 	nginx_conf,
+	setup_production,
 	setState
 ]

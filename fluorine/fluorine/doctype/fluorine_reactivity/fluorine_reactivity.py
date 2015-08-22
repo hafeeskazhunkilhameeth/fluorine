@@ -112,19 +112,19 @@ def get_mongo_exports(doc):
 	if doc.check_mongodb and doc.fluor_mongo_host.strip():
 		user_pass = "%s:%s@" % (doc.mongo_user, doc.mongo_pass) if doc.mongo_user and doc.mongo_pass else ''
 		mghost = doc.fluor_mongo_host.replace("http://","").replace("mongodb://","").strip(' \t\n\r')
-		export_mongo = "export MONGO_URL=mongodb://%s%s:%s/%s " % (user_pass, mghost, doc.fluor_mongo_port, doc.fluor_mongo_database)
+		export_mongo = "export MONGO_URL =mongodb://%s%s:%s/%s " % (user_pass, mghost, doc.fluor_mongo_port, doc.fluor_mongo_database)
 	else:
 		mongo_conf = meteor_config.get("meteor_mongo")
-		db = mongo_conf.get("db")
-		port = mongo_conf.get("port")
-		host = mongo_conf.get("host")
+		db = mongo_conf.get("db") or "fluorine"
+		port = mongo_conf.get("port") or 27017
+		host = mongo_conf.get("host") or "127.0.0.1"
 		export_mongo = "export MONGO_URL=mongodb://%s:%s/%s " % (host.replace("http://","").replace("mongodb://","").strip(' \t\n\r'), port, db)
 		mongo_default = True
 
 	return export_mongo, mongo_default
 
 
-def save_to_procfile(doc):
+def save_to_procfile(doc, production_debug=False):
 	from fluorine.utils.file import writelines
 	#from fluorine.utils.reactivity import meteor_config
 	#from fluorine.utils.meteor.utils import default_path_prefix, PORT
@@ -165,13 +165,20 @@ def save_to_procfile(doc):
 	"""
 	for app in meteor_apps:
 		export_mongo, mongo_default = get_mongo_exports(doc)
-		if app == "meteor_web" and mongo_default:
-			exp_mongo = ""
-		else:
-			exp_mongo = export_mongo + " && "
-
 		mthost, mtport, forwarded_count = get_root_exports(doc, app)
-		procfile.insert(0, "%s: (%s%s && export ROOT_URL=%s && cd apps/reactivity/%s && meteor --port %s)\n" %\
+
+		if production_debug:
+			#procfile.insert(0, "%s: (%s%s && export ROOT_URL=%s && export PORT=%s && cd apps/reactivity/%s/bundle && node main.js)\n" %
+			#				(app, export_mongo + " && ", forwarded_count, mthost, mtport, app))
+			procfile.insert(0, "%s: (cd apps/reactivity/%s/bundle && exec_meteor)\n" %
+							(app, app))
+		else:
+			if app == "meteor_web" and mongo_default:
+				exp_mongo = ""
+			else:
+				exp_mongo = export_mongo + " && "
+
+			procfile.insert(0, "%s: (%s%s && export ROOT_URL=%s && cd apps/reactivity/%s && meteor --port %s)\n" %
 							(app, exp_mongo, forwarded_count, mthost, app, mtport))
 
 		writelines(procfile_path, procfile)
