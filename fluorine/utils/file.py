@@ -349,6 +349,8 @@ def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 	custom_pattern = set(custom_pattern)
 	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", "*.xhtml"])
 	pattern = ignore_patterns(*custom_pattern)
+	dst_public_assets_path = os.path.join(get_path_reactivity(), "public", "assets")
+	dst_private_path = os.path.join(get_path_reactivity(), "private")
 
 	for app, paths in frappe.local.files_to_add.iteritems():#context.files_to_add.iteritems():
 		#print "apps in frappe.local.files_to_add 2 {}".format(frappe.local.files_to_add)
@@ -356,10 +358,23 @@ def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 		meteorpath = os.path.join(pathname, "templates", "react", whatfor[0])
 		app_path = frappe.get_app_path(app)
 
+		dst_public_app_path = os.path.join(dst_public_assets_path, app)
+		dst_private_app_path = os.path.join(dst_private_path, app)
+
 		if os.path.exists(meteorpath) and paths:
 			folders_path.append(app)
 			app_folders = "/".join(folders_path)
 			destpath = os.path.join(dst, app_folders)
+			public_path = os.path.join(pathname, "public")
+			private_path = os.path.join(meteorpath, "private")
+
+			frappe.create_folder(dst_public_assets_path)
+			os.symlink(public_path, dst_public_app_path)
+
+			if os.path.exists(private_path):
+				frappe.create_folder(dst_private_path)
+				os.symlink(private_path, dst_private_app_path)
+
 			for obj in paths:
 				tpath = obj.get("tname")
 				if tpath:

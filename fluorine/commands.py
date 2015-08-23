@@ -51,7 +51,7 @@ def setup_production(site=None, debug=None, force=False):
 @click.option('--mac_sup_prefix_path', default="/usr/local", help='Name of the user to use to start production mode. Default to the current user.')
 @click.option('--debug', is_flag=True)
 @click.option('--force', is_flag=True)
-def setState(site=None, state=None, mongo_custom=None, user=None,  mac_sup_prefix_path=None, debug=None, force=None):
+def setState(site=None, state=None, mongo_custom=None, user=None, mac_sup_prefix_path=None, debug=None, force=None):
 	"""Prepare Frappe for meteor."""
 	import getpass
 
