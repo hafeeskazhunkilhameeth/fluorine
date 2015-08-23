@@ -228,6 +228,9 @@ def generate_nginx_supervisor_conf(doc, user=None, debug=None, bench="..", mac_s
 			os.symlink(os.path.abspath(os.path.join(bench, 'config', 'supervisor.conf')), final_path)
 		make_supervisor(doc)
 	elif platform.system() != "Darwin" and not debug:
+		nginx_link = '/etc/nginx/conf.d/frappe.conf'
+		if os.path.exists(nginx_link):
+			os.unlink(nginx_link)
 		bench_setup_production(user=user, bench=bench)
 		make_supervisor(doc)
 	else:
