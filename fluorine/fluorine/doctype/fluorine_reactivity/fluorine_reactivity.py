@@ -466,7 +466,7 @@ def prepare_client_files():
 	#fluorine_path = frappe.get_app_path("fluorine")
 	react_path = get_path_reactivity()
 	fluorine_path = frappe.get_app_path("fluorine")
-	meteor_js_path = os.path.join(fluorine_path, "public", "js", "meteor")
+	#meteor_js_path = os.path.join(fluorine_path, "public", "js", "meteor")
 
 	for whatfor in ("meteor_web", "meteor_app"):
 	#meteor_final_path = os.path.join(react_path, "final_%s" % (whatfor.split("_")[1],))
@@ -477,11 +477,11 @@ def prepare_client_files():
 			except:
 				pass
 
-		if os.path.exists(meteor_js_path):
-			try:
-				remove_directory(meteor_js_path)
-			except:
-				pass
+		#if os.path.exists(meteor_js_path):
+		#	try:
+		#		remove_directory(meteor_js_path)
+		#	except:
+		#		pass
 
 		src = os.path.join(react_path, whatfor, ".meteor", "packages")
 		dst = os.path.join(fluorine_path, "templates", "packages_" + whatfor)
