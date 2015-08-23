@@ -25,10 +25,14 @@ def run_bench_module(module, func, *args, **kwargs):
 	return res
 
 
-def get_bench_module(module):
+def get_bench_module(module, bench=".."):
 	import sys, importlib
-	bench_path = os.path.abspath("../../bench-repo/")
-	sys.path.append(bench_path)
+
+	bench_path = os.path.abspath(bench)
+	if bench_path not in sys.path:
+		sys.path.append(bench_path)
+
+	#print "cwd {} bench {} abs_bench {} bench_path in sys.path {}".format(os.getcwd(), bench, bench_path, bench_path in sys.path)
 	m = importlib.import_module("bench." + module)
 
 	return m
@@ -168,20 +172,25 @@ def exec_cmd(cmd, cwd=".", with_password=False):
 	if return_code > 0:
 		raise CommandFailedError("restarting nginx...")
 
-def is_running_systemd(module):
-	m = get_bench_module(module)
+def is_running_systemd(module, bench=".."):
+	m = get_bench_module(module, bench=bench)
 	res = run_bench_module(m, "is_running_systemd")
 	return res
 
-def get_program(module, p):
-	m = get_bench_module(module)
+def get_program(module, p, bench=".."):
+	m = get_bench_module(module, bench=bench)
 	res = run_bench_module(m, "get_program", p)
 	return res
 
-def restart_service(service):
-	if os.path.basename(get_program("utils", ['systemctl']) or '') == 'systemctl' and is_running_systemd("production_setup"):
+def fix_prod_setup_perms(frappe_user=None, bench="."):
+	m = get_bench_module("utils", bench=bench)
+	run_bench_module(m, "fix_prod_setup_perms", frappe_user=frappe_user)
+
+
+def linux_system_service(service, bench=".."):
+	if os.path.basename(get_program("utils", ['systemctl'], bench=bench) or '') == 'systemctl' and is_running_systemd("production_setup", bench=bench):
 		exec_cmd = "{prog} restart {service}".format(prog='systemctl', service=service)
-	elif os.path.basename(get_program("utils", ['service']) or '') == 'service':
+	elif os.path.basename(get_program("utils", ['service'], bench=bench) or '') == 'service':
 		exec_cmd = "{prog} {service} restart ".format(prog='service', service=service)
 	else:
 		raise Exception, 'No service manager found'
@@ -189,29 +198,71 @@ def restart_service(service):
 	return exec_cmd
 
 
-def start_services(debug=False):
+def get_supervisor_confdir(path=""):
+
+	if path.endswith("/"):
+		path = path.rsplit("/",1)[0]
+
+	possiblities = ('%s/etc/supervisor/conf.d' % path, '%s/etc/conf.d' % path, '%s/etc/supervisor.d/' % path, '%s/etc/supervisord/conf.d' % path, '%s/etc/supervisord.d' % path)
+	for possiblity in possiblities:
+		if os.path.exists(possiblity):
+			return possiblity
+
+	raise Exception, 'No supervisor conf dir found.'
+
+def generate_nginx_supervisor_conf(doc, user=None, debug=None, bench="..", mac_sup_prefix_path="/usr/local"):
+	import platform
+
+	supervisor_conf_filename = "frappe.conf"
+
+	if platform.system() == "Darwin" and not debug:
+		m = get_bench_module("config", bench=bench)
+		run_bench_module(m, "generate_nginx_config")
+		m = get_bench_module("config", bench=bench)
+		run_bench_module(m, "generate_supervisor_config", user=user)
+		fix_prod_setup_perms(frappe_user=user, bench=bench)
+
+		sup_conf_dir = get_supervisor_confdir(path=mac_sup_prefix_path)
+		final_path = os.path.join(sup_conf_dir, supervisor_conf_filename)
+		if not os.path.exists(final_path):
+			os.symlink(os.path.abspath(os.path.join(bench, 'config', 'supervisor.conf')), final_path)
+		make_supervisor(doc)
+	elif platform.system() != "Darwin" and not debug:
+		bench_setup_production(user=user, bench=bench)
+		make_supervisor(doc)
+	else:
+		m = get_bench_module("config", bench=bench)
+		run_bench_module(m, "generate_nginx_config")
+		fix_prod_setup_perms(frappe_user=user, bench=bench)
+
+
+def start_nginx_services(debug=False):
 	import platform
 
 	if platform.system() == 'Darwin':
 		try:
 			click.echo("restarting nginx...")
 			exec_cmd("sudo -S nginx -s reload", with_password=True)
+			click.echo("nginx restarted.")
 		except:
 			click.echo("nginx not running. Starting nginx...")
 			exec_cmd("sudo -S nginx", with_password=True)
+			click.echo("nginx started.")
 			#os.popen("sudo -S %s"%("sudo -S nginx"), 'w').write(password)
 
 	else:
 		click.echo("restarting nginx...")
-		cmd = "sudo -S " + restart_service('nginx')
+		cmd = "sudo -S " + linux_system_service('nginx')
 		exec_cmd(cmd, with_password=True)
+		click.echo("nginx restarted.")
 
 	if not debug:
 		click.echo("restarting supervisor...")
 		exec_cmd("sudo -S supervisorctl reload", with_password=True)
+		click.echo("supervisor restarted.")
 
 
-def _setup_production(user=None):
+def bench_setup_production(user=None, bench=".."):
 	import getpass
 
 	if not user:
@@ -221,8 +272,9 @@ def _setup_production(user=None):
 	os.chdir("../")
 	exec_cmd("sudo -S bench setup production %s" % user, with_password=True)
 	os.chdir(cwd)
-	
 
+
+#TODO PARA REMOVER
 @click.command('mproduction')
 @click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
 @click.option('--debug', is_flag=True)
@@ -231,6 +283,7 @@ def setup_production(site=None, debug=None, force=False):
 	"""Prepare Frappe for meteor."""
 	from fluorine.utils.fcache import clear_frappe_caches
 
+	bench = "../../bench-repo/"
 	#_setup_production()
 	#return
 	if site == None:
@@ -241,11 +294,11 @@ def setup_production(site=None, debug=None, force=False):
 	devmode = doc.fluor_dev_mode
 	fluor_state = doc.fluorine_state
 
-	start_meteor_production_mode(doc, devmode, fluor_state, site=site, debug=debug, force=force)
+	start_meteor_production_mode(doc, devmode, fluor_state, site=site, debug=debug, force=force, bench=bench)
+
+	#start_nginx_services(debug=debug)
 
 	clear_frappe_caches()
-
-	start_services()
 
 	if frappe.db:
 		frappe.db.commit()
@@ -256,17 +309,26 @@ def setup_production(site=None, debug=None, force=False):
 @click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
 @click.option('--state', default="start", help='Use start|stop|production to start, stop or set meteor in production mode.')
 @click.option('--mongo-custom', help='Set False to use custom mongo. Set mongo custom options in folder reactivity/common_site_config.json. By default is True.', is_flag=True)
+@click.option('--user', default=None, help='Name of the user to use to start production mode. Default to the current user.')
+@click.option('--mac_sup_prefix_path', default="/usr/local", help='Name of the user to use to start production mode. Default to the current user.')
 @click.option('--debug', is_flag=True)
 @click.option('--force', is_flag=True)
-def setState(site=None, state=None, debug=None, force=None, mongo_custom=None):
+def setState(site=None, state=None, mongo_custom=None, user=None, debug=None, force=None, mac_sup_prefix_path=None):
 	"""Prepare Frappe for meteor."""
+	import getpass
+
 	if site == None:
 		site = get_default_site()
 
-	_setState(site=site, state=state, debug=debug, force=force, mongo_custom=mongo_custom)
+	if not user:
+		user = getpass.getuser()
+
+	bench = "../../bench-repo/"
+
+	_setState(site=site, state=state, debug=debug, force=force, mongo_custom=mongo_custom, user=user, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path)
 
 
-def _setState(site=None, state=None, debug=False, force=False, mongo_custom=False):
+def _setState(site=None, state=None, debug=False, force=False, mongo_custom=False, user=None, bench="..", mac_sup_prefix_path="/usr/local"):
 	from fluorine.utils.fcache import clear_frappe_caches
 
 	doc = get_doctype("Fluorine Reactivity", site)
@@ -275,12 +337,12 @@ def _setState(site=None, state=None, debug=False, force=False, mongo_custom=Fals
 	fluor_state = doc.fluorine_state
 	what = state.lower()
 	if what == "start":
-		start_meteor(doc, devmode, fluor_state, site=site, mongo_custom=mongo_custom)
+		start_meteor(doc, devmode, fluor_state, site=site, mongo_custom=mongo_custom, bench=bench)
 	elif what == "stop":
-		stop_meteor(doc, devmode, fluor_state, force=force, site=site)
+		stop_meteor(doc, devmode, fluor_state, force=force, site=site, bench=bench)
 	elif what == "production":
 		#import sys
-		start_meteor_production_mode(doc, devmode, fluor_state, site=site, debug=debug, force=force)
+		start_meteor_production_mode(doc, devmode, fluor_state, site=site, debug=debug, force=force, user=user, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path)
 		#m = get_bench_module("config")
 		#run_bench_module(m, "generate_nginx_config")
 
@@ -291,13 +353,13 @@ def _setState(site=None, state=None, debug=False, force=False, mongo_custom=Fals
 		frappe.destroy()
 
 
-def start_meteor(doc, devmode, state, site=None, mongo_custom=False):
+def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench=".."):
 	from fluorine.utils.file import get_path_reactivity, save_js_file
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile, make_mongodb_default
 	from fluorine.utils.meteor.utils import PORT
+	from fluorine.utils.reactivity import meteor_config
 	import platform
 
-	from fluorine.utils.reactivity import meteor_config
 	path_reactivity = get_path_reactivity()
 	config_file_path = os.path.join(path_reactivity, "common_site_config.json")
 	#meteor_config = frappe.get_file_json(config_file_path)
@@ -346,7 +408,7 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False):
 	click.echo("Please restart nginx.")
 
 
-def stop_meteor(doc, devmode, state, force=False, site=None, production=False):
+def stop_meteor(doc, devmode, state, force=False, site=None, production=False, bench=".."):
 	#from fluorine.utils.file import set_config
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile, prepare_make_meteor_file
 
@@ -409,10 +471,9 @@ def _check_custom_mongodb(doc):
 
 	return True
 
-def start_meteor_production_mode(doc, devmode, state, site=None, debug=False, force=False):
+def start_meteor_production_mode(doc, devmode, state, site=None, debug=False, force=False, user=None, bench="..", mac_sup_prefix_path="/usr/local"):
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import make_meteor_file, prepare_client_files, remove_from_procfile, make_final_app_client, save_to_procfile
 	from fluorine.utils.meteor.utils import build_meteor_context, make_meteor_props
-
 
 	if doc.fluorine_state == "off" and doc.fluor_dev_mode == 0 and check_prod_mode() or force==True:
 
@@ -445,22 +506,24 @@ def start_meteor_production_mode(doc, devmode, state, site=None, debug=False, fo
 		click.echo("Make js and css hooks.")
 		_change_hook(state="production", site=site)
 		#common_site_config.json must have meteor_dns for production mode or use default
+		generate_nginx_supervisor_conf(doc, user=user, debug=debug, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path)
+
 		hosts_web, hosts_app = get_hosts(doc, production=True)
 		_generate_nginx_conf(hosts_web=hosts_web, hosts_app=hosts_app, production=True)
 		remove_public_link()
 
-		if not debug:
-			click.echo("Run frappe setup production.")
-			make_supervisor(doc)
-			click.echo("Please restart nginx and supervisor.")
-		else:
+		#if not debug:
+		#	click.echo("Run frappe setup production.")
+		#	make_supervisor(doc)
+			#click.echo("Please restart nginx and supervisor.")
+		if debug:
 			make_start_meteor_script(doc)
 			save_to_procfile(doc, production_debug=True)
-			click.echo("Please restart nginx.")
+			#click.echo("Please restart nginx.")
 
 		build()
 
-		start_services()
+		start_nginx_services(debug=debug)
 
 	else:
 		click.echo("You must set state to off in fluorine doctype and remove developer mode.")
@@ -504,13 +567,9 @@ def make_supervisor(doc):
 	import getpass
 	from fluorine.utils.file import writelines, readlines, get_path_reactivity
 
-	#TODO ADD
-	#m = get_bench_module("production_setup")
-	#run_bench_module(m, "setup_production")
-
 	#TODO REMOVE
-	m = get_bench_module("config")
-	run_bench_module(m, "generate_supervisor_config")
+	#m = get_bench_module("config")
+	#run_bench_module(m, "generate_supervisor_config")
 
 	conf = frappe._dict()
 	conf.user = getpass.getuser()
@@ -698,15 +757,8 @@ def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None):
 		else:
 			hosts_app = get_hosts(doc, production=production)
 
-	#config_path = os.path.join(os.path.abspath(".."), "config")
 	config_path = os.path.join(os.path.abspath(".."), "config")
 	config_file = os.path.join(config_path, "nginx.conf")
-	#if not os.path.exists(config_file):
-	#p = subprocess.Popen(["bench", "setup", "nginx"], cwd=os.path.abspath(".."))
-	#p.wait()
-	m = get_bench_module("config")
-	#m.generate_nginx_config()
-	run_bench_module(m, "generate_nginx_config")
 
 	frappe_nginx_file = readlines(config_file)
 	inside_server = False
