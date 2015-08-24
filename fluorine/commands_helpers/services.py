@@ -18,14 +18,15 @@ def linux_system_service(service, bench=".."):
 
 def start_nginx_supervisor_services(debug=False):
 	from bench_helpers import exec_cmd
+	from fluorine.commands_helpers.bench_helpers import CommandFailedError
 	import platform
 
 	if platform.system() == 'Darwin':
 		try:
 			click.echo("restarting nginx...")
-			exec_cmd("sudo -S nginx -s reload", with_password=True)
+			exec_cmd("sudo -k -S nginx -s reload", with_password=True)
 			click.echo("nginx restarted.")
-		except:
+		except CommandFailedError:
 			click.echo("nginx not running. Starting nginx...")
 			exec_cmd("sudo -S nginx", with_password=True)
 			click.echo("nginx started.")

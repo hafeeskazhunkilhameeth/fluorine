@@ -266,14 +266,15 @@ def get_meteor_appId(path):
 	return appid
 
 
-def prepare_client_files(app):
+def prepare_client_files(curr_app):
 	from fluorine.utils.react_file_loader import remove_directory
-	from fluorine.utils.file import get_path_reactivity
-	from shutil import copyfile
+	from fluorine.utils.file import get_path_reactivity, save_file
+	from fluorine.commands_helpers.meteor import get_active_apps
+	#from shutil import copyfile
 
 	#fluorine_path = frappe.get_app_path("fluorine")
 	react_path = get_path_reactivity()
-	app_path = frappe.get_app_path(app)
+	app_path = frappe.get_app_path(curr_app)
 	#meteor_js_path = os.path.join(fluorine_path, "public", "js", "meteor")
 
 	for whatfor in ("meteor_web", "meteor_app"):
@@ -291,9 +292,24 @@ def prepare_client_files(app):
 		#	except:
 		#		pass
 
+		apps = get_active_apps()
+		apps.remove(curr_app)
+		print "installed apps {}".format(apps)
 		src = os.path.join(react_path, whatfor, ".meteor", "packages")
 		dst = os.path.join(app_path, "templates", "packages_add_" + whatfor)
-		copyfile(src, dst)
+		installed_packages = frappe.get_file_items(src)
+
+		for app in apps:
+			tmp_app_path = frappe.get_app_path(app)
+			tmp_dst = os.path.join(tmp_app_path, "templates", "packages_add_" + whatfor)
+			tmp_app_pckg = frappe.get_file_items(tmp_dst)
+			for pckg in tmp_app_pckg:
+				if pckg in installed_packages:
+					installed_packages.remove(pckg)
+
+		save_file(dst, "\n".join(installed_packages))
+		#copyfile(src, dst)
+
 	#fluorine_dst_temp_path = os.path.join(frappe.get_app_path("fluorine"), "templates", "react", "temp")
 
 	#dst = os.path.join(react_path, "app")

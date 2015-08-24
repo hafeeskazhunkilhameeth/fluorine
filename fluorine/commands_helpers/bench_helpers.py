@@ -6,6 +6,8 @@ import os
 class CommandFailedError(Exception):
 	pass
 
+class PasswordError(Exception):
+	pass
 
 def run_bench_module(module, func, *args, **kwargs):
 	cwd = os.getcwd()
@@ -37,20 +39,46 @@ def run_frappe_cmd(bench_path, *args, **kwargs):
 	return
 
 def exec_cmd(cmd, cwd=".", with_password=False):
-	import subprocess, getpass
+	import subprocess, getpass, click
 
-	stdout=subprocess.PIPE
+	stderr=stdout=subprocess.PIPE
 	echo = None
 
-	if with_password:
-		password = getpass.getpass("Please enter root password.\n")
-		echo = subprocess.Popen(['echo', password], stdout=stdout,)
+	return_code = 1
+	password_error = 0
+	password_error_txt = "Password:Sorry, try again."
 
-	p = subprocess.Popen(cmd, cwd=cwd, shell=True, stdin=echo.stdout if echo else None)
+	error = stderr
 
-	return_code = p.wait()
+	for i in range(3):
+		if with_password:
+			password = getpass.getpass("Please enter root password.\n")
+			echo = subprocess.Popen(['echo', password], stdout=stdout,)
+
+		p = subprocess.Popen(cmd, cwd=cwd, shell=True, stdin=echo.stdout if echo else None, stdout=stdout, stderr=stderr)
+
+		#return_code = p.wait()
+		#out, err = p.communicate()
+		p.wait()
+		return_code = p.returncode
+		error = p.stderr.read()
+		#out = p.stdout.read()
+		#print "return code out {} err {} retcode {} i {}".format(out, error, return_code, i)
+		if not with_password:
+			break
+		elif return_code == 0:
+			break
+		elif password_error_txt in error: #or not with_password or return_code == 0:
+			password_error = 1
+			click.echo(error.replace("1",str(i + 1)))
+
+		#return_code = 0
 	if return_code > 0:
-		raise CommandFailedError("restarting nginx...")
+		if password_error:
+			click.echo(error.replace("1","3"))
+			raise PasswordError("Password error.")
+		else:
+			raise CommandFailedError("restarting nginx...")
 
 def is_running_systemd(module, bench=".."):
 	m = get_bench_module(module, bench=bench)
