@@ -5,8 +5,14 @@ import frappe, os
 from frappe.website import render, statics
 
 
+
+class MeteorInstalationError(Exception):
+	pass
+
+
 def before_install():
 	from file import get_path_reactivity
+	from fluorine.commands_helpers.meteor import update_versions
 
 	path_reactivity = get_path_reactivity()
 	if not os.path.exists(path_reactivity):
@@ -14,7 +20,11 @@ def before_install():
 
 	make_link_to_desk()
 	copy_common_config(path_reactivity)
-	create_meteor_apps(path_reactivity)
+	create_meteor_apps(path_reactivity=path_reactivity)
+	for package_name in ("meteor_app", "meteor_web"):
+		meteor_add_package("fluorine", package_name, path_reactivity=path_reactivity)
+
+	update_versions()
 	#make_public_symbolic_link(path_reactivity)
 
 
@@ -75,20 +85,26 @@ def copy_common_config(path_reactivity):
 	except:
 		pass
 
-def create_meteor_apps(path_reactivity):
+def create_meteor_apps(path_reactivity=None):
 	import subprocess
 	import glob
 
-	try:
-		app_path = frappe.get_app_path("fluorine")
-		for app in ("meteor_app", "meteor_web"):
-			p = subprocess.Popen(["meteor", "create", app], cwd=path_reactivity, shell=False, close_fds=True)
-			p.wait()
-			meteor_app = os.path.join(path_reactivity, app)
-			for f in glob.glob(os.path.join(meteor_app,"meteor_*")):
-				os.remove(f)
+	if not path_reactivity:
+		from file import get_path_reactivity
+		path_reactivity = get_path_reactivity()
 
-			meteor_add_package(app_path, app, path_reactivity)
+	try:
+		for app in ("meteor_app", "meteor_web"):
+			if not os.path.exists(os.path.join(path_reactivity, app)):
+				p = subprocess.Popen(["meteor", "create", app], cwd=path_reactivity, shell=False, close_fds=True)
+				p.wait()
+				meteor_app = os.path.join(path_reactivity, app)
+				for f in glob.glob(os.path.join(meteor_app,"meteor_*")):
+					os.remove(f)
+
+			elif not os.path.exists(os.path.join(path_reactivity, app, ".meteor")):
+				raise MeteorInstalationError("Meteor %s folder exists." % app)
+
 			#p = subprocess.Popen(["meteor", "run"], cwd=os.path.join(path_reactivity, app), shell=False, close_fds=True)
 			#p.wait()
 	except:
@@ -97,24 +113,56 @@ def create_meteor_apps(path_reactivity):
 				Install the packages that you like and start use frappe. Good Luck!"""
 
 
-def meteor_add_package(app_path, app, path_reactivity):
+def meteor_package(app, package_name, path_reactivity=None, action="add"):
 	import subprocess
-	from fluorine.utils.file import readlines
+	#from fluorine.utils.file import readlines
 
+	if not path_reactivity:
+		from file import get_path_reactivity
+		path_reactivity = get_path_reactivity()
+
+	app_path = frappe.get_app_path(app)
+	cwd = os.path.join(path_reactivity, app)
+	packages_path = os.path.join(app_path, "templates", "packages_" + action + "_" + package_name)
+	if os.path.exists(packages_path):
+		packages = frappe.get_file_items(packages_path)
+		meteor_packages = frappe.get_file_items(os.path.join(path_reactivity, package_name, ".meteor", "packages"))
+
+		#NOTE: Only add packages that do not exist or remove packages that exist
+		for pckg in packages:
+			if pckg in meteor_packages:
+				if action == "add":
+					packages.remove(pckg)
+			elif action == "remove":
+				packages.remove(pckg)
+
+		#packages = readlines(packages_path)
+		#p = subprocess.Popen(["meteor", "add", " ".join([line for line in packages if not line.startswith("#")])], cwd=cwd, shell=False, close_fds=True)
+		p = subprocess.Popen(["meteor", action, " ".join(packages)], cwd=cwd, shell=False, close_fds=True)
+		p.wait()
+
+
+def meteor_add_package(app, package_name, path_reactivity=None):
+	meteor_package(app, package_name, path_reactivity=path_reactivity, action="add")
+
+
+def meteor_remove_package(app, package_name, path_reactivity=None):
+	meteor_package(app, package_name, path_reactivity=path_reactivity, action="remove")
+
+	"""
+	if not path_reactivity:
+		from file import get_path_reactivity
+		path_reactivity = get_path_reactivity()
+
+	app_path = frappe.get_app_path(app)
+	cwd = os.path.join(path_reactivity, app)
 	packages_path = os.path.join(app_path, "templates", "packages_" + app)
-	packages = readlines(packages_path)
-	p = subprocess.Popen(["meteor", "add", " ".join([line for line in packages if not line.startswith("#")])], cwd=os.path.join(path_reactivity, app), shell=False, close_fds=True)
+	#packages = readlines(packages_path)
+	packages = frappe.get_file_items(packages_path)
+	#p = subprocess.Popen(["meteor", "remove", " ".join([line for line in packages if not line.startswith("#")])], cwd=os.path.join(path_reactivity, app), shell=False, close_fds=True)
+	p = subprocess.Popen(["meteor", "remove", " ".join(packages)], cwd=cwd, shell=False, close_fds=True)
 	p.wait()
-
-
-def meteor_remove_package(app_path, app, path_reactivity):
-	import subprocess
-	from fluorine.utils.file import readlines
-
-	packages_path = os.path.join(app_path, "templates", "packages_" + app)
-	packages = readlines(packages_path)
-	p = subprocess.Popen(["meteor", "remove", " ".join([line for line in packages if not line.startswith("#")])], cwd=os.path.join(path_reactivity, app), shell=False, close_fds=True)
-	p.wait()
+	"""
 
 
 def init_singles():

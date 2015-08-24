@@ -4,7 +4,7 @@
 from __future__ import unicode_literals
 import frappe, os
 from frappe.model.document import Document
-
+from frappe import _
 
 
 """
@@ -70,12 +70,14 @@ class FluorineReactivity(Document):
 			})
 			prepare_make_meteor_file(self.fluor_meteor_port, self.fluorine_reactivity)
 			meteor_config["production_mode"] = 1
-			update_versions()
+			#update_versions()
 			#return
 
 		if self.fluorine_base_template and self.fluorine_base_template.lower() != "default":
 			save_custom_template(self.fluorine_base_template)
 
+		if self.current_dev_app.strip() != "":
+			meteor_config["current_dev_app"] = self.current_dev_app
 		#if not self.fluor_dev_mode:
 			#prepare_make_meteor_file(self.fluor_meteor_port, self.fluorine_reactivity)
 		save_to_common_site_config(self, meteor_config)
@@ -88,6 +90,12 @@ class FluorineReactivity(Document):
 	def validate(self, method=None):
 		if not self.ddpurl or self.ddpurl.strip() == "":
 			return frappe.throw("You must provide a valid ddp url")
+
+		if self.current_dev_app.strip() != "":
+			apps = frappe.get_installed_apps()
+			if self.current_dev_app not in apps:
+				return frappe.throw("App %s is not a valid meteor app. To be a valid meteor app it must exist as installed app and must exist templates/react/meteor_app and/or\
+				 					templates/react/meteor_web folder" % self.current_dev_app)
 
 
 def get_root_exports(doc, app):
@@ -272,53 +280,32 @@ def save_to_common_site_config(doc, meteor_config=None):
 	#save_js_file(config_path, f)
 	update_common_config(f)
 
+
 @frappe.whitelist()
+def prepare_to_update():
+	from fluorine.utils.reactivity import meteor_config
+	from fluorine.utils.meteor.utils import update_common_config
+	from fluorine.commands import add_meteor_packages
+	from fluorine.commands_helpers.meteor import update_versions, check_updates
+
+	doc = frappe.get_doc("Fluorine Reactivity")
+
+	check_meteor_apps_created(doc)
+	if not check_updates():
+		frappe.throw(_("Sorry, There is no registed updates."))
+
+	if doc.fluorine_state == "off" and doc.fluor_dev_mode == 0:
+		update_versions()
+		prepare_make_meteor_file(doc.fluor_meteor_port, doc.fluorine_reactivity)
+		meteor_config["on_update"] = 1
+		add_meteor_packages()
+		update_common_config(meteor_config)
+	else:
+		frappe.throw(_("Please set state off and/or developer mode off first."))
+
+
+#@frappe.whitelist()
 #def make_meteor_file(devmode, mthost, mtport, mtddpurl, mghost, mgport, mgdb, architecture, whatfor):
-def make_meteor_file(mthost, mtport, mtddpurl, architecture, whatfor):
-	#devmode = frappe.utils.cint(devmode)
-	#from frappe.website.context import get_context
-	#from fluorine.utils.meteor.utils import build_meteor_context, make_meteor_props
-	from fluorine.utils.file import make_meteor_file
-	#from fluorine.utils.fcache import clear_frappe_caches
-	#from fluorine.utils.spacebars_template import get_app_pages, get_web_pages
-	#clear_frappe_caches()
-	#whatfor = ["common"] if devmode else ["meteor_web", "meteor_app"]
-	_whatfor = {"Both": ("meteor_web", "meteor_app"), "Reactive Web": ("meteor_web",), "Reactive App": ("meteor_app",)}
-
-	#prepare_compile_environment()
-	for w in _whatfor.get(whatfor):
-		#prepare_client_files(w)
-		#if whatfor == "Both" and w == "meteor_app":
-		#	mtport = int(mtport) + 80
-		#	frappe.local.path = "mdesk"
-		#	get_context("mdesk")
-			#frappe.get_template(context.base_template_path).render(context)
-		#else:
-		#	frappe.local.path = "fluorine_home"
-		#	get_context("fluorine_home")
-			#frappe.get_template(context.base_template_path).render(context)
-
-		make_meteor_file(jquery=0, whatfor=w, mtport=mtport, mthost=mthost, architecture=architecture)
-		#context = frappe._dict()
-		#build_meteor_context(context, 0, w)
-		#make_meteor_props(context, w, production=1)
-
-	#TODO REMOVER
-	#if "meteor_app" in _whatfor.get(whatfor):
-	#	make_final_app_client(meteor_root_url=mthost, meteor_port=int(mtport), meteor_ddpurl=mtddpurl)
-
-	#fluorine_publicjs_path = os.path.join(frappe.get_app_path("fluorine"), "public", "js", "react")
-	#file.remove_folder_content(fluorine_publicjs_path)
-	#file.make_meteor_config_file(mthost, mtport, version)
-
-	#if devmode:
-	#	restart_reactivity(mthost=mthost, mtport=mtport, mghost=mghost, mgport=mgport, mgdb=mgdb)
-
-def update_versions():
-	from fluorine.commands_helpers.meteor import get_active_apps, save_version
-
-	apps = get_active_apps()
-	save_version(apps)
 
 
 def prepare_make_meteor_file(mtport, whatfor):
@@ -466,44 +453,6 @@ def build_frappe_json_files(manifest, build_json, jquery=0):
 			#copyfile(src, dst)
 
 
-def prepare_client_files():
-	from fluorine.utils.react_file_loader import remove_directory
-	from fluorine.utils.file import get_path_reactivity
-	from shutil import copyfile
-
-	#fluorine_path = frappe.get_app_path("fluorine")
-	react_path = get_path_reactivity()
-	fluorine_path = frappe.get_app_path("fluorine")
-	#meteor_js_path = os.path.join(fluorine_path, "public", "js", "meteor")
-
-	for whatfor in ("meteor_web", "meteor_app"):
-	#meteor_final_path = os.path.join(react_path, "final_%s" % (whatfor.split("_")[1],))
-		meteor_final_path = os.path.join(react_path, whatfor.replace("meteor", "final"))
-		if os.path.exists(meteor_final_path):
-			try:
-				remove_directory(os.path.join(meteor_final_path, "bundle"))
-			except:
-				pass
-
-		#if os.path.exists(meteor_js_path):
-		#	try:
-		#		remove_directory(meteor_js_path)
-		#	except:
-		#		pass
-
-		src = os.path.join(react_path, whatfor, ".meteor", "packages")
-		dst = os.path.join(fluorine_path, "templates", "packages_" + whatfor)
-		copyfile(src, dst)
-	#fluorine_dst_temp_path = os.path.join(frappe.get_app_path("fluorine"), "templates", "react", "temp")
-
-	#dst = os.path.join(react_path, "app")
-	#remove_tmp_app_dir(fluorine_dst_temp_path, dst)
-	#if devmode:
-	#	return
-	#frappe.create_folder(dst)
-	#file.copy_all_files_with_symlink(fluorine_dst_temp_path, dst, whatfor, extension=["js", "html"])
-
-
 def remove_tmp_app_dir(src, dst):
 	from fluorine.utils.react_file_loader import remove_directory
 	try:
@@ -546,6 +495,32 @@ def make_mongodb_default(conf, port=3070):
 				"db": db,
 				"type": "default"
 			}
+
+def check_meteor_apps_created(doc, with_error=True):
+	from fluorine.utils.file import get_path_reactivity
+	from frappe import _
+
+	path_reactivity = get_path_reactivity()
+	whatfor = doc.fluorine_reactivity
+	meteor_web = os.path.join(path_reactivity, "meteor_web", ".meteor")
+	meteor_app = os.path.join(path_reactivity, "meteor_app", ".meteor")
+	msg = "Please install meteor app first. From command line issue 'bench fluorine create-meteor-apps.'"
+	error = False
+
+	web_folder_exist = os.path.exists(meteor_web)
+	app_folder_exist = os.path.exists(meteor_app)
+
+	if whatfor == "Both" and not (web_folder_exist and app_folder_exist):
+		error = True
+	elif whatfor == "Reactive Web" and not web_folder_exist:
+		error = True
+	elif whatfor == "Reactive App" and not app_folder_exist:
+		error = True
+
+	if with_error and error:
+		frappe.throw(_(msg))
+
+	return not error
 
 def is_open_port(ip="127.0.0.1", port=3070):
 	import socket

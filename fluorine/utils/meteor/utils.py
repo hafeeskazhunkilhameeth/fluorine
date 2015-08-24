@@ -265,6 +265,86 @@ def get_meteor_appId(path):
 	print "appId {}".format(appid)
 	return appid
 
+
+def prepare_client_files(app):
+	from fluorine.utils.react_file_loader import remove_directory
+	from fluorine.utils.file import get_path_reactivity
+	from shutil import copyfile
+
+	#fluorine_path = frappe.get_app_path("fluorine")
+	react_path = get_path_reactivity()
+	app_path = frappe.get_app_path(app)
+	#meteor_js_path = os.path.join(fluorine_path, "public", "js", "meteor")
+
+	for whatfor in ("meteor_web", "meteor_app"):
+	#meteor_final_path = os.path.join(react_path, "final_%s" % (whatfor.split("_")[1],))
+		meteor_final_path = os.path.join(react_path, whatfor.replace("meteor", "final"))
+		if os.path.exists(meteor_final_path):
+			try:
+				remove_directory(os.path.join(meteor_final_path, "bundle"))
+			except:
+				pass
+
+		#if os.path.exists(meteor_js_path):
+		#	try:
+		#		remove_directory(meteor_js_path)
+		#	except:
+		#		pass
+
+		src = os.path.join(react_path, whatfor, ".meteor", "packages")
+		dst = os.path.join(app_path, "templates", "packages_add_" + whatfor)
+		copyfile(src, dst)
+	#fluorine_dst_temp_path = os.path.join(frappe.get_app_path("fluorine"), "templates", "react", "temp")
+
+	#dst = os.path.join(react_path, "app")
+	#remove_tmp_app_dir(fluorine_dst_temp_path, dst)
+	#if devmode:
+	#	return
+	#frappe.create_folder(dst)
+	#file.copy_all_files_with_symlink(fluorine_dst_temp_path, dst, whatfor, extension=["js", "html"])
+
+
+def make_meteor_files(mthost, mtport, mtddpurl, architecture, whatfor):
+	#devmode = frappe.utils.cint(devmode)
+	#from frappe.website.context import get_context
+	#from fluorine.utils.meteor.utils import build_meteor_context, make_meteor_props
+	from fluorine.utils.file import make_meteor_file
+	#from fluorine.utils.fcache import clear_frappe_caches
+	#from fluorine.utils.spacebars_template import get_app_pages, get_web_pages
+	#clear_frappe_caches()
+	#whatfor = ["common"] if devmode else ["meteor_web", "meteor_app"]
+	_whatfor = {"Both": ("meteor_web", "meteor_app"), "Reactive Web": ("meteor_web",), "Reactive App": ("meteor_app",)}
+
+	#prepare_compile_environment()
+	for w in _whatfor.get(whatfor):
+		#prepare_client_files(w)
+		#if whatfor == "Both" and w == "meteor_app":
+		#	mtport = int(mtport) + 80
+		#	frappe.local.path = "mdesk"
+		#	get_context("mdesk")
+			#frappe.get_template(context.base_template_path).render(context)
+		#else:
+		#	frappe.local.path = "fluorine_home"
+		#	get_context("fluorine_home")
+			#frappe.get_template(context.base_template_path).render(context)
+
+		make_meteor_file(jquery=0, whatfor=w, mtport=mtport, mthost=mthost, architecture=architecture)
+		#context = frappe._dict()
+		#build_meteor_context(context, 0, w)
+		#make_meteor_props(context, w, production=1)
+
+	#TODO REMOVER
+	#if "meteor_app" in _whatfor.get(whatfor):
+	#	make_final_app_client(meteor_root_url=mthost, meteor_port=int(mtport), meteor_ddpurl=mtddpurl)
+
+	#fluorine_publicjs_path = os.path.join(frappe.get_app_path("fluorine"), "public", "js", "react")
+	#file.remove_folder_content(fluorine_publicjs_path)
+	#file.make_meteor_config_file(mthost, mtport, version)
+
+	#if devmode:
+	#	restart_reactivity(mthost=mthost, mtport=mtport, mghost=mghost, mgport=mgport, mgdb=mgdb)
+
+
 def make_heritage(block, context):
 	import re
 	#for block, render in out.items():
