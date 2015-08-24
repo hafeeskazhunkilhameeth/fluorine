@@ -78,7 +78,6 @@ def copy_common_config(path_reactivity):
 def create_meteor_apps(path_reactivity):
 	import subprocess
 	import glob
-	from fluorine.utils.file import readlines
 
 	try:
 		app_path = frappe.get_app_path("fluorine")
@@ -89,16 +88,34 @@ def create_meteor_apps(path_reactivity):
 			for f in glob.glob(os.path.join(meteor_app,"meteor_*")):
 				os.remove(f)
 
-			packages_path = os.path.join(app_path, "templates", "packages_" + app)
-			packages = readlines(packages_path)
-			p = subprocess.Popen(["meteor", "add", " ".join([line for line in packages if not line.startswith("#")])], cwd=os.path.join(path_reactivity, app), shell=False, close_fds=True)
-			p.wait()
+			meteor_add_package(app_path, app, path_reactivity)
 			#p = subprocess.Popen(["meteor", "run"], cwd=os.path.join(path_reactivity, app), shell=False, close_fds=True)
 			#p.wait()
 	except:
 		print """Error. You must install meteor and node before you can use this app. After that you must create two apps in apps/reactivity folder.
 				For that, cd to apps/reactivity and issue 'meteor create meteor_app' and 'meteor create meteor_web'.
 				Install the packages that you like and start use frappe. Good Luck!"""
+
+
+def meteor_add_package(app_path, app, path_reactivity):
+	import subprocess
+	from fluorine.utils.file import readlines
+
+	packages_path = os.path.join(app_path, "templates", "packages_" + app)
+	packages = readlines(packages_path)
+	p = subprocess.Popen(["meteor", "add", " ".join([line for line in packages if not line.startswith("#")])], cwd=os.path.join(path_reactivity, app), shell=False, close_fds=True)
+	p.wait()
+
+
+def meteor_remove_package(app_path, app, path_reactivity):
+	import subprocess
+	from fluorine.utils.file import readlines
+
+	packages_path = os.path.join(app_path, "templates", "packages_" + app)
+	packages = readlines(packages_path)
+	p = subprocess.Popen(["meteor", "remove", " ".join([line for line in packages if not line.startswith("#")])], cwd=os.path.join(path_reactivity, app), shell=False, close_fds=True)
+	p.wait()
+
 
 def init_singles():
 	singles = [single['name'] for single in frappe.get_all("DocType", filters={'issingle': True})]

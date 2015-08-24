@@ -241,6 +241,15 @@ def save_meteor_root_prefix(prefix, path):
 	save_meteor_props("__meteor_runtime_config__.ROOT_URL_PATH_PREFIX = '%s';" % prefix, path)
 """
 
+def update_common_config(config):
+	from fluorine.utils.file import get_path_reactivity, save_js_file
+
+	path_reactivity = get_path_reactivity()
+	config_file_path = os.path.join(path_reactivity, "common_site_config.json")
+
+	save_js_file(config_file_path, config)
+
+
 def save_meteor_props(props, path):
 	from fluorine.utils.file import save_file
 	save_file(path, props)

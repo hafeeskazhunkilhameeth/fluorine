@@ -4,6 +4,7 @@ __author__ = 'luissaguas'
 from fluorine.commands_helpers import *
 
 
+
 def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None):
 	from fluorine.utils.file import save_file, readlines
 	import re
@@ -101,7 +102,7 @@ def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None):
 
 
 
-def get_supervisor_confdir(path=""):
+def get_mac_supervisor_confdir(path=""):
 
 	if path.endswith("/"):
 		path = path.rsplit("/",1)[0]
@@ -144,10 +145,10 @@ def make_supervisor(doc):
 	writelines(config_file, content)
 
 
-def generate_nginx_supervisor_conf(doc, user=None, debug=None, bench="..", mac_sup_prefix_path="/usr/local"):
+def generate_nginx_supervisor_conf(doc, user=None, debug=None, update=False, bench="..", mac_sup_prefix_path="/usr/local"):
 	from bench_helpers import bench_generate_nginx_config, bench_generate_supervisor_config, fix_prod_setup_perms,\
 						bench_setup_production
-	import platform
+	import platform, errno
 
 	supervisor_conf_filename = "frappe.conf"
 
@@ -158,24 +159,28 @@ def generate_nginx_supervisor_conf(doc, user=None, debug=None, bench="..", mac_s
 		#m = get_bench_module("config", bench=bench)
 		#run_bench_module(m, "generate_supervisor_config", user=user)
 		bench_generate_supervisor_config(bench=bench, user=user)
-		fix_prod_setup_perms(frappe_user=user, bench=bench)
 
-		sup_conf_dir = get_supervisor_confdir(path=mac_sup_prefix_path)
+		sup_conf_dir = get_mac_supervisor_confdir(path=mac_sup_prefix_path)
 		final_path = os.path.join(sup_conf_dir, supervisor_conf_filename)
 		if not os.path.exists(final_path):
 			os.symlink(os.path.abspath(os.path.join("..", 'config', 'supervisor.conf')), final_path)
 		make_supervisor(doc)
 	elif platform.system() != "Darwin" and not debug:
-		nginx_link = '/etc/nginx/conf.d/frappe.conf'
-		if os.path.exists(nginx_link):
-			os.unlink(nginx_link)
-		bench_setup_production(user=user, bench=bench)
+		if not update:
+			try:
+				bench_setup_production(user=user, bench=bench)
+			except OSError as e:
+				if e.errno != errno.EEXIST:
+					raise
+		else:
+			bench_generate_supervisor_config(bench=bench, user=user)
+			bench_generate_nginx_config(bench=bench)
+
 		make_supervisor(doc)
 	else:
 		#m = bh.get_bench_module("config", bench=bench)
 		#bh.run_bench_module(m, "generate_nginx_config")
 		bench_generate_nginx_config(bench=bench)
-		fix_prod_setup_perms(frappe_user=user, bench=bench)
 
 
 supervisor_meteor_conf = """

@@ -127,6 +127,7 @@ def make_meteor_ignor_files():
 		}
 	})
 
+	return list_ignores
 	#print "list apps to remove {}".format(list_ignores)
 
 """

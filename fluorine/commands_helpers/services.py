@@ -16,7 +16,7 @@ def linux_system_service(service, bench=".."):
 	return exec_cmd
 
 
-def start_nginx_services(debug=False):
+def start_nginx_supervisor_services(debug=False):
 	from bench_helpers import exec_cmd
 	import platform
 
@@ -33,7 +33,7 @@ def start_nginx_services(debug=False):
 
 	else:
 		click.echo("restarting nginx...")
-		cmd = "sudo -S " + sh.linux_system_service('nginx')
+		cmd = "sudo -S " + linux_system_service('nginx')
 		exec_cmd(cmd, with_password=True)
 		click.echo("nginx restarted.")
 
@@ -42,6 +42,11 @@ def start_nginx_services(debug=False):
 		exec_cmd("sudo -S supervisorctl reload", with_password=True)
 		click.echo("supervisor restarted.")
 
+def build_assets(bench_path=".."):
+	from bench_helpers import run_frappe_cmd
+
+	click.echo("Building assets...")
+	run_frappe_cmd(bench_path, 'build')
 
 def build(make_copy=False, verbose=False):
 	"Minify + concatenate JS and CSS files, build translations"

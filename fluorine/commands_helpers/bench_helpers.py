@@ -30,6 +30,12 @@ def get_bench_module(module, bench=".."):
 	return m
 
 
+def run_frappe_cmd(bench_path, *args, **kwargs):
+	#bench = kwargs.get('bench', '..')
+	m = get_bench_module("utils", bench=bench_path)
+	run_bench_module(m, "run_frappe_cmd", *args, **kwargs)
+	return
+
 def exec_cmd(cmd, cwd=".", with_password=False):
 	import subprocess, getpass
 
@@ -78,3 +84,27 @@ def bench_setup_production(user=None, bench=".."):
 	os.chdir("../")
 	exec_cmd("sudo -S bench setup production %s" % user, with_password=True)
 	os.chdir(cwd)
+
+def get_supervisor_confdir(bench="."):
+	m = get_bench_module("production_setup", bench=bench)
+	res = run_bench_module(m, "get_supervisor_confdir")
+	return res
+
+
+def get_supervisor_conf_filename(bench="."):
+	m = get_bench_module("production_setup", bench=bench)
+	res = run_bench_module(m, "is_centos7")
+	if res:
+		return 'frappe.ini'
+		#copy_default_nginx_config()
+	else:
+		return 'frappe.conf'
+
+
+def get_current_version(app, bench='.'):
+	import semantic_version
+
+	m = get_bench_module("app", bench=bench)
+	version = run_bench_module(m, "get_current_version", app)
+
+	return semantic_version.Version(version)

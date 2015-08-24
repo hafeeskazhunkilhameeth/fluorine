@@ -215,3 +215,64 @@ def remove_from_assets():
 		#os.unlink(os.path.join(os.path.abspath("."), "assets", "js", "program.json"))
 	except:
 		pass
+
+
+def get_active_apps():
+	from fluorine.utils.reactivity import make_meteor_ignor_files
+
+	ign_apps = make_meteor_ignor_files()
+
+	apps = frappe.get_installed_apps()
+	for app in ign_apps:
+		try:
+			apps.remove(app)
+		except:
+			pass
+
+	return apps
+
+
+def check_updates(apps, bench=".."):
+	from fluorine.utils.reactivity import meteor_config
+	from bench_helpers import get_current_version
+	#from fluorine.utils.file import get_path_reactivity
+	import semantic_version
+
+	#path_reactivity = get_path_reactivity()
+	#config_file_path = os.path.join(path_reactivity, "common_site_config.json")
+	#config_file = frappe.get_file_json(config_file_path)
+	versions = meteor_config.get("versions")
+
+	if not versions:
+		return False
+
+	for app in apps:
+		curr_version = get_current_version(app, bench=bench)
+		old_version = versions.get(app, None)
+		if old_version and curr_version <= semantic_version.Version(old_version):
+			return True
+
+
+	return False
+
+def save_version(apps, bench=".."):
+	from bench_helpers import get_current_version
+	from fluorine.utils.reactivity import meteor_config
+	from fluorine.utils.meteor.utils import update_common_config
+	#from fluorine.utils.file import get_path_reactivity, save_js_file
+
+	#path_reactivity = get_path_reactivity()
+	#config_file_path = os.path.join(path_reactivity, "common_site_config.json")
+	#config_file = frappe.get_file_json(config_file_path)
+	versions = meteor_config.get("versions")
+
+	if not versions:
+		versions = meteor_config["versions"] = frappe._dict()
+
+	for app in apps:
+		app_path = frappe.get_app_path(app)
+		if os.path.exists(os.path.join(app_path, "templates", "react")):
+			version = get_current_version(app, bench=bench)
+			versions[app] = str(version)
+
+	update_common_config(meteor_config)

@@ -70,6 +70,7 @@ class FluorineReactivity(Document):
 			})
 			prepare_make_meteor_file(self.fluor_meteor_port, self.fluorine_reactivity)
 			meteor_config["production_mode"] = 1
+			update_versions()
 			#return
 
 		if self.fluorine_base_template and self.fluorine_base_template.lower() != "default":
@@ -205,13 +206,13 @@ def remove_from_procfile():
 
 
 def save_to_common_site_config(doc, meteor_config=None):
-	import os
+	#import os
 	#from fluorine.utils.reactivity import meteor_config
-	from fluorine.utils.meteor.utils import default_path_prefix, PORT
-	from fluorine.utils.file import get_path_reactivity, save_js_file
+	from fluorine.utils.meteor.utils import default_path_prefix, PORT, update_common_config
+	#from fluorine.utils.file import get_path_reactivity, save_js_file
 
-	path_reactivity = get_path_reactivity()
-	config_path = os.path.join(path_reactivity, "common_site_config.json")
+	#path_reactivity = get_path_reactivity()
+	#config_path = os.path.join(path_reactivity, "common_site_config.json")
 
 	f = meteor_config
 
@@ -268,7 +269,8 @@ def save_to_common_site_config(doc, meteor_config=None):
 	#		del f["meteor_mongo"]
 	#	make_mongodb_default(f, meteor_web.get("port"))
 
-	save_js_file(config_path, f)
+	#save_js_file(config_path, f)
+	update_common_config(f)
 
 @frappe.whitelist()
 #def make_meteor_file(devmode, mthost, mtport, mtddpurl, mghost, mgport, mgdb, architecture, whatfor):
@@ -311,6 +313,12 @@ def make_meteor_file(mthost, mtport, mtddpurl, architecture, whatfor):
 
 	#if devmode:
 	#	restart_reactivity(mthost=mthost, mtport=mtport, mghost=mghost, mgport=mgport, mgdb=mgdb)
+
+def update_versions():
+	from fluorine.commands_helpers.meteor import get_active_apps, save_version
+
+	apps = get_active_apps()
+	save_version(apps)
 
 
 def prepare_make_meteor_file(mtport, whatfor):
