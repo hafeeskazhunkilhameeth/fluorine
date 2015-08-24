@@ -48,7 +48,7 @@ def exec_cmd(cmd, cwd=".", with_password=False):
 	password_error = 0
 	password_error_txt = "Password:Sorry, try again."
 
-	error = stderr
+	#error = stderr
 
 	for i in range(3):
 		if with_password:
@@ -71,6 +71,9 @@ def exec_cmd(cmd, cwd=".", with_password=False):
 		elif password_error_txt in error: #or not with_password or return_code == 0:
 			password_error = 1
 			click.echo(error.replace("1",str(i + 1)))
+		else:
+			password_error = 0
+			break
 
 		#return_code = 0
 	if return_code > 0:
