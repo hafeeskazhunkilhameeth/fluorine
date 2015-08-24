@@ -75,7 +75,6 @@ def exec_cmd(cmd, cwd=".", with_password=False):
 		#return_code = 0
 	if return_code > 0:
 		if password_error:
-			click.echo(error.replace("1","3"))
 			raise PasswordError("Password error.")
 		else:
 			raise CommandFailedError("restarting nginx...")
