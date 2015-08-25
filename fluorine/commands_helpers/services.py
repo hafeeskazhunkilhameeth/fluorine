@@ -24,7 +24,7 @@ def start_nginx_supervisor_services(debug=False):
 	if platform.system() == 'Darwin':
 		try:
 			click.echo("restarting nginx...")
-			exec_cmd("sudo -k -S nginx -s reload", with_password=True)
+			exec_cmd("sudo -S nginx -s reload", with_password=True)
 			click.echo("nginx restarted.")
 		except CommandFailedError:
 			click.echo("nginx not running. Starting nginx...")
