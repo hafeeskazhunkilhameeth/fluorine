@@ -107,7 +107,6 @@ class FluorineHooks(object):
 		elif icss:
 			self.hooks["app_include_css"] = icss
 
-		print "hooks {}".format(self.hooks)
 		#fluorine_path = frappe.get_app_path("fluorine")
 		#save_batch_hook(hooks, fluorine_path + "/hooks.py")
 		#clear_frappe_caches(site=site)
@@ -198,7 +197,6 @@ def remove_react_from_hook(paths, where="app", hooks=None, include_files_from_di
 		hooks.pop("home_page", None)
 
 	hjs = hooks.get(where + "_include_js", None)
-	print "removing from app hook where {} hooks app_include_js {}".format(where, hjs)
 
 	if hjs:
 		if include_files_from_disk:
@@ -242,12 +240,10 @@ def save_batch_hook(objjs, file_path):
 	#module_path = os.path.dirname(fluorine.__file__)
 	#file_path = file.get_path_fluorine("hook_help.txt")
 	#with open(os.path.join(module_path, "hook_help.txt"), "w") as f:
-	print "objjs file_path {} {}".format(file_path, objjs)
 	with open(file_path, "w") as f:
 		for key, value in objjs.iteritems():
 			#value = objjs.get(key)
 			#if isinstance(value, (list,dict,tuple)):
-			print "before save {}".format(key + '=' + json.dumps(value) + os.linesep)
 			f.write(key + '=' + json.dumps(value) + os.linesep)
 			f.flush()
 			#else:

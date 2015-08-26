@@ -12,19 +12,48 @@ from fluorine.commands_helpers import hooks as hh
 from fluorine.commands_helpers import mongo as mgh
 
 
-def _add_meteor_packages(app):
-	from fluorine.utils.install import meteor_add_package
+def _reset_packages(app, file_add=None, file_remove=None):
+	from fluorine.utils.install import meteor_reset_package
 
-	for package_name in ("meteor_app", "meteor_web"):
-		meteor_add_package(app, package_name)
+	for whatfor in ("meteor_app", "meteor_web"):
+		meteor_reset_package(app, whatfor, file_add=file_add, file_remove=file_remove)
 
 
-def add_meteor_packages():
+def _reset_packages_all(file_add=None, file_remove=None):
 	from fluorine.commands_helpers.meteor import get_active_apps
 
 	apps = get_active_apps()
 	for app in apps:
-		_add_meteor_packages(app)
+		_reset_packages(app, file_add=file_add, file_remove=file_remove)
+
+
+def _remove_meteor_packages(app, file_remove=None):
+	from fluorine.utils.install import meteor_remove_package
+
+	for whatfor in ("meteor_app", "meteor_web"):
+		meteor_remove_package(app, whatfor, file_remove=file_remove)
+
+
+def remove_meteor_packages(file_remove=None):
+	from fluorine.commands_helpers.meteor import get_active_apps
+
+	apps = get_active_apps()
+	for app in apps:
+		_remove_meteor_packages(app, file_remove=file_remove)
+
+def _add_meteor_packages(app, file_add=None):
+	from fluorine.utils.install import meteor_add_package
+
+	for whatfor in ("meteor_app", "meteor_web"):
+		meteor_add_package(app, whatfor, file_add=file_add)
+
+
+def add_meteor_packages(file_add=None):
+	from fluorine.commands_helpers.meteor import get_active_apps
+
+	apps = get_active_apps()
+	for app in apps:
+		_add_meteor_packages(app, file_add=file_add)
 
 
 def _cmd_create_meteor_apps(doc):
@@ -36,26 +65,113 @@ def _cmd_create_meteor_apps(doc):
 		add_meteor_packages()
 
 
-@click.command('add-meteor-packages')
-@click.argument('app')
-def cmd_add_meteor_packages(app):
-	"""Add meteor packages from an app."""
-	from fluorine.commands_helpers.meteor import get_active_apps
+@click.command('check-updates')
+@click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
+def cmd_check_updates(site=None):
+	"""Check for update in versions of fluorine apps."""
+	from fluorine.commands_helpers.meteor import check_updates
 
-	apps = get_active_apps()
-	if app not in apps:
+	if site == None:
+		site = get_default_site()
+
+	bench = "../../bench-repo/"
+	start_frappe_db(site)
+
+	if check_updates(bench=bench):
+		click.echo("fluorine apps are not updated.")
+	else:
+		click.echo("fluorine apps are updated.")
+
+
+@click.command('update-version')
+@click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
+def cmd_update_version(site=None):
+	"""Update version of fluorine apps."""
+	from fluorine.commands_helpers.meteor import update_versions
+
+	if site == None:
+		site = get_default_site()
+
+	bench = "../../bench-repo/"
+	start_frappe_db(site)
+
+	update_versions(bench=bench)
+	click.echo("fluorine apps were updated.")
+
+
+@click.command('remove-meteor-packages')
+@click.option('--app', default=None, help='The name of the fluorine app to reset packages.')
+@click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
+def cmd_remove_meteor_packages(app, site=None):
+	"""Add meteor packages from an app."""
+	from fluorine.commands_helpers.meteor import is_valid_fluorine_app
+	from fluorine.commands_helpers.config import get_custom_packages_files
+
+	if site == None:
+		site = get_default_site()
+
+	start_frappe_db(site)
+
+	if not is_valid_fluorine_app(app):
 		click.echo("Sorry. App %s does not exist as meteor app." % app)
 		return
 
-	_add_meteor_packages(app)
+	file_add, file_remove = get_custom_packages_files()
 
+	if app:
+		_remove_meteor_packages(app, file_remove=file_remove)
+	else:
+		remove_meteor_packages(file_remove=file_remove)
+
+
+@click.command('add-meteor-packages')
+@click.option('--app', default=None, help='The name of the fluorine app to reset packages.')
+@click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
+def cmd_add_meteor_packages(app=None, site=None):
+	"""Add meteor packages from an app."""
+	from fluorine.commands_helpers.meteor import is_valid_fluorine_app
+	from fluorine.commands_helpers.config import get_custom_packages_files
+
+	if site == None:
+		site = get_default_site()
+
+	start_frappe_db(site)
+
+	if not is_valid_fluorine_app(app):
+		click.echo("Sorry. App %s does not exist as meteor app." % app)
+		return
+
+	file_add, file_remove = get_custom_packages_files()
+
+	if app:
+		_add_meteor_packages(app, file_add=file_add)
+	else:
+		add_meteor_packages(file_add=file_add)
 
 
 @click.command('reset-meteor-packages')
+@click.option('--app', default=None, help='The name of the fluorine app to reset packages.')
 @click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
-def cmd_reset_meteor_packages(site=None):
+def cmd_reset_meteor_packages(app=None, site=None):
 	"""Reset meteor packages."""
-	add_meteor_packages()
+	from fluorine.commands_helpers.meteor import is_valid_fluorine_app
+	from fluorine.commands_helpers.config import get_custom_packages_files
+
+
+	if site == None:
+		site = get_default_site()
+
+	start_frappe_db(site)
+
+	file_add, file_remove = get_custom_packages_files()
+
+	if app:
+		if not is_valid_fluorine_app(app):
+			click.echo("Sorry. App %s does not exist as meteor app." % app)
+			return
+		_reset_packages(app, file_add=file_add, file_remove=file_remove)
+	else:
+		_reset_packages_all(file_add=file_add, file_remove=file_remove)
 
 
 @click.command('create-meteor-apps')
@@ -71,7 +187,7 @@ def cmd_create_meteor_apps(site=None):
 	_cmd_create_meteor_apps(doc)
 
 
-@click.command('current-app')
+@click.command('current-dev-app')
 @click.argument('app')
 def set_current_app(app):
 	"""Set the current app."""
@@ -208,6 +324,7 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 
 	hh._change_hook(state="start", site=site)
 
+	#use mongo from meteor by default
 	if not mongo_custom:
 		meteor_config.pop("meteor_mongo", None)
 		make_mongodb_default(meteor_config, doc.fluor_meteor_port or PORT.meteor_web)
@@ -228,7 +345,7 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 	mh.make_public_link()
 	mh.remove_from_assets()
 	save_to_procfile(doc)
-
+	bench_generate_nginx_config(bench=bench)
 	ch._generate_nginx_conf(production=False)
 	try:
 		src = os.path.abspath(os.path.join("..", 'config', 'nginx.conf'))
@@ -244,12 +361,13 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 		click.echo("nginx link not set. You must make a symlink to frappe-bench/config/nginx.conf from nginx conf folder.")
 		return
 
-	click.echo("Please restart nginx.")
+	#click.echo("Please restart nginx.")
+	sh.start_nginx_supervisor_services(debug=True)
 
 
 def stop_meteor(doc, devmode, state, force=False, site=None, production=False, bench=".."):
 	#from fluorine.utils.file import set_config
-	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile, prepare_make_meteor_file
+	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile
 
 	#if state != "off" or force:
 	doc.fluorine_state = "off"
@@ -389,6 +507,9 @@ commands = [
 	cmd_create_meteor_apps,
 	cmd_reset_meteor_packages,
 	cmd_add_meteor_packages,
+	cmd_remove_meteor_packages,
 	setup_production,
+	cmd_update_version,
+	cmd_check_updates,
 	setState
 ]

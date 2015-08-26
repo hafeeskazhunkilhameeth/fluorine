@@ -21,8 +21,8 @@ def before_install():
 	make_link_to_desk()
 	copy_common_config(path_reactivity)
 	create_meteor_apps(path_reactivity=path_reactivity)
-	for package_name in ("meteor_app", "meteor_web"):
-		meteor_add_package("fluorine", package_name, path_reactivity=path_reactivity)
+	for whatfor in ("meteor_app", "meteor_web"):
+		meteor_add_package("fluorine", whatfor, path_reactivity=path_reactivity)
 
 	update_versions()
 	#make_public_symbolic_link(path_reactivity)
@@ -113,56 +113,73 @@ def create_meteor_apps(path_reactivity=None):
 				Install the packages that you like and start use frappe. Good Luck!"""
 
 
-def meteor_package(app, package_name, path_reactivity=None, action="add"):
+def meteor_package(app, whatfor, package_name, path_reactivity=None, action="add"):
 	import subprocess
-	#from fluorine.utils.file import readlines
 
 	if not path_reactivity:
 		from file import get_path_reactivity
 		path_reactivity = get_path_reactivity()
 
 	app_path = frappe.get_app_path(app)
-	cwd = os.path.join(path_reactivity, app)
-	packages_path = os.path.join(app_path, "templates", "packages_" + action + "_" + package_name)
+	cwd = os.path.join(path_reactivity, whatfor)
+	packages_path = os.path.join(app_path, "templates", package_name)
 	if os.path.exists(packages_path):
 		packages = frappe.get_file_items(packages_path)
-		meteor_packages = frappe.get_file_items(os.path.join(path_reactivity, package_name, ".meteor", "packages"))
+		meteor_packages = frappe.get_file_items(os.path.join(cwd, ".meteor", "packages"))
 
 		#NOTE: Only add packages that do not exist or remove packages that exist
-		for pckg in packages:
+		for pckg in packages[:]:
 			if pckg in meteor_packages:
 				if action == "add":
 					packages.remove(pckg)
+					print "{}: {} already exist - no action was taken.".format(whatfor, pckg)
 			elif action == "remove":
 				packages.remove(pckg)
+				print "{}: {} does not exist - no action was taken.".format(whatfor, pckg)
 
 		#packages = readlines(packages_path)
 		#p = subprocess.Popen(["meteor", "add", " ".join([line for line in packages if not line.startswith("#")])], cwd=cwd, shell=False, close_fds=True)
-		p = subprocess.Popen(["meteor", action, " ".join(packages)], cwd=cwd, shell=False, close_fds=True)
-		p.wait()
+		if packages:
+			print "{}: action: {}".format(whatfor, action)
+			p = subprocess.Popen(["meteor", action, " ".join(packages)], cwd=cwd, shell=False, close_fds=True)
+			p.wait()
+
+		return True
+
+	return False
 
 
-def meteor_add_package(app, package_name, path_reactivity=None):
-	meteor_package(app, package_name, path_reactivity=path_reactivity, action="add")
+def get_default_packages_file(action, whatfor):
+	return "custom_packages_%s_%s" % (action, whatfor)
+
+def meteor_reset_package(app, whatfor, file_add=None, file_remove=None, path_reactivity=None):
+
+	if not file_add:
+		file_add = get_default_packages_file("add", whatfor)
+	if not file_remove:
+		file_remove = get_default_packages_file("remove", whatfor)
+
+	meteor_package(app, whatfor, file_add, path_reactivity=path_reactivity, action="remove")
+	meteor_package(app, whatfor, file_remove, path_reactivity=path_reactivity, action="add")
 
 
-def meteor_remove_package(app, package_name, path_reactivity=None):
-	meteor_package(app, package_name, path_reactivity=path_reactivity, action="remove")
+def meteor_add_package(app, whatfor, file_add=None, path_reactivity=None):
+	package_name = "packages_add_%s" % whatfor
+	meteor_package(app, whatfor, package_name, path_reactivity=path_reactivity, action="add")
 
-	"""
-	if not path_reactivity:
-		from file import get_path_reactivity
-		path_reactivity = get_path_reactivity()
+	if not file_add:
+		file_add = get_default_packages_file("add", whatfor)
 
-	app_path = frappe.get_app_path(app)
-	cwd = os.path.join(path_reactivity, app)
-	packages_path = os.path.join(app_path, "templates", "packages_" + app)
-	#packages = readlines(packages_path)
-	packages = frappe.get_file_items(packages_path)
-	#p = subprocess.Popen(["meteor", "remove", " ".join([line for line in packages if not line.startswith("#")])], cwd=os.path.join(path_reactivity, app), shell=False, close_fds=True)
-	p = subprocess.Popen(["meteor", "remove", " ".join(packages)], cwd=cwd, shell=False, close_fds=True)
-	p.wait()
-	"""
+	meteor_package(app, whatfor, file_add, path_reactivity=path_reactivity, action="add")
+
+
+def meteor_remove_package(app, whatfor, file_remove=None, path_reactivity=None):
+	#package_name = "packages_remove_%s" % whatfor
+	#meteor_package(app, whatfor, package_name, path_reactivity=path_reactivity, action="remove")
+	if not file_remove:
+		file_remove = get_default_packages_file("remove", whatfor)
+
+	meteor_package(app, whatfor, file_remove, path_reactivity=path_reactivity, action="remove")
 
 
 def init_singles():

@@ -141,14 +141,17 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 	print "json.dumps ", rt
 	sh1.update(rt)
 	sh2.update(rt)
-	for m in manifest:
-		if m.get("where") == "client" or m.get("where") == "internal":
-			if whatfor == "meteor_app":
-				#prefix = "assets/fluorine/%s/webbrowser/" % whatfor
-				prefix = "/meteordesk"
-			else:
-				prefix = ""
 
+	if whatfor == "meteor_app":
+		#prefix = "assets/fluorine/%s/webbrowser/" % whatfor
+		prefix = "/meteordesk"
+	else:
+		prefix = ""
+
+	for m in manifest:
+		#if m.get("path").startswith("assets") and m.get("type") == "asset":
+		#	continue
+		if m.get("where") == "client" or m.get("where") == "internal":
 			path = m.get("path")
 			mhash = m.get("hash")
 			if m.get("where") == "client":
@@ -167,7 +170,7 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 					sh2.update(path)
 					sh2.update(mhash)
 					continue
-				else:
+				elif m.get("type") == "js":
 					if whatfor == "meteor_app":
 						if "jquery" not in path:
 							frappe_manifest_js.append(nurl)
@@ -294,7 +297,6 @@ def prepare_client_files(curr_app):
 
 		apps = get_active_apps()
 		apps.remove(curr_app)
-		print "installed apps {}".format(apps)
 		src = os.path.join(react_path, whatfor, ".meteor", "packages")
 		dst = os.path.join(app_path, "templates", "packages_add_" + whatfor)
 		installed_packages = frappe.get_file_items(src)

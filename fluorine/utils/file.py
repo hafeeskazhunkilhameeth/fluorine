@@ -331,7 +331,7 @@ common_pattern = c(r"templates/(.*)/?common/(.*)")
 #@profile
 def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 
-	_whatfor = ["meteor_app", "meteor_web", "meteor_frappe"]
+	_whatfor = ["meteor_app", "meteor_web"]
 	folders_path = []
 	exclude = ["private", "public"]
 	custom_pattern = custom_pattern or []
@@ -347,10 +347,12 @@ def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 		pass
 
 	custom_pattern = set(custom_pattern)
-	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", "*.xhtml"])
+	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", "*.xhtml", ".gitignore"])
 	pattern = ignore_patterns(*custom_pattern)
-	dst_public_assets_path = os.path.join(get_path_reactivity(), "public", "assets")
-	dst_private_path = os.path.join(get_path_reactivity(), "private")
+	dst_public_assets_path = os.path.join(get_path_reactivity(), whatfor[0], "public", "assets")
+	#frappe.create_folder(dst_public_assets_path)
+	dst_private_path = os.path.join(get_path_reactivity(), whatfor[0], "private")
+	#frappe.create_folder(dst_private_path)
 
 	for app, paths in frappe.local.files_to_add.iteritems():#context.files_to_add.iteritems():
 		#print "apps in frappe.local.files_to_add 2 {}".format(frappe.local.files_to_add)
@@ -358,22 +360,24 @@ def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 		meteorpath = os.path.join(pathname, "templates", "react", whatfor[0])
 		app_path = frappe.get_app_path(app)
 
-		dst_public_app_path = os.path.join(dst_public_assets_path, app)
-		dst_private_app_path = os.path.join(dst_private_path, app)
+		#dst_public_app_path = os.path.join(dst_public_assets_path, app)
+		#dst_private_app_path = os.path.join(dst_private_path, app)
 
 		if os.path.exists(meteorpath) and paths:
 			folders_path.append(app)
 			app_folders = "/".join(folders_path)
 			destpath = os.path.join(dst, app_folders)
-			public_path = os.path.join(pathname, "public")
-			private_path = os.path.join(meteorpath, "private")
+			#public_path = os.path.join(pathname, "public", "meteor_assets")
+			#private_path = os.path.join(meteorpath, "private")
 
-			frappe.create_folder(dst_public_assets_path)
-			os.symlink(public_path, dst_public_app_path)
-
-			if os.path.exists(private_path):
-				frappe.create_folder(dst_private_path)
-				os.symlink(private_path, dst_private_app_path)
+			#frappe.create_folder(dst_public_assets_path)
+			#if os.path.exists(public_path):
+			#	os.symlink(public_path, dst_public_app_path)
+			make_public(pathname, dst_public_assets_path, app, whatfor, custom_pattern=custom_pattern)
+			make_private(meteorpath, dst_private_path, app, whatfor, custom_pattern=custom_pattern)
+			#if os.path.exists(private_path):
+			#	frappe.create_folder(dst_private_path)
+			#	os.symlink(private_path, dst_private_app_path)
 
 			for obj in paths:
 				tpath = obj.get("tname")
@@ -388,7 +392,8 @@ def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 
 				for root, dirs, files in os.walk(startpath):
 
-					ign_names = pattern(startpath, files)
+					#ign_names = pattern(startpath, files)
+					ign_names = pattern(root, files)
 
 					for f in files:
 						if f in ign_names: #or meteor_ignore_files(app, meteor_relpath, root, f, meteor_ignore=meteor_ignore):
@@ -413,6 +418,60 @@ def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 								os.symlink(os.path.join(root, f), os.path.realpath(os.path.join(destpath, os.path.join(relative_file,f))))
 							except:
 								pass
+
+
+
+def make_public(app_path, dst_public_assets_path, app, whatfor, custom_pattern=None):
+
+	folder_path = os.path.join(app_path, "public")
+	_make_public_private(folder_path, dst_public_assets_path, app, whatfor, "public", custom_pattern=custom_pattern)
+
+
+def make_private(meteorpath, dst_private_path, app, whatfor, custom_pattern=None):
+	"""
+	dst_private_app_path = os.path.join(dst_private_path, app)
+	private_path = os.path.join(meteorpath, "private")
+	if os.path.exists(private_path):
+		os.symlink(private_path, dst_private_app_path)
+	"""
+	folder_path = os.path.join(meteorpath, "private")
+	_make_public_private(folder_path, dst_private_path, app, whatfor, "private", custom_pattern=custom_pattern)
+
+
+def _make_public_private(folder_path, dst_folder_path, app, whatfor, folder, custom_pattern=None):
+
+	_whatfor = ["meteor_app", "meteor_web"]
+	exclude = []
+	try:
+		for w in whatfor:
+			_whatfor.remove(w)
+		exclude.extend(_whatfor)
+	except:
+		pass
+
+	dst_folder_app_path = os.path.join(dst_folder_path, app)
+	#folder_path = os.path.join(meteorpath, folder)
+
+	custom_pattern = custom_pattern or []
+	custom_pattern = set(custom_pattern)
+	if folder == "public":
+		custom_pattern.update(["build.json"])
+	custom_pattern.update(exclude)
+	pattern = ignore_patterns(*custom_pattern)
+
+	if os.path.exists(folder_path):
+		files = os.listdir(folder_path)
+		custom_ign_names = pattern(folder_path, files)
+
+		for f in files:
+			if f in custom_ign_names:
+				continue
+			#print "f in _whatfor {} f {} app {} folder {}".format(f in _whatfor, f, app, folder)
+			if folder == "public" and app == "fluorine" and f in whatfor:
+				continue
+
+			frappe.create_folder(os.path.dirname(os.path.join(dst_folder_app_path, f)))
+			os.symlink(os.path.join(folder_path, f), os.path.join(dst_folder_app_path, f))
 
 
 def check_remove(source):

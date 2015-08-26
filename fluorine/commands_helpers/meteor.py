@@ -145,7 +145,7 @@ def get_meteor_environment(doc, whatfor):
 	"""
 	mongo_url, mongo_default = get_mongo_exports(doc)
 
-	conf.mongo_url = mongo_url.replace("export MONGO_URL=", "").strip()
+	conf.mongo_url = mongo_url.strip().replace("export MONGO_URL=", "")
 	#METEOR
 	"""
 	mthost = doc.fluor_meteor_host.strip() or "http://127.0.0.1"
@@ -217,16 +217,28 @@ def remove_from_assets():
 		pass
 
 
+def is_valid_fluorine_app(app):
+
+	apps = get_active_apps()
+	if app not in apps:
+		return False
+
+	return True
+
+
 def get_active_apps():
 	from fluorine.utils.reactivity import make_meteor_ignor_files
 
-	ign_apps = make_meteor_ignor_files()
+	ign_files = make_meteor_ignor_files()
+
+	ign_apps = ign_files.remove.get("apps")
 
 	apps = frappe.get_installed_apps()
-	for app in apps:
+	for app in apps[:]:
 		app_path = frappe.get_app_path(app)
 		meteor_app = os.path.join(app_path, "templates", "react", "meteor_app")
 		meteor_web = os.path.join(app_path, "templates", "react", "meteor_web")
+		#print "not exists {} app {} web {} app in {}".format(app, os.path.exists(meteor_app), os.path.exists(meteor_web), app in ign_apps)
 		if not (os.path.exists(meteor_app) or os.path.exists(meteor_web)) or app in ign_apps:
 			apps.remove(app)
 
@@ -251,7 +263,7 @@ def check_updates(bench=".."):
 	for app in apps:
 		curr_version = get_current_version(app, bench=bench)
 		old_version = versions.get(app, None)
-		if old_version and curr_version <= semantic_version.Version(old_version):
+		if not old_version or curr_version > semantic_version.Version(old_version):
 			return True
 
 
@@ -261,16 +273,10 @@ def update_versions(bench=".."):
 	from bench_helpers import get_current_version
 	from fluorine.utils.reactivity import meteor_config
 	from fluorine.utils.meteor.utils import update_common_config
-	#from fluorine.utils.file import get_path_reactivity, save_js_file
 
-	#path_reactivity = get_path_reactivity()
-	#config_file_path = os.path.join(path_reactivity, "common_site_config.json")
-	#config_file = frappe.get_file_json(config_file_path)
 	apps = get_active_apps()
-	versions = meteor_config.get("versions")
-
-	if not versions:
-		versions = meteor_config["versions"] = frappe._dict()
+	meteor_config.pop("versions", None)
+	versions = meteor_config["versions"] = frappe._dict()
 
 	for app in apps:
 		version = get_current_version(app, bench=bench)

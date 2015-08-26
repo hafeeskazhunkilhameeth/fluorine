@@ -45,12 +45,15 @@ def get_hosts(doc, production=False):
 	return hosts_web, hosts_app
 
 
-def get_doctype(name, site):
-
+def start_frappe_db(site):
 	if not frappe.db:
 		frappe.init(site=site)
 		frappe.connect()
 
+
+def get_doctype(name, site):
+
+	start_frappe_db(site)
 	doc = frappe.get_doc(name)
 
 	return doc

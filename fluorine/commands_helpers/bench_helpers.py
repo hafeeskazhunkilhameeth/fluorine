@@ -19,14 +19,18 @@ def run_bench_module(module, func, *args, **kwargs):
 	return res
 
 
-def get_bench_module(module, bench=".."):
+def get_bench_module(module, depends=None, bench=".."):
 	import sys, importlib
 
+	depends = depends or []
 	bench_path = os.path.abspath(bench)
 	if bench_path not in sys.path:
 		sys.path.append(bench_path)
 
 	#print "cwd {} bench {} abs_bench {} bench_path in sys.path {}".format(os.getcwd(), bench, bench_path, bench_path in sys.path)
+	for d in depends:
+		importlib.import_module("bench." + d)
+
 	m = importlib.import_module("bench." + module)
 
 	return m
@@ -38,22 +42,29 @@ def run_frappe_cmd(bench_path, *args, **kwargs):
 	run_bench_module(m, "run_frappe_cmd", *args, **kwargs)
 	return
 
-def exec_cmd(cmd, cwd=".", with_password=False):
-	import subprocess, getpass, click
+
+def get_password():
+	import subprocess, getpass
+
+	stdout=subprocess.PIPE
+	password = getpass.getpass("Please enter root password.\n")
+	echo = subprocess.Popen(['echo', password], stdout=stdout,)
+
+	return echo
+
+def exec_cmd(cmd, service="service", cwd=".", with_password=False, echo=None):
+	import subprocess, click
 
 	stderr=stdout=subprocess.PIPE
-	echo = None
+	#echo = None
 
 	return_code = 1
 	password_error = 0
 	password_error_txt = "Password:Sorry, try again."
 
-	#error = stderr
-
 	for i in range(3):
-		if with_password:
-			password = getpass.getpass("Please enter root password.\n")
-			echo = subprocess.Popen(['echo', password], stdout=stdout,)
+		if with_password and not echo:
+			echo = get_password()
 
 		p = subprocess.Popen(cmd, cwd=cwd, shell=True, stdin=echo.stdout if echo else None, stdout=stdout, stderr=stderr)
 
@@ -67,28 +78,28 @@ def exec_cmd(cmd, cwd=".", with_password=False):
 		if not with_password:
 			break
 		elif return_code == 0:
-			break
+			return echo
 		elif password_error_txt in error: #or not with_password or return_code == 0:
 			password_error = 1
 			click.echo(error.replace("1",str(i + 1)))
+			echo = None
 		else:
 			password_error = 0
 			break
-
 		#return_code = 0
 	if return_code > 0:
 		if password_error:
 			raise PasswordError("Password error.")
 		else:
-			raise CommandFailedError("restarting nginx...")
+			raise CommandFailedError("starting %s..." % service)
 
-def is_running_systemd(module, bench=".."):
-	m = get_bench_module(module, bench=bench)
+def is_running_systemd(bench=".."):
+	m = get_bench_module("production_setup", bench=bench)
 	res = run_bench_module(m, "is_running_systemd")
 	return res
 
-def get_program(module, p, bench=".."):
-	m = get_bench_module(module, bench=bench)
+def get_program(p, bench=".."):
+	m = get_bench_module("utils", bench=bench)
 	res = run_bench_module(m, "get_program", p)
 	return res
 
@@ -134,7 +145,8 @@ def get_supervisor_conf_filename(bench="."):
 def get_current_version(app, bench='.'):
 	import semantic_version
 
-	m = get_bench_module("app", bench=bench)
+	#get_bench_module("utils", bench=bench)
+	m = get_bench_module("app", depends=["utils"], bench=bench)
 	version = run_bench_module(m, "get_current_version", app)
 
 	return semantic_version.Version(version)

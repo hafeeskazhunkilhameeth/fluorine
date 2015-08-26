@@ -4,6 +4,15 @@ __author__ = 'luissaguas'
 from fluorine.commands_helpers import *
 
 
+def get_custom_packages_files():
+	from fluorine.utils.reactivity import meteor_config
+
+	custom_packages = meteor_config.get("custom_pakages") or {}
+	file_add = custom_packages.get("add") or None
+	file_remove = custom_packages.get("remove") or None
+
+	return (file_add, file_remove)
+
 
 def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None):
 	from fluorine.utils.file import save_file, readlines
@@ -16,7 +25,7 @@ def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None):
 		if not hosts_web and not hosts_app:
 			hosts_web, hosts_app = get_hosts(doc, production=production)
 		elif not hosts_web:
-			hosts_web= get_hosts(doc, production=production)
+			hosts_web = get_hosts(doc, production=production)
 		else:
 			hosts_app = get_hosts(doc, production=production)
 
@@ -43,14 +52,21 @@ def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None):
 			inside_location = False
 		elif re.match(r"location\s*/\s*{", line.strip()):
 			inside_location = True
-		elif inside_server and production == False and re.match(r"root", line.strip()):
+		elif inside_server and re.match(r"root", line.strip()):
 			line = [line, "\n"]
-			line.extend(rewrite_for_bread)
+			if production:
+				line.extend(production_if_redirect.split("\n"))
+			else:
+				line.extend(rewrite_for_bread)
+
 		elif inside_location and line.strip().startswith("try_files"):
 			named_location_group = re.search(r"@(.*);$", line)
 			named_location = named_location_group.group(1)
 			if production:
+				#oline = line
+				#line = production_if_redirect.split("\n")
 				line = re.sub(r"@(.*);$", "/assets/js/meteor_web/$uri $uri @meteor;", line)
+				#line.append(oline)
 			else:
 				line = re.sub(r"@(.*);$", "$uri @meteor;", line)
 
@@ -71,6 +87,10 @@ def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None):
 				lapi[1] = lapi[1].replace("|^/mdesk", "")
 				lapi.pop(2)
 				lapi.pop(2)
+				loc_redirect = production_location_redirect.split("\n")
+				line.extend(loc_redirect)
+				#error403_ = error403.split("\n")
+				#line.extend(error403_)
 			else:
 				lapi.pop(4)
 			line.extend(lapi)
@@ -189,8 +209,8 @@ command=node main.js
 autostart=true
 autorestart=true
 stopsignal=QUIT
-stdout_logfile={bench_dir}/logs/%s.log
-stderr_logfile={bench_dir}/logs/%s.error.log
+stdout_logfile={bench_dir}/logs/{progname}.log
+stderr_logfile={bench_dir}/logs/{progname}.error.log
 user={user}
 directory={final_server_path}
 environment={meteorenv}
@@ -214,6 +234,11 @@ upstream meteor_frappe_web {
   ip_hash;               # this directive ensures that each unique visiting IP will always be routed to the same server.
   %s
 }
+
+
+log_format mainlog '$http_x_forwarded_for - $remote_user [$time_local] "$host" "$request" '
+            '$status $body_bytes_sent "$http_referer" '
+            '"$http_user_agent" $request_time';
 
 """
 
@@ -265,3 +290,36 @@ location_meteor = """
 			proxy_redirect off;
 		}
 """.split("\n")
+
+production_if_redirect = """
+		#fix the frappe POST to root url '/'
+		if ($request_method = POST){
+			set $post 1;
+		}
+
+		if ($http_referer = $scheme://$host/desk){
+			set $referer "${post}1";
+		}
+
+		if ($referer = 11){
+			rewrite ^/$ /tmp last;
+		}
+		#fix redirect from frappe when logout
+		#error_page 403 = @resolve;
+"""
+
+production_location_redirect = """
+		location =/tmp {
+			internal;
+			rewrite $uri / break;
+			try_files $uri @magic;
+		}
+"""
+#Not necessary
+error403 = """
+		location @resolve {
+			try_files $uri @meteor;
+		}
+"""
+
+#access_log /Users/saguas/erpnext4/erpnext/frappe_v5/frappe-bench/logs/nginx-access.log mainlog;
