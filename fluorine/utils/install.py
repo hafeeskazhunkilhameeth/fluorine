@@ -142,7 +142,9 @@ def meteor_package(app, whatfor, package_name, path_reactivity=None, action="add
 		#p = subprocess.Popen(["meteor", "add", " ".join([line for line in packages if not line.startswith("#")])], cwd=cwd, shell=False, close_fds=True)
 		if packages:
 			print "{}: action: {}".format(whatfor, action)
-			p = subprocess.Popen(["meteor", action, " ".join(packages)], cwd=cwd, shell=False, close_fds=True)
+			args = ["meteor", action]
+			args.extend(packages)
+			p = subprocess.Popen(args, cwd=cwd, shell=False, close_fds=True)
 			p.wait()
 
 		return True
