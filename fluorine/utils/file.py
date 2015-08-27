@@ -157,10 +157,10 @@ def get_path_reactivity():
 
 	#cwd = os.getcwd()
 	frappe_module = os.path.dirname(frappe.__file__)
-	path_reactivity = os.path.realpath(os.path.join(frappe_module, "..", ".."))
+	path_apps = os.path.realpath(os.path.join(frappe_module, "..", ".."))
 	#path_reactivity = os.path.realpath(os.path.join(cwd, ".."))
-	path = os.path.join(path_reactivity, "reactivity")
-	return path
+	path_reactivity = os.path.join(path_apps, "reactivity")
+	return path_reactivity
 
 def get_path_assets_js():
 	#base = get_site_base_path()

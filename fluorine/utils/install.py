@@ -15,14 +15,14 @@ def before_install():
 	print "bench current working dir {}".format(os.getcwd())
 	#app_path = frappe.get_app_path("fluorine")
 	frappe_module = os.path.dirname(frappe.__file__)
-	path_reactivity = os.path.realpath(os.path.join(frappe_module, "..", ".."))
+	path_apps = os.path.realpath(os.path.join(frappe_module, "..", ".."))
 	#path_reactivity = os.path.realpath(os.path.join(cwd, ".."))
-	path = os.path.join(path_reactivity, "reactivity")
+	path_reactivity = os.path.join(path_apps, "reactivity")
 
-	if not os.path.exists(path):
-		frappe.create_folder(path)
+	if not os.path.exists(path_reactivity):
+		frappe.create_folder(path_reactivity)
 
-	copy_common_config(path)
+	copy_common_config(path_reactivity)
 	#from file import get_path_reactivity
 
 	#path_reactivity = get_path_reactivity()
