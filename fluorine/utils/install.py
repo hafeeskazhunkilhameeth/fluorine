@@ -18,12 +18,14 @@ def before_install():
 	path_reactivity = os.path.realpath(os.path.join(frappe_module, "..", ".."))
 	#path_reactivity = os.path.realpath(os.path.join(cwd, ".."))
 	path = os.path.join(path_reactivity, "reactivity")
+
+	if not os.path.exists(path):
+		frappe.create_folder(path)
+
 	copy_common_config(path)
 	#from file import get_path_reactivity
 
 	#path_reactivity = get_path_reactivity()
-	if not os.path.exists(path_reactivity):
-		frappe.create_folder(path_reactivity)
 
 	make_link_to_desk()
 
