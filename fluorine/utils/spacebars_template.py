@@ -231,7 +231,7 @@ def check_refs(tname, refs):
 
 
 def prepare_common_page_context(context, whatfor):
-	from fluorine.utils import check_dev_mode, jquery_include
+	from fluorine.utils import check_dev_mode, jquery_include, meteor_config
 	from fluorine.utils.meteor.utils import build_meteor_context
 	from fluorine.utils.file import set_config
 
@@ -249,6 +249,8 @@ def prepare_common_page_context(context, whatfor):
 	set_config({
 		"production_mode": 0
 	})
+
+	meteor_config["production_mode"] = 0
 
 	return fluorine_build_context(context, whatfor), devmode
 

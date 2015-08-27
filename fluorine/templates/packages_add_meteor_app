@@ -1,7 +1,7 @@
 meteor-platform
-insecure
 accounts-password
 tap:i18n
 tap:i18n-ui
 tap:i18n-db
 kadira:flow-router
+insecure

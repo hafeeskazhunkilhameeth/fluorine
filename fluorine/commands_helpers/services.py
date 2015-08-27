@@ -19,7 +19,7 @@ def linux_system_service(service, bench=".."):
 def start_nginx_supervisor_services(debug=False):
 	from bench_helpers import exec_cmd
 	from fluorine.commands_helpers.bench_helpers import CommandFailedError, get_password
-	import platform
+	import platform, frappe
 
 	echo = None#get_password()
 
@@ -42,8 +42,11 @@ def start_nginx_supervisor_services(debug=False):
 
 	if not debug:
 		click.echo("restarting supervisor...")
-		exec_cmd("sudo -S supervisorctl reload", service="supervisor", with_password=True, echo=echo)
-		click.echo("supervisor restarted.")
+		try:
+			exec_cmd("sudo -S supervisorctl reload", service="supervisor", with_password=True, echo=echo)
+			click.echo("supervisor restarted.")
+		except CommandFailedError:
+			frappe.throw("Supervisor not restart. Check if supervisor is running.")
 
 def build_assets(bench_path=".."):
 	from bench_helpers import run_frappe_cmd

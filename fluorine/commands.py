@@ -392,7 +392,8 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, site=None
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile, make_final_app_client, save_to_procfile, check_meteor_apps_created
 	from fluorine.utils.meteor.utils import build_meteor_context, make_meteor_props, make_meteor_files, prepare_client_files
 
-	if state == "off" and devmode == 0 and check_prod_mode() or force==True:
+	prodmode = check_prod_mode()
+	if state == "off" and devmode == 0 and prodmode or prodmode and force==True:
 
 		click.echo("Checking for meteor apps folder. Please wait.")
 		if not check_meteor_apps_created(doc):
