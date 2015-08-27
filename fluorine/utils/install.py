@@ -12,9 +12,13 @@ class MeteorInstalationError(Exception):
 
 def before_install():
 
-	app_path = frappe.get_app_path("fluorine")
-	path_reactivity = os.path.realpath(os.path.join(app_path, "..", ".."))
-	copy_common_config(path_reactivity)
+	print "bench current working dir {}".format(os.getcwd())
+	#app_path = frappe.get_app_path("fluorine")
+	frappe_module = os.path.dirname(frappe.__file__)
+	path_reactivity = os.path.realpath(os.path.join(frappe_module, "..", ".."))
+	#path_reactivity = os.path.realpath(os.path.join(cwd, ".."))
+	path = os.path.join(path_reactivity, "reactivity")
+	copy_common_config(path)
 	#from file import get_path_reactivity
 
 	#path_reactivity = get_path_reactivity()

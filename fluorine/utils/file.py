@@ -150,11 +150,15 @@ def get_path_server_observe():
 	return path
 
 def get_path_reactivity():
-	import fluorine
+	#import fluorine
 	#base = get_site_base_path()
 	#path = os.path.realpath(os.path.join(base, "..", "..", "apps", "reactivity"))
-	path_module = os.path.dirname(fluorine.__file__)
-	path_reactivity = os.path.realpath(os.path.join(path_module, "..", ".."))
+	#path_module = os.path.dirname(fluorine.__file__)
+
+	#cwd = os.getcwd()
+	frappe_module = os.path.dirname(frappe.__file__)
+	path_reactivity = os.path.realpath(os.path.join(frappe_module, "..", ".."))
+	#path_reactivity = os.path.realpath(os.path.join(cwd, ".."))
 	path = os.path.join(path_reactivity, "reactivity")
 	return path
 
