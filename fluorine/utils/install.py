@@ -30,11 +30,12 @@ def before_install():
 	make_link_to_desk()
 
 	#from fluorine.utils.reactivity import meteor_config
-	import fluorine.utils.reactivity.meteor_config
-	if not fluorine.utils.reactivity.meteor_config:
-		from fluorine.utils import get_meteor_configuration_file
-		get_meteor_configuration_file()
 
+	import fluorine.utils
+	from fluorine.utils import get_meteor_configuration_file
+	get_meteor_configuration_file()
+	
+	from fluorine.utils.reactivity import meteor_config
 	print "meteor_config {}".format(fluorine.utils.reactivity.meteor_config)
 	create_meteor_apps(path_reactivity=path_reactivity)
 	for whatfor in ("meteor_app", "meteor_web"):
