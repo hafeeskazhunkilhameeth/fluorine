@@ -12,7 +12,7 @@ class MeteorInstalationError(Exception):
 
 def before_install():
 
-	print "bench current working dir {}".format(os.getcwd())
+	#print "bench current working dir {}".format(os.getcwd())
 	#app_path = frappe.get_app_path("fluorine")
 	frappe_module = os.path.dirname(frappe.__file__)
 	path_apps = os.path.realpath(os.path.join(frappe_module, "..", ".."))
@@ -34,6 +34,7 @@ def before_install():
 		from fluorine.utils import get_meteor_configuration_file
 		get_meteor_configuration_file()
 
+	print "meteor_config {}".format(meteor_config)
 	create_meteor_apps(path_reactivity=path_reactivity)
 	for whatfor in ("meteor_app", "meteor_web"):
 		meteor_add_package("fluorine", whatfor, path_reactivity=path_reactivity)
