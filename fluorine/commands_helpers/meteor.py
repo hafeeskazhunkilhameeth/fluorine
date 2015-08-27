@@ -282,7 +282,7 @@ def update_versions(bench=".."):
 	if not meteor_config:
 		from fluorine.utils import get_meteor_configuration_file
 		meteor_config = get_meteor_configuration_file()
-		
+
 	meteor_config.pop("versions", None)
 	versions = meteor_config["versions"] = frappe._dict()
 

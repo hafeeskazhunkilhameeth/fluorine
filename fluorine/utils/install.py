@@ -64,10 +64,11 @@ def make_public_symbolic_link(path_reactivity):
 
 def make_link_to_desk():
 	frappe_path = frappe.get_app_path("frappe")
-	app_path = frappe.get_app_path("fluorine")
+	fluorine_path = frappe.get_app_path("fluorine")
 	source = os.path.join(frappe_path, "templates", "pages", "desk.html")
-	link_name = os.path.join(app_path, "templates", "pages", "mdesk.html")
-	os.symlink(source, link_name)
+	link_name = os.path.join(fluorine_path, "templates", "pages", "mdesk.html")
+	if not os.path.exists(link_name):
+		os.symlink(source, link_name)
 
 def copy_common_config(path_reactivity):
 	from shutil import copyfile
