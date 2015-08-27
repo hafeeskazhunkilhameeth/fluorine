@@ -114,18 +114,19 @@ def create_meteor_apps(path_reactivity=None):
 				Install the packages that you like and start use frappe. Good Luck!"""
 
 
-def meteor_package(app, whatfor, package_name, path_reactivity=None, action="add"):
+def meteor_package(whatfor, packages, path_reactivity=None, action="add"):
 	import subprocess
 
 	if not path_reactivity:
 		from file import get_path_reactivity
 		path_reactivity = get_path_reactivity()
 
-	app_path = frappe.get_app_path(app)
+	#app_path = frappe.get_app_path(app)
 	cwd = os.path.join(path_reactivity, whatfor)
-	packages_path = os.path.join(app_path, "templates", package_name)
-	if os.path.exists(packages_path):
-		packages = frappe.get_file_items(packages_path)
+	#packages_path = os.path.join(app_path, "templates", package_name)
+	#if os.path.exists(packages_path):
+	if packages:
+		#packages = frappe.get_file_items(packages_path)
 		meteor_packages = frappe.get_file_items(os.path.join(cwd, ".meteor", "packages"))
 
 		#NOTE: Only add packages that do not exist or remove packages that exist
@@ -152,8 +153,20 @@ def meteor_package(app, whatfor, package_name, path_reactivity=None, action="add
 	return False
 
 
+def get_packages_file(app, package_name):
+
+	app_path = frappe.get_app_path(app)
+	packages_path = os.path.join(app_path, "templates", package_name)
+	if os.path.exists(packages_path):
+		packages = frappe.get_file_items(packages_path)
+		return packages
+
 def get_default_packages_file(action, whatfor):
 	return "custom_packages_%s_%s" % (action, whatfor)
+
+def meteor_package_list(whatfor, packages=None, path_reactivity=None, action="add"):
+	meteor_package(whatfor, packages, path_reactivity=path_reactivity, action=action)
+
 
 def meteor_reset_package(app, whatfor, file_add=None, file_remove=None, path_reactivity=None):
 
@@ -162,18 +175,28 @@ def meteor_reset_package(app, whatfor, file_add=None, file_remove=None, path_rea
 	if not file_remove:
 		file_remove = get_default_packages_file("remove", whatfor)
 
-	meteor_package(app, whatfor, file_add, path_reactivity=path_reactivity, action="remove")
-	meteor_package(app, whatfor, file_remove, path_reactivity=path_reactivity, action="add")
+	packages_add = get_packages_file(app, file_add)
+	packages_remove = get_packages_file(app, file_remove)
+
+	#meteor_package(whatfor, packages_add, path_reactivity=path_reactivity, action="remove")
+	meteor_package_list(whatfor, packages=packages_remove, path_reactivity=path_reactivity, action="remove")
+	#meteor_package(whatfor, packages_remove, path_reactivity=path_reactivity, action="add")
+	meteor_package_list(whatfor, packages=packages_add, path_reactivity=path_reactivity, action="add")
 
 
 def meteor_add_package(app, whatfor, file_add=None, path_reactivity=None):
 	package_name = "packages_add_%s" % whatfor
-	meteor_package(app, whatfor, package_name, path_reactivity=path_reactivity, action="add")
+	packages = get_packages_file(app, package_name)
+	#meteor_package(whatfor, packages, path_reactivity=path_reactivity, action="add")
+	meteor_package_list(whatfor, packages=packages, path_reactivity=path_reactivity, action="add")
 
 	if not file_add:
 		file_add = get_default_packages_file("add", whatfor)
 
-	meteor_package(app, whatfor, file_add, path_reactivity=path_reactivity, action="add")
+	packages_add = get_packages_file(app, file_add)
+
+	#meteor_package(whatfor, packages_add, path_reactivity=path_reactivity, action="add")
+	meteor_package_list(whatfor, packages=packages_add, path_reactivity=path_reactivity, action="add")
 
 
 def meteor_remove_package(app, whatfor, file_remove=None, path_reactivity=None):
@@ -182,7 +205,10 @@ def meteor_remove_package(app, whatfor, file_remove=None, path_reactivity=None):
 	if not file_remove:
 		file_remove = get_default_packages_file("remove", whatfor)
 
-	meteor_package(app, whatfor, file_remove, path_reactivity=path_reactivity, action="remove")
+	packages_remove = get_packages_file(app, file_remove)
+
+	meteor_package_list(whatfor, packages=packages_remove, path_reactivity=path_reactivity, action="remove")
+	#meteor_package(whatfor, packages_remove, path_reactivity=path_reactivity, action="remove")
 
 
 def init_singles():
