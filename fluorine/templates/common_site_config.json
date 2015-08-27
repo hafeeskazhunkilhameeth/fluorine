@@ -2,26 +2,33 @@
     "meteor_dns": {
         "meteor_web": [
             {
-                "host": "http://localhost", 
-                "ddpurl": "192.168.1.100", 
-                "port": 3000
+                "host": "http://127.0.0.1", 
+                "ddpurl": "127.0.0.1", 
+                "port": 3070
             }
         ], 
         "meteor_app": [
             {
-                "host": "http://localhost", 
-                "ddpurl": "192.168.1.100", 
+                "host": "http://127.0.0.1", 
+                "ddpurl": "127.0.0.1", 
                 "port": 3080
             }
         ]
     }, 
     "meteor_dev": {
-        "host": "http://localhost", 
-        "ddpurl": "http://192.168.1.100", 
-        "port": 3000
+        "meteor_web": {
+            "port": 3070
+        }, 
+        "host": "http://127.0.0.1", 
+        "ddpurl": "http://127.0.0.1", 
+        "meteor_app": {
+            "ROOT_URL_PATH_PREFIX": "/meteordesk", 
+            "port": 3080, 
+            "ddpurl": "http://127.0.0.1"
+        }
     }, 
     "meteor_mongo": {
-        "host": "http://localhost", 
+        "host": "http://127.0.0.1", 
         "db": "fluorine", 
         "port": "27017"
     }, 
@@ -30,6 +37,7 @@
         "folder_refresh": 1
     }, 
     "site": "site1.local", 
-    "sites_path": "", 
+    "sites_path": "",
+	"meteor_http_forwarded_count": "1", 
     "developer_mode": 0
 }
