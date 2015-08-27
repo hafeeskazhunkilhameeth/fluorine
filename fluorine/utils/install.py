@@ -11,19 +11,28 @@ class MeteorInstalationError(Exception):
 
 
 def before_install():
-	from file import get_path_reactivity
-	from fluorine.commands_helpers.meteor import update_versions
 
-	path_reactivity = get_path_reactivity()
+	app_path = frappe.get_app_path("fluorine")
+	path_reactivity = os.path.realpath(os.path.join(app_path, "..", ".."))
+	copy_common_config(path_reactivity)
+	#from file import get_path_reactivity
+
+	#path_reactivity = get_path_reactivity()
 	if not os.path.exists(path_reactivity):
 		frappe.create_folder(path_reactivity)
 
 	make_link_to_desk()
-	copy_common_config(path_reactivity)
+
+	from fluorine.utils.reactivity import meteor_config
+	if not meteor_config:
+		from fluorine.utils import get_meteor_configuration_file
+		get_meteor_configuration_file()
+
 	create_meteor_apps(path_reactivity=path_reactivity)
 	for whatfor in ("meteor_app", "meteor_web"):
 		meteor_add_package("fluorine", whatfor, path_reactivity=path_reactivity)
 
+	from fluorine.commands_helpers.meteor import update_versions
 	update_versions()
 	#make_public_symbolic_link(path_reactivity)
 

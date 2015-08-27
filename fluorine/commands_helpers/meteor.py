@@ -279,9 +279,6 @@ def update_versions(bench=".."):
 	from fluorine.utils.meteor.utils import update_common_config
 
 	apps = get_active_apps()
-	if not meteor_config:
-		from fluorine.utils import get_meteor_configuration_file
-		meteor_config = get_meteor_configuration_file()
 
 	meteor_config.pop("versions", None)
 	versions = meteor_config["versions"] = frappe._dict()
