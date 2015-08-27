@@ -85,12 +85,16 @@ def run_npm():
 def make_start_meteor_script(doc):
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import get_mongo_exports, get_root_exports
 	from fluorine.utils.file import get_path_reactivity, save_file
-	import stat
+	from distutils.spawn import find_executable
+	import stat#, platform
 
 	tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
 	meteor_apps = tostart.get(doc.fluorine_reactivity)
 
 	react_path = get_path_reactivity()
+
+	#if not platform.system() == 'Darwin':
+	node = find_executable("node") or find_executable("nodejs")
 
 	for app in meteor_apps:
 		meteor_final_path = os.path.join(react_path, app.replace("meteor", "final"), "bundle/exec_meteor")
@@ -102,7 +106,7 @@ export ROOT_URL=%s
 export PORT=%s
 %s
 %s
-node main.js""" % (mthost, mtport, forwarded_count, exp_mongo)
+%s main.js""" % (mthost, mtport, forwarded_count, exp_mongo, node)
 		save_file(meteor_final_path, script)
 
 		st = os.stat(meteor_final_path)
@@ -275,6 +279,10 @@ def update_versions(bench=".."):
 	from fluorine.utils.meteor.utils import update_common_config
 
 	apps = get_active_apps()
+	if not meteor_config:
+		from fluorine.utils import get_meteor_configuration_file
+		meteor_config = get_meteor_configuration_file()
+		
 	meteor_config.pop("versions", None)
 	versions = meteor_config["versions"] = frappe._dict()
 

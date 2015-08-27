@@ -6,31 +6,40 @@ import os, click
 def linux_system_service(service, bench=".."):
 	from bench_helpers import get_program, is_running_systemd
 
-	if os.path.basename(get_program("utils", ['systemctl'], bench=bench) or '') == 'systemctl' and is_running_systemd(bench=bench):
-		exec_cmd = "{prog} restart {service}".format(prog='systemctl', service=service)
+	if os.path.basename(get_program(['systemctl'], bench=bench) or '') == 'systemctl' and is_running_systemd(bench=bench):
+		exec_cmd = "{service_manager} restart {service}".format(service_manager='systemctl', service=service)
 	elif os.path.basename(get_program(['service'], bench=bench) or '') == 'service':
-		exec_cmd = "{prog} {service} restart ".format(prog='service', service=service)
+		exec_cmd = "{service_manager} {service} restart ".format(service_manager='service', service=service)
 	else:
-		raise Exception, 'No service manager found'
+		# look for 'service_manager' and 'service_manager_command' in environment
+		service_manager = os.environ.get("BENCH_SERVICE_MANAGER")
+		if service_manager:
+			service_manager_command = (os.environ.get("BENCH_SERVICE_MANAGER_COMMAND")
+				or "{service_manager} restart {service}").format(service_manager=service_manager, service=service)
+			exec_cmd = service_manager_command
+		else:
+			raise Exception, 'No service manager found'
 
 	return exec_cmd
 
 
 def start_nginx_supervisor_services(debug=False):
 	from bench_helpers import exec_cmd
-	from fluorine.commands_helpers.bench_helpers import CommandFailedError, get_password
+	from fluorine.commands_helpers.bench_helpers import CommandFailedError
+	from distutils.spawn import find_executable
 	import platform, frappe
 
 	echo = None#get_password()
 
 	if platform.system() == 'Darwin':
+		nginx = find_executable("nginx")
 		try:
 			click.echo("restarting nginx...")
-			echo = exec_cmd("sudo -S nginx -s reload", service="nginx", with_password=True, echo=echo)
+			echo = exec_cmd("sudo -S %s -s reload" % nginx, service="nginx", with_password=True, echo=echo)
 			click.echo("nginx restarted.")
 		except CommandFailedError:
 			click.echo("nginx not running. Starting nginx...")
-			echo = exec_cmd("sudo -S nginx", service="nginx", with_password=True, echo=echo)
+			echo = exec_cmd("sudo -S %s" % nginx, service="nginx", with_password=True, echo=echo)
 			click.echo("nginx started.")
 			#os.popen("sudo -S %s"%("sudo -S nginx"), 'w').write(password)
 
@@ -41,9 +50,10 @@ def start_nginx_supervisor_services(debug=False):
 		click.echo("nginx restarted.")
 
 	if not debug:
+		supervisorctl = find_executable("supervisorctl")
 		click.echo("restarting supervisor...")
 		try:
-			exec_cmd("sudo -S supervisorctl reload", service="supervisor", with_password=True, echo=echo)
+			exec_cmd("sudo -S %s reload" % supervisorctl, service="supervisor", with_password=True, echo=echo)
 			click.echo("supervisor restarted.")
 		except CommandFailedError:
 			frappe.throw("Supervisor not restart. Check if supervisor is running.")
