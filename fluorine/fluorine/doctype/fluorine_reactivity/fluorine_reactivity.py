@@ -260,7 +260,7 @@ def save_to_common_site_config(doc, meteor_config=None):
 	#mtconf.get("meteor_app")["ddpurl"] = doc.ddpurl.strip()
 	meteor_app["ddpurl"] = doc.ddpurl.strip()
 
-	f["site"] = doc.site.strip() or frappe.local.site
+	f["site"] = doc.site.strip() if doc.site else frappe.local.site
 	f["developer_mode"] = doc.fluor_dev_mode
 
 
