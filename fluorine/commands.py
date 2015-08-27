@@ -112,7 +112,7 @@ def cmd_remove_meteor_packages(app, site=None):
 
 	start_frappe_db(site)
 
-	if not is_valid_fluorine_app(app):
+	if app and not is_valid_fluorine_app(app):
 		click.echo("Sorry. App %s does not exist as meteor app." % app)
 		return
 
@@ -137,7 +137,7 @@ def cmd_add_meteor_packages(app=None, site=None):
 
 	start_frappe_db(site)
 
-	if not is_valid_fluorine_app(app):
+	if app and not is_valid_fluorine_app(app):
 		click.echo("Sorry. App %s does not exist as meteor app." % app)
 		return
 

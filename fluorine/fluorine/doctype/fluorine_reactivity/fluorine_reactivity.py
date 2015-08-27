@@ -62,7 +62,7 @@ class FluorineReactivity(Document):
 		if not meteor_config:
 			from fluorine.utils import get_meteor_configuration_file
 			meteor_config = get_meteor_configuration_file()
-			
+
 		meteor_config["developer_mode"] = self.fluor_dev_mode #if self.fluorine_state == "on" else 0
 
 		if self.fluorine_state == "off" and self.fluor_dev_mode == 0:
