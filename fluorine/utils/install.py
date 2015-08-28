@@ -38,7 +38,6 @@ def before_install():
 		meteor_add_package("fluorine", whatfor, path_reactivity=path_reactivity)
 
 	from fluorine.commands_helpers.meteor import update_versions
-	print "cwd {}".format(os.getcwd())
 	bench = "../../bench-repo/"
 	update_versions(bench=bench)
 	#make_public_symbolic_link(path_reactivity)
