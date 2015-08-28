@@ -52,7 +52,7 @@ def after_install(rebuild_website=False):
 	hooks = os.path.join(fluorine_path, "hooks.py")
 	copyfile(hooks_default, hooks)
 
-	#gitignore file
+	#gitignore file for hook.py
 	gitignore_default = os.path.join(fluorine_path, "templates", "gitignore")
 	copyfile(gitignore_default, os.path.join(fluorine_path, ".gitignore"))
 

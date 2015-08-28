@@ -7,52 +7,6 @@ from frappe.model.document import Document
 from frappe import _
 
 
-"""
-class FluorineReactivity(Document):
-	def on_update(self, method=None):
-		#from fluorine.utils.file import set_config
-		from fluorine.utils.file import save_custom_template, set_config
-		from fluorine.utils.fhooks import change_base_template
-
-		from fluorine.utils.reactivity import meteor_config
-
-		meteor_config["developer_mode"] = self.fluor_dev_mode
-
-		if self.fluorine_state == "off":
-			set_config({
-				"developer_mode": self.fluor_dev_mode
-			})
-			change_base_template()
-			return
-
-		page_default = True
-
-		if self.fluorine_base_template and self.fluorine_base_template.lower() != "default":
-			page_default = False
-			save_custom_template(self.fluorine_base_template)
-
-		if not self.fluor_dev_mode:
-			prepare_make_meteor_file(self.fluor_meteor_port, self.fluorine_reactivity)
-			#self.fluorine_state = "off"
-		else:
-			change_base_template(page_default=page_default)
-
-		save_to_common_site_config(self)
-
-		if self.fluor_dev_mode:
-			save_to_procfile(self)
-		else:
-			remove_from_procfile()
-
-
-	def validate(self, method=None):
-		if not self.ddpurl or self.ddpurl.strip() == "":
-			return frappe.throw("You must provide a valid ddp url")
-
-		#if not self.site or self.site.strip() == "":
-		#	return frappe.throw("You must provide a valid site")
-"""
-
 class FluorineReactivity(Document):
 	def on_update(self, method=None):
 		from fluorine.utils.file import set_config
