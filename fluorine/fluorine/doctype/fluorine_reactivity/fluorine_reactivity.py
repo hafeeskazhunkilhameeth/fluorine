@@ -342,9 +342,8 @@ def prepare_make_meteor_file(mtport, whatfor):
 
 
 def prepare_compile_environment():
-	from fluorine.utils.reactivity import list_ignores
+	from fluorine.utils.reactivity import list_ignores, make_meteor_ignor_files
 	#from fluorine.utils.fhooks import change_base_template
-	from fluorine.utils.reactivity import make_meteor_ignor_files #,meteor_config
 	#from fluorine.utils.file import set_config
 
 	#set_config({
@@ -354,8 +353,9 @@ def prepare_compile_environment():
 	#meteor_config["mongodb_users_ready"] = 0
 
 	#make_meteor_ignor_files()
-
 	#from fluorine.utils.reactivity import list_ignores
+	if not list_ignores:
+		list_ignores = make_meteor_ignor_files()
 
 	list_ignores["files_folders"] = {
 		"all":{
