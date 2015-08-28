@@ -11,6 +11,13 @@ class MeteorInstalationError(Exception):
 
 
 def before_install():
+	from shutil import copyfile
+
+	#TODO chage the hook and build files
+	fluorine_path = frappe.get_app_path("fluorine")
+	hooks_default = os.path.join(fluorine_path, "templates", "hooks_default.py")
+	hooks = os.path.join(fluorine_path, "hooks.py")
+	copyfile(hooks_default, hooks)
 
 	#print "bench current working dir {}".format(os.getcwd())
 	#app_path = frappe.get_app_path("fluorine")
@@ -44,17 +51,9 @@ def before_install():
 
 
 def after_install(rebuild_website=False):
-	from shutil import copyfile
-
-	#TODO chage the hook and build files
-	fluorine_path = frappe.get_app_path("fluorine")
-	hooks_default = os.path.join(fluorine_path, "templates", "hooks_default.py")
-	hooks = os.path.join(fluorine_path, "hooks.py")
-	copyfile(hooks_default, hooks)
-
 	#gitignore file for hook.py
-	gitignore_default = os.path.join(fluorine_path, "templates", "gitignore")
-	copyfile(gitignore_default, os.path.join(fluorine_path, ".gitignore"))
+	#gitignore_default = os.path.join(fluorine_path, "templates", "gitignore")
+	#copyfile(gitignore_default, os.path.join(fluorine_path, ".gitignore"))
 
 
 	version = frappe.utils.cint(frappe.__version__.split(".", 1)[0])
