@@ -123,10 +123,7 @@ def bench_setup_production(user=None, bench=".."):
 
 	#cwd = os.getcwd()
 	#os.chdir("../")
-	try:
-		exec_cmd("sudo -S bench setup production %s" % user, with_password=True)
-	except:
-		frappe.throw("Error: check if the symlink exist and remove it.")
+	exec_cmd("sudo -S bench setup production %s" % user, with_password=True)
 	#os.chdir(cwd)
 
 def get_supervisor_confdir(bench="."):

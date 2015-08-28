@@ -188,10 +188,12 @@ def generate_nginx_supervisor_conf(doc, user=None, debug=None, update=False, ben
 	elif platform.system() != "Darwin" and not debug:
 
 		if not update:
+			import frappe
 			try:
-				#sup_conf_dir = get_supervisor_confdir(bench=bench)
-				#final_path = os.path.join(sup_conf_dir, get_supervisor_conf_filename(bench=bench))
-				#if os.path.exists(final_path):
+				sup_conf_dir = get_supervisor_confdir(bench=bench)
+				final_path = os.path.join(sup_conf_dir, get_supervisor_conf_filename(bench=bench))
+				if os.path.exists(final_path):
+					frappe.throw("Can continue: the symlink to supervisor config file %s exist and must be remove it." % final_path)
 				#	os.unlink(final_path)
 				bench_setup_production(user=user, bench=bench)
 			except OSError as e:
