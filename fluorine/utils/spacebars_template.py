@@ -261,6 +261,7 @@ def prepare_common_page_context(context, whatfor):
 
 def get_app_pages(context):
 	from fluorine.utils.module import get_app_context
+	#from fluorine.utils import meteor_config
 
 	def get_frappe_context(context):
 

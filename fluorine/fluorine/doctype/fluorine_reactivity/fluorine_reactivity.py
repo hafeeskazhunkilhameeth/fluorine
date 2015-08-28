@@ -66,6 +66,11 @@ class FluorineReactivity(Document):
 		meteor_config["developer_mode"] = self.fluor_dev_mode #if self.fluorine_state == "on" else 0
 
 		if self.fluorine_state == "off" and self.fluor_dev_mode == 0:
+
+			if meteor_config.get("production_mode"):
+				from fluorine.utils.reactivity import start_meteor
+				start_meteor()
+
 			#TODO check if needed to remove
 			set_config({
 				#"developer_mode": self.fluor_dev_mode
@@ -342,7 +347,7 @@ def prepare_make_meteor_file(mtport, whatfor):
 
 
 def prepare_compile_environment():
-	from fluorine.utils.reactivity import list_ignores, make_meteor_ignor_files
+	from fluorine.utils.reactivity import list_ignores#, make_meteor_ignor_files
 	#from fluorine.utils.fhooks import change_base_template
 	#from fluorine.utils.file import set_config
 
@@ -354,8 +359,8 @@ def prepare_compile_environment():
 
 	#make_meteor_ignor_files()
 	#from fluorine.utils.reactivity import list_ignores
-	if not list_ignores:
-		list_ignores = make_meteor_ignor_files()
+	#if not list_ignores:
+	#	list_ignores = make_meteor_ignor_files()
 
 	list_ignores["files_folders"] = {
 		"all":{
