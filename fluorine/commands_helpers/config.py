@@ -189,8 +189,8 @@ def generate_nginx_supervisor_conf(doc, user=None, debug=None, update=False, ben
 
 		if not update:
 			try:
-				sup_conf_dir = get_mac_supervisor_confdir(path=mac_sup_prefix_path)
-				final_path = os.path.join(sup_conf_dir, supervisor_conf_filename)
+				sup_conf_dir = get_supervisor_confdir(bench=bench)
+				final_path = os.path.join(sup_conf_dir, get_supervisor_conf_filename(bench=bench))
 				if not os.path.exists(final_path):
 					os.unlink(final_path)
 				bench_setup_production(user=user, bench=bench)
