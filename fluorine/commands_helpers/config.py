@@ -191,7 +191,7 @@ def generate_nginx_supervisor_conf(doc, user=None, debug=None, update=False, ben
 			try:
 				sup_conf_dir = get_supervisor_confdir(bench=bench)
 				final_path = os.path.join(sup_conf_dir, get_supervisor_conf_filename(bench=bench))
-				if not os.path.exists(final_path):
+				if os.path.exists(final_path):
 					os.unlink(final_path)
 				bench_setup_production(user=user, bench=bench)
 			except OSError as e:
