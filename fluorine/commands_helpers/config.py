@@ -186,8 +186,13 @@ def generate_nginx_supervisor_conf(doc, user=None, debug=None, update=False, ben
 			os.symlink(os.path.abspath(os.path.join("..", 'config', 'supervisor.conf')), final_path)
 		make_supervisor(doc)
 	elif platform.system() != "Darwin" and not debug:
+
 		if not update:
 			try:
+				sup_conf_dir = get_mac_supervisor_confdir(path=mac_sup_prefix_path)
+				final_path = os.path.join(sup_conf_dir, supervisor_conf_filename)
+				if not os.path.exists(final_path):
+					os.unlink(final_path)
 				bench_setup_production(user=user, bench=bench)
 			except OSError as e:
 				if e.errno != errno.EEXIST:
