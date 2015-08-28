@@ -13,16 +13,18 @@ class MeteorInstalationError(Exception):
 def before_install():
 	from shutil import copyfile
 
+
+	frappe_module = os.path.dirname(frappe.__file__)
+	path_apps = os.path.realpath(os.path.join(frappe_module, "..", ".."))
 	#TODO chage the hook and build files
-	fluorine_path = frappe.get_app_path("fluorine")
+	#fluorine_path = frappe.get_app_path("fluorine")
+	fluorine_path = os.path.join(path_apps, "fluorine", "fluorine")
 	hooks_default = os.path.join(fluorine_path, "templates", "hooks_default.py")
 	hooks = os.path.join(fluorine_path, "hooks.py")
 	copyfile(hooks_default, hooks)
 
 	#print "bench current working dir {}".format(os.getcwd())
 	#app_path = frappe.get_app_path("fluorine")
-	frappe_module = os.path.dirname(frappe.__file__)
-	path_apps = os.path.realpath(os.path.join(frappe_module, "..", ".."))
 	#path_reactivity = os.path.realpath(os.path.join(cwd, ".."))
 	path_reactivity = os.path.join(path_apps, "reactivity")
 
