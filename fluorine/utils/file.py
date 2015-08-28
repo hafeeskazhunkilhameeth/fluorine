@@ -475,7 +475,10 @@ def _make_public_private(folder_path, dst_folder_path, app, whatfor, folder, cus
 				continue
 
 			frappe.create_folder(os.path.dirname(os.path.join(dst_folder_app_path, f)))
+			#try:
 			os.symlink(os.path.join(folder_path, f), os.path.join(dst_folder_app_path, f))
+			#except:
+			#	pass
 
 
 def check_remove(source):

@@ -47,10 +47,15 @@ def after_install(rebuild_website=False):
 	from shutil import copyfile
 
 	#TODO chage the hook and build files
-	app_path = frappe.get_app_path("fluorine")
-	hooks_default = os.path.join(app_path, "templates", "hooks_default.py")
-	hooks = os.path.join(app_path, "hooks.py")
+	fluorine_path = frappe.get_app_path("fluorine")
+	hooks_default = os.path.join(fluorine_path, "templates", "hooks_default.py")
+	hooks = os.path.join(fluorine_path, "hooks.py")
 	copyfile(hooks_default, hooks)
+
+	#gitignore file
+	gitignore_default = os.path.join(fluorine_path, "templates", "gitignore")
+	copyfile(gitignore_default, os.path.join(fluorine_path, ".gitignore"))
+
 
 	version = frappe.utils.cint(frappe.__version__.split(".", 1)[0])
 	if version >= 5:
