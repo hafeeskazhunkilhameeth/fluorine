@@ -404,8 +404,8 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, site=None
 			click.echo("There are updates in your apps. To update production you must press button 'run_updates' in fluorine app.")
 			return
 
-		if force==True:
-			mh.make_public_folders()
+		#if force==True:
+		mh.make_public_folders()
 
 		mgh._check_custom_mongodb(doc)
 		#stop_meteor(doc, devmode, state, production=True)
