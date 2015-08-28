@@ -40,7 +40,7 @@ def before_install():
 	from fluorine.commands_helpers.meteor import update_versions
 	print "cwd {}".format(os.getcwd())
 	bench = "../../bench-repo/"
-	update_versions(bench="..")
+	update_versions(bench=bench)
 	#make_public_symbolic_link(path_reactivity)
 
 
