@@ -14,6 +14,7 @@ def before_install():
 	from shutil import copyfile
 
 
+	print "prepare to copy hooks"
 	frappe_module = os.path.dirname(frappe.__file__)
 	path_apps = os.path.realpath(os.path.join(frappe_module, "..", ".."))
 	#TODO chage the hook and build files
