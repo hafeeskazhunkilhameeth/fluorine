@@ -13,8 +13,8 @@ def check_mongodb(conf):
 
 def start_meteor():
 	#import frappe
-	from fluorine.utils.mongodb.utils import is_mongodb_ready, set_frappe_users, save_mongodb_config
-	from file import get_common_config_file_json
+	#from fluorine.utils.mongodb.utils import is_mongodb_ready, set_frappe_users, save_mongodb_config
+	#from file import get_common_config_file_json
 
 	conf = meteor_config
 	check_mongodb(conf)
