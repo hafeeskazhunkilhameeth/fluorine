@@ -95,7 +95,8 @@ class FluorineReactivity(Document):
 			return frappe.throw("You must provide a valid ddp url")
 
 		if self.current_dev_app and self.current_dev_app.strip() != "":
-			apps = frappe.get_installed_apps()
+			from fluorine.utils import APPS as apps
+			#apps = frappe.get_installed_apps()
 			if self.current_dev_app not in apps:
 				return frappe.throw("App %s is not a valid meteor app. To be a valid meteor app it must exist as installed app and must exist templates/react/meteor_app and/or\
 				 					templates/react/meteor_web folder" % self.current_dev_app)

@@ -231,22 +231,26 @@ def is_valid_fluorine_app(app):
 
 
 def get_active_apps():
+	from fluorine.utils import APPS as apps
 	from fluorine.utils.reactivity import make_meteor_ignor_files
 
 	ign_files = make_meteor_ignor_files()
 
 	ign_apps = ign_files.remove.get("apps")
 
-	apps = frappe.get_installed_apps()
-	for app in apps[:]:
+	#apps = frappe.get_installed_apps()
+	active_apps = []
+	for app in apps:
 		app_path = frappe.get_app_path(app)
 		meteor_app = os.path.join(app_path, "templates", "react", "meteor_app")
 		meteor_web = os.path.join(app_path, "templates", "react", "meteor_web")
 		#print "not exists {} app {} web {} app in {}".format(app, os.path.exists(meteor_app), os.path.exists(meteor_web), app in ign_apps)
-		if not (os.path.exists(meteor_app) or os.path.exists(meteor_web)) or app in ign_apps:
-			apps.remove(app)
+		#if not (os.path.exists(meteor_app) or os.path.exists(meteor_web)) or app in ign_apps:
+		if (os.path.exists(meteor_app) or os.path.exists(meteor_web)) and app not in ign_apps:
+			#apps.remove(app)
+			active_apps.append(app)
 
-	return apps
+	return active_apps
 
 
 def check_updates(bench=".."):

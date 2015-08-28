@@ -9,6 +9,20 @@ meteor_config = None
 
 assets_public_path = "/assets/fluorine/js/react"
 
+APPS = None
+
+#Get all apps installed and not installed. This away we can have multiple sites and fluorine installed in only one site.
+def get_installed_apps():
+	import re
+
+	global APPS
+	try:
+		with open("apps.txt") as f:
+			APPS = re.sub(r" +", "", f.read()).split()
+	except IOError:
+		APPS = frappe.get_installed_apps()
+
+	return APPS
 
 
 def get_encoding():
@@ -47,6 +61,9 @@ def get_meteor_configuration_file():
 	meteor_config = get_common_config_file_json()
 
 	return meteor_config
+
+
+get_installed_apps()
 
 if check_dev_mode():
 	frappe_conf = frappe.get_site_config()

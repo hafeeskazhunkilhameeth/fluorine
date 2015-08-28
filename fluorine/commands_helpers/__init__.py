@@ -60,6 +60,20 @@ def get_doctype(name, site):
 
 
 def get_default_site():
+	from fluorine.utils import meteor_config
+
+	site = meteor_config.get("site")
+	if not site:
+		try:
+			with open("currentsite.txt") as f:
+				site = f.read().strip()
+		except IOError:
+			frappe.throw("There is no default site. Check if reactivity/common_site_config.json for site option or if sites/currentsite.txt exist or provide the site with --site option.")
+
+	return site
+
+"""
+def get_default_site():
 	import click
 
 	try:
@@ -68,3 +82,4 @@ def get_default_site():
 			return site
 	except IOError:
 		click.echo("There is no default site. Check if sites/currentsite.txt exist or provide the site with --site option.")
+"""

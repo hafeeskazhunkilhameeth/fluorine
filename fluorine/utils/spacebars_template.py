@@ -56,6 +56,7 @@ def add_jinja_extension(extension):
 
 def fluorine_get_floader(encoding="utf-8"):
 
+	from fluorine.utils import APPS
 	from fluorine.utils.fjinja2.fjinja import MyChoiceLoader
 	from fluorine.utils.fjinja2.fjinja import MyFileSystemLoader
 
@@ -64,7 +65,8 @@ def fluorine_get_floader(encoding="utf-8"):
 		path = os.path.normpath(os.path.join(os.getcwd(), "..")) + "/apps"
 		#first template to load is the last installed
 		#So, we can replace the oldest template by new one with the same name
-		apps = frappe.get_installed_apps()[::-1]
+		#apps = frappe.get_installed_apps()[::-1]
+		apps = APPS[::-1]
 		app_fluorine = frappe.get_app_path("fluorine")
 		dbname = os.path.join(app_fluorine, "templates/react/temp", "fluorinedb")
 		db_dirpath = os.path.dirname(os.path.join(dbname))
@@ -76,10 +78,11 @@ def fluorine_get_floader(encoding="utf-8"):
 
 	return frappe.local.floader
 
+"""
 
 def fluorine_get_template(path):
 	return fluorine_get_fenv().addto_meteor_templates_list(path)
-
+"""
 
 def compile_jinja_templates(context, whatfor):
 
@@ -246,11 +249,12 @@ def prepare_common_page_context(context, whatfor):
 	context.meteor_web = True
 	context.custom_template = doc.fluorine_base_template
 
-	set_config({
-		"production_mode": 0
-	})
+	if devmode:
+		set_config({
+			"production_mode": 0
+		})
 
-	meteor_config["production_mode"] = 0
+		meteor_config["production_mode"] = 0
 
 	return fluorine_build_context(context, whatfor), devmode
 
@@ -311,7 +315,7 @@ def get_web_pages(context):
 
 
 def fluorine_build_context(context, whatfor):
-
+	from fluorine.utils import APPS as apps
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation#, save_js_file
 	from reactivity import list_ignores
 	from fluorine.utils.meteor.utils import make_meteor_props
@@ -342,7 +346,7 @@ def fluorine_build_context(context, whatfor):
 	devmode = context.developer_mode
 	#refresh = False
 	#space_compile = True
-	apps = frappe.get_installed_apps()#[::-1]
+	#apps = frappe.get_installed_apps()#[::-1]
 
 	frappe.local.meteor_ignores = list_ignores
 

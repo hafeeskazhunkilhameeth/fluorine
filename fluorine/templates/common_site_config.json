@@ -36,8 +36,6 @@
         "compile": 1, 
         "folder_refresh": 1
     }, 
-    "site": "site1.local", 
-    "sites_path": "",
 	"meteor_http_forwarded_count": "1", 
     "developer_mode": 0
 }

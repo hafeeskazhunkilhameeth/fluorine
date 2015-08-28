@@ -56,7 +56,7 @@ def start_nginx_supervisor_services(debug=False):
 			exec_cmd("sudo -S %s reload" % supervisorctl, service="supervisor", with_password=True, echo=echo)
 			click.echo("supervisor restarted.")
 		except CommandFailedError:
-			frappe.throw("Supervisor not restart. Check if supervisor is running.")
+			frappe.throw("Supervisor not restart. Check if supervisor is running then to restart production again use the option --force.")
 
 def build_assets(bench_path=".."):
 	from bench_helpers import run_frappe_cmd
