@@ -116,14 +116,17 @@ def bench_generate_nginx_config(bench=".."):
 	run_bench_module(m, "generate_nginx_config")
 
 def bench_setup_production(user=None, bench=".."):
-	import getpass
+	import getpass, frappe
 
 	if not user:
 		user = getpass.getuser()
 
 	#cwd = os.getcwd()
 	#os.chdir("../")
-	exec_cmd("sudo -S bench setup production %s" % user, with_password=True)
+	try:
+		exec_cmd("sudo -S bench setup production %s" % user, with_password=True)
+	except:
+		frappe.throw("Error: check if the symlink exist and remove it.")
 	#os.chdir(cwd)
 
 def get_supervisor_confdir(bench="."):
