@@ -14,7 +14,7 @@ def get_custom_packages_files():
 	return (file_add, file_remove)
 
 
-def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None):
+def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None, server_port=None):
 	from fluorine.utils.file import save_file, readlines
 	import re
 
@@ -55,7 +55,7 @@ def _generate_nginx_conf(hosts_web=None, hosts_app=None, production=None):
 		elif inside_server and re.match(r"root", line.strip()):
 			line = [line, "\n"]
 			if production:
-				line.extend(production_if_redirect.split("\n"))
+				line.extend((production_if_redirect % (":" + str(server_port) if server_port else "", )).split("\n"))
 			else:
 				line.extend(rewrite_for_bread)
 
@@ -304,7 +304,7 @@ production_if_redirect = """
 			set $post 1;
 		}
 
-		if ($http_referer = $scheme://$host/desk){
+		if ($http_referer = $scheme://$host%s/desk){
 			set $referer "${post}1";
 		}
 

@@ -2,7 +2,7 @@ __meteor_runtime_config__ = {
 		"meteorRelease": "METEOR@1.1.0.3",
 		"ROOT_URL": "http://127.0.0.1/meteordesk",
 		"ROOT_URL_PATH_PREFIX": "/meteordesk",
-		"autoupdateVersion": "0de35a5484411095069f0faba70b538aa6bb9fbb",
+		"autoupdateVersion": "22407fac39a083d4ec8cf0e560447e7f44934448",
 		"autoupdateVersionRefreshable": "db712d677bf161001148be3a11aa356543cb1c88",
 		'DDP_DEFAULT_CONNECTION_URL': 'http://192.168.1.100/meteordesk'
 	};

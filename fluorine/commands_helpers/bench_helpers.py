@@ -116,13 +116,14 @@ def bench_generate_nginx_config(bench=".."):
 	run_bench_module(m, "generate_nginx_config")
 
 def bench_setup_production(user=None, bench=".."):
-	import getpass, frappe
+	import getpass, click
 
 	if not user:
 		user = getpass.getuser()
 
 	#cwd = os.getcwd()
 	#os.chdir("../")
+	click.echo("Generating supervisor and nginx files.")
 	exec_cmd("sudo -S bench setup production %s" % user, with_password=True)
 	#os.chdir(cwd)
 
