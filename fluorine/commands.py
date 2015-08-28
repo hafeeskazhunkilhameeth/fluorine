@@ -235,11 +235,12 @@ def setup_production(site=None, debug=None, force=False):
 @click.option('--state', default="start", help='Use start|stop|production to start, stop or set meteor in production mode.')
 @click.option('--mongo-custom', help='Set False to use custom mongo. Set mongo custom options in folder reactivity/common_site_config.json. By default is True.', is_flag=True)
 @click.option('--user', default=None, help='Name of the user to use to start production mode. Default to the current user.')
+@click.option('--server-port', default=None, help='Nginx listen port. Supply the port number if it is different then 80. Used only in production mode.')
 @click.option('--mac_sup_prefix_path', default="/usr/local", help='Name of the user to use to start production mode. Default to the current user.')
 @click.option('--debug', is_flag=True)
 @click.option('--update', is_flag=True)
 @click.option('--force', is_flag=True)
-def setState(site=None, state=None, mongo_custom=None, user=None, mac_sup_prefix_path=None, debug=None, update=None, force=None):
+def setState(site=None, state=None, mongo_custom=None, user=None, server_port=None, mac_sup_prefix_path=None, debug=None, update=None, force=None):
 	"""Prepare Frappe for meteor."""
 	import getpass
 
@@ -251,10 +252,10 @@ def setState(site=None, state=None, mongo_custom=None, user=None, mac_sup_prefix
 
 	bench = "../../bench-repo/"
 
-	_setState(site=site, state=state, debug=debug, update= update, force=force, mongo_custom=mongo_custom, user=user, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path)
+	_setState(site=site, state=state, debug=debug, update= update, force=force, mongo_custom=mongo_custom, user=user, bench=bench, server_port=server_port, mac_sup_prefix_path=mac_sup_prefix_path)
 
 
-def _setState(site=None, state=None, debug=False, update=False, force=False, mongo_custom=False, user=None, bench="..", mac_sup_prefix_path="/usr/local"):
+def _setState(site=None, state=None, debug=False, update=False, force=False, mongo_custom=False, user=None, bench="..", server_port=None, mac_sup_prefix_path="/usr/local"):
 	from fluorine.utils.fcache import clear_frappe_caches
 
 	doc = get_doctype("Fluorine Reactivity", site)
@@ -282,7 +283,7 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 		if not update and not debug:
 			if meteor_config.get("on_update", 0):
 				update = True
-		in_production = start_meteor_production_mode(doc, devmode, fluor_state, current_dev_app, site=site, debug=debug, update=update, force=force, user=user, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path)
+		in_production = start_meteor_production_mode(doc, devmode, fluor_state, current_dev_app, server_port=server_port, site=site, debug=debug, update=update, force=force, user=user, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path)
 		if in_production and update:
 			#from fluorine.commands_helpers.meteor import update_common_config
 			from fluorine.utils.meteor.utils import update_common_config
@@ -388,7 +389,7 @@ def stop_meteor(doc, devmode, state, force=False, site=None, production=False, b
 	#	prepare_make_meteor_file(doc.fluor_meteor_port, doc.fluorine_reactivity)
 
 
-def start_meteor_production_mode(doc, devmode, state, current_dev_app, site=None, debug=False, update=False, force=False, user=None, bench="..", mac_sup_prefix_path="/usr/local"):
+def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_port=None, site=None, debug=False, update=False, force=False, user=None, bench="..", mac_sup_prefix_path="/usr/local"):
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile, make_final_app_client, save_to_procfile, check_meteor_apps_created
 	from fluorine.utils.meteor.utils import build_meteor_context, make_meteor_props, make_meteor_files, prepare_client_files
 

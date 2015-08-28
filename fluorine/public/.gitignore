@@ -4,4 +4,5 @@
 *.swp
 meteor_app/
 meteor_web/
+js/meteor_runtime_config.js
 build.json
