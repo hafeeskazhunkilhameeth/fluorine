@@ -52,7 +52,7 @@ def get_password():
 
 	return echo
 
-def exec_cmd(cmd, service="service", cwd=".", with_password=False, echo=None):
+def exec_cmd(cmd, service="service", cwd="..", with_password=False, echo=None):
 	import subprocess, click
 
 	stderr=stdout=subprocess.PIPE
@@ -121,10 +121,10 @@ def bench_setup_production(user=None, bench=".."):
 	if not user:
 		user = getpass.getuser()
 
-	cwd = os.getcwd()
-	os.chdir("../")
+	#cwd = os.getcwd()
+	#os.chdir("../")
 	exec_cmd("sudo -S bench setup production %s" % user, with_password=True)
-	os.chdir(cwd)
+	#os.chdir(cwd)
 
 def get_supervisor_confdir(bench="."):
 	m = get_bench_module("production_setup", bench=bench)
