@@ -257,14 +257,14 @@ def setup_production(site=None, debug=None, force=False):
 @click.command('set-state')
 @click.argument('state')
 @click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
-@click.option('--mongo-custom', help='Set False to use custom mongo. Set mongo custom options in folder reactivity/common_site_config.json. By default is True.', is_flag=True)
+@click.option('--custom-mongo', help='Set False to use custom mongo. Set mongo custom options in folder reactivity/common_site_config.json. By default is True.', is_flag=True)
 @click.option('--user', default=None, help='Name of the user to use to start production mode. Default to the current user.')
 @click.option('--server-port', default=None, help='Nginx listen port. Supply the port number if it is different then 80. Used only in production mode.')
 @click.option('--mac_sup_prefix_path', default="/usr/local", help='Name of the user to use to start production mode. Default to the current user.')
 @click.option('--debug', is_flag=True)
 @click.option('--update', is_flag=True)
 @click.option('--force', is_flag=True)
-def setState(state, site=None, mongo_custom=None, user=None, server_port=None, mac_sup_prefix_path=None, debug=None, update=None, force=None):
+def setState(state, site=None, custom_mongo=None, user=None, server_port=None, mac_sup_prefix_path=None, debug=None, update=None, force=None):
 	"""Prepare Frappe for meteor.\n
 		STATE: \n
 		`develop` to enter in developer mode;\n
@@ -281,7 +281,7 @@ def setState(state, site=None, mongo_custom=None, user=None, server_port=None, m
 
 	bench = "../../bench-repo/"
 
-	_setState(site=site, state=state, debug=debug, update= update, force=force, mongo_custom=mongo_custom, user=user, bench=bench, server_port=server_port, mac_sup_prefix_path=mac_sup_prefix_path)
+	_setState(site=site, state=state, debug=debug, update= update, force=force, mongo_custom=custom_mongo, user=user, bench=bench, server_port=server_port, mac_sup_prefix_path=mac_sup_prefix_path)
 
 
 def _setState(site=None, state=None, debug=False, update=False, force=False, mongo_custom=False, user=None, bench="..", server_port=None, mac_sup_prefix_path="/usr/local"):

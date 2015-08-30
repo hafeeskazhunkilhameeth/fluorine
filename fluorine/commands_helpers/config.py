@@ -57,8 +57,8 @@ def _generate_fluorine_nginx_conf(hosts_web=None, hosts_app=None, production=Non
 			if production:
 				#line.extend((production_if_redirect % (":" + str(server_port) if server_port else "", )).split("\n"))
 				line.extend(production_if_redirect.split("\n"))
-			else:
-				line.extend(rewrite_for_bread)
+			#else:
+			#	line.extend(rewrite_for_bread)
 
 		elif inside_location and line.strip().startswith("try_files"):
 			named_location_group = re.search(r"@(.*);$", line)
@@ -259,7 +259,7 @@ new_location_root = """
 
 rewrite_for_bread = """
 		#because we use mdesk intead of desk brand icon start with /m/assets; Only in developer mode
-		rewrite ^/m/(.*)$ http://$remote_addr/$1 last;""".split("\n")
+		#rewrite ^/m/(.*)$ http://$remote_addr/$1 last;""".split("\n")
 
 location_api = """
 		location ~* "^/api|^/desk|^/mdesk|^/index.html$" {
