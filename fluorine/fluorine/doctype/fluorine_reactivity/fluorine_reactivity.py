@@ -438,6 +438,7 @@ def make_mongodb_default(conf, port=3070):
 		from fluorine.utils import file
 		path_reactivity = file.get_path_reactivity()
 		meteor_web = os.path.join(path_reactivity, "meteor_web")
+		print "getting mongo config..."
 		meteor = subprocess.Popen(["meteor", "--port", str(port)], cwd=meteor_web, shell=False, stdout=subprocess.PIPE)
 		mongodb = None
 		while True:
