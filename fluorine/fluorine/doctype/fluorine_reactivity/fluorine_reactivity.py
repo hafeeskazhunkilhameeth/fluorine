@@ -9,7 +9,7 @@ from frappe import _
 
 class FluorineReactivity(Document):
 	def on_update(self, method=None):
-		from fluorine.utils.file import set_config
+		#from fluorine.utils.file import set_config
 		from fluorine.utils.file import save_custom_template
 		from fluorine.utils.reactivity import meteor_config
 

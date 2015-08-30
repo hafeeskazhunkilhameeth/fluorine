@@ -216,7 +216,7 @@ def cmd_restore_common_config(site=None):
 	if doc.current_dev_app and doc.current_dev_app.strip() != "":
 		meteor_config["current_dev_app"] = doc.current_dev_app
 
-	meteor_config["production_mode"] = 0
+	meteor_config["production_mode"] = meteor_config.get("production_mode") or 0
 	meteor_config["developer_mode"] = doc.fluor_dev_mode
 	save_to_common_site_config(doc, meteor_config)
 
