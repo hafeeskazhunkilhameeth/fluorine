@@ -67,6 +67,14 @@ cur_frm.cscript["check_mongodb"] = function(doc){
 }
 
 $(document).on("save", function(ev, doc){
+	if (doc.fluor_dev_mode == 0 && doc.fluorine_state === "off"){
+		msgprint("Please issue `bench fluorine set-state production` to enter in production mode.");
+	}else if(doc.fluor_dev_mode == 1 && doc.fluorine_state === "on"){
+		msgprint("Please issue `bench fluorine set-state develop` to enter in developer mode and then `bench start` and go to 'http://localhost'.");
+	}else if(doc.fluor_dev_mode == 0 && doc.fluorine_state === "off"){
+		msgprint("Please issue `bench start` and got to 'http://localhost:8000' to enter in original frappe web.");
+	}
+
 	check_production_mode(doc);
 });
 

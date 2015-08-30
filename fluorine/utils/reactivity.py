@@ -143,9 +143,12 @@ def is_open_port(ip="127.0.0.1", port=3070):
 	return is_open
 """
 
-import sys
-
-if any("--serve"==s or "--start"==s or "serve"==s for s in sys.argv) and not meteor_config.get("production_mode"):
+#import sys
+import logging
+logger = logging.getLogger("frappe")
+#if any("--serve"==s or "--start"==s or "serve"==s for s in sys.argv) and not meteor_config.get("production_mode"):
+if not meteor_config.get("production_mode"):
 	#import frappe
 	#print "starting reactivity...{}".format(sys.argv)
+	logger.error('starting reactivity... 6' )
 	start_meteor()

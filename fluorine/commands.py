@@ -198,10 +198,34 @@ def set_current_app(app):
 	update_common_config(meteor_config)
 
 
+@click.command('restore-common-config')
+@click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite.')
+def cmd_restore_common_config(site=None):
+	"""Restore the common site config file in reactivity folder."""
+	from fluorine.utils.reactivity import meteor_config
+	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_common_site_config
+
+	if site == None:
+		site = get_default_site()
+
+	doc = get_doctype("Fluorine Reactivity", site)
+
+	if not meteor_config:
+		meteor_config = {}
+
+	if doc.current_dev_app and doc.current_dev_app.strip() != "":
+		meteor_config["current_dev_app"] = doc.current_dev_app
+
+	meteor_config["production_mode"] = 0
+	meteor_config["developer_mode"] = doc.fluor_dev_mode
+	save_to_common_site_config(doc, meteor_config)
+
+	click.echo("Common config restored.")
+
 
 #TODO PARA REMOVER
 @click.command('mproduction')
-@click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
+@click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite.')
 @click.option('--debug', is_flag=True)
 @click.option('--force', is_flag=True)
 def setup_production(site=None, debug=None, force=False):
@@ -230,9 +254,9 @@ def setup_production(site=None, debug=None, force=False):
 		frappe.destroy()
 
 
-@click.command('setState')
+@click.command('set-state')
+@click.argument('state')
 @click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
-@click.option('--state', default="start", help='Use start|stop|production to start, stop or set meteor in production mode.')
 @click.option('--mongo-custom', help='Set False to use custom mongo. Set mongo custom options in folder reactivity/common_site_config.json. By default is True.', is_flag=True)
 @click.option('--user', default=None, help='Name of the user to use to start production mode. Default to the current user.')
 @click.option('--server-port', default=None, help='Nginx listen port. Supply the port number if it is different then 80. Used only in production mode.')
@@ -240,8 +264,13 @@ def setup_production(site=None, debug=None, force=False):
 @click.option('--debug', is_flag=True)
 @click.option('--update', is_flag=True)
 @click.option('--force', is_flag=True)
-def setState(site=None, state=None, mongo_custom=None, user=None, server_port=None, mac_sup_prefix_path=None, debug=None, update=None, force=None):
-	"""Prepare Frappe for meteor."""
+def setState(state, site=None, mongo_custom=None, user=None, server_port=None, mac_sup_prefix_path=None, debug=None, update=None, force=None):
+	"""Prepare Frappe for meteor.\n
+		STATE: \n
+		`develop` to enter in developer mode;\n
+		`production` to enter in production mode;\n
+		`stop` to enter in original frappe web.
+	"""
 	import getpass
 
 	if site == None:
@@ -263,7 +292,7 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 	devmode = doc.fluor_dev_mode
 	fluor_state = doc.fluorine_state
 	what = state.lower()
-	if what == "start":
+	if what == "develop":
 		start_meteor(doc, devmode, fluor_state, site=site, mongo_custom=mongo_custom, bench=bench)
 	elif what == "stop":
 		stop_meteor(doc, devmode, fluor_state, force=force, site=site, bench=bench)
@@ -324,6 +353,7 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 		doc.fluorine_state = "on"
 
 	meteor_config["developer_mode"] = 1
+	meteor_config["production_mode"] = 0
 	#hh._change_hook(state="start", site=site)
 	meteor_config["stop"] = 0
 	#use mongo from meteor by default
@@ -385,6 +415,7 @@ def stop_meteor(doc, devmode, state, force=False, site=None, production=False, b
 	#	})
 	meteor_config["stop"] = 1
 	meteor_config["developer_mode"] = 1
+	meteor_config["production_mode"] = 0
 	update_common_config(meteor_config)
 	doc.save()
 
@@ -522,6 +553,7 @@ commands = [
 	cmd_reset_meteor_packages,
 	cmd_add_meteor_packages,
 	cmd_remove_meteor_packages,
+	cmd_restore_common_config,
 	setup_production,
 	cmd_update_version,
 	cmd_check_updates,

@@ -87,7 +87,7 @@ def get_encoding():
 
 
 def check_dev_mode():
-	from fluorine.utils.file import get_path_reactivity, get_fluorine_conf
+	#from fluorine.utils.file import get_path_reactivity, get_fluorine_conf
 
 	if not meteor_config:
 		get_meteor_configuration_file()
@@ -142,5 +142,5 @@ if check_dev_mode():
 		#if frappe_conf.developer_mode:
 
 		#print "Enter Reactivity State!!!"
-		import spacebars_template
+		#import spacebars_template
 		import reactivity

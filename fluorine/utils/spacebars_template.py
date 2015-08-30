@@ -318,7 +318,9 @@ def get_web_pages(context):
 def fluorine_build_context(context, whatfor):
 	from fluorine.utils import APPS as apps
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation#, save_js_file
-	from reactivity import list_ignores
+	#from reactivity import list_ignores
+	import reactivity
+	#import fluorine.utils.reactivity
 	from fluorine.utils.meteor.utils import make_meteor_props
 	from react_file_loader import get_custom_pattern
 
@@ -349,7 +351,7 @@ def fluorine_build_context(context, whatfor):
 	#space_compile = True
 	#apps = frappe.get_installed_apps()#[::-1]
 
-	frappe.local.meteor_ignores = list_ignores
+	frappe.local.meteor_ignores = reactivity.list_ignores
 
 	"""
 	if devmode:
