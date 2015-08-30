@@ -428,7 +428,7 @@ def stop_meteor(doc, devmode, state, force=False, site=None, production=False, b
 
 
 def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_port=None, site=None, debug=False, update=False, force=False, user=None, bench="..", mac_sup_prefix_path="/usr/local"):
-	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile, make_final_app_client, save_to_procfile, check_meteor_apps_created
+	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile, make_final_app_client, save_to_procfile, check_meteor_apps_created,prepare_make_meteor_file
 	from fluorine.utils.meteor.utils import build_meteor_context, make_meteor_props, make_meteor_files, prepare_client_files
 
 	prodmode = check_prod_mode()
@@ -449,6 +449,11 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_po
 		mgh._check_custom_mongodb(doc)
 		#stop_meteor(doc, devmode, state, production=True)
 		remove_from_procfile()
+
+		from fluorine.utils.reactivity import start_meteor
+		start_meteor()
+		frappe.local.request = frappe._dict()
+		prepare_make_meteor_file(doc.fluor_meteor_port, doc.fluorine_reactivity)
 		#only save the meteor packages installed in fluorine if fluorine app is in development.
 		if current_dev_app != "fluorine" or current_dev_app == "fluorine" and force:
 			prepare_client_files(current_dev_app)

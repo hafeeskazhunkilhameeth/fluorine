@@ -66,6 +66,12 @@ frappe.translation = function(lang){
 	return frappe.call(options);
 }
 
+frappe.compile_meteor = function(){
+	var cmd = "fluorine.utils.compile.meteor_compile";
+	var options = {cmd: cmd};
+	return frappe.call(options);
+}
+
 var clean_url = function(url){
     return url.replace(/\/\//g, '/').replace(/http:\//, 'http://')
 }

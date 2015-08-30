@@ -30,7 +30,7 @@ Router.configure({
 
 Template.ApplicationLayout.helpers({
     header_classes: function(){
-        return "navbar navbar-default navbar-static-top";
+        return "navbar navbar-default navbar-fixed-top";
     },
 
     header_roles: function(){

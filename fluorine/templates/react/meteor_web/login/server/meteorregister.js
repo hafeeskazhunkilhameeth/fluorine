@@ -44,5 +44,11 @@ Meteor.methods({
 			res = {cookies: result.headers["set-cookie"]};
 		}
 		return res;
+	},
+	frappe_compile: function(){
+		var userId = this.userId;
+		if (userId === 'undefined')
+			return;
+		frappe.compile_meteor();
 	}
 });

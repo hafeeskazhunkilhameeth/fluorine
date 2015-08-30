@@ -54,46 +54,46 @@ def _generate_fluorine_nginx_conf(hosts_web=None, hosts_app=None, production=Non
 			inside_location = True
 		elif inside_server and re.match(r"root", line.strip()):
 			line = [line, "\n"]
-			if production:
+			#if production:
 				#line.extend((production_if_redirect % (":" + str(server_port) if server_port else "", )).split("\n"))
-				line.extend(production_if_redirect.split("\n"))
+			line.extend(production_if_redirect.split("\n"))
 			#else:
 			#	line.extend(rewrite_for_bread)
 
 		elif inside_location and line.strip().startswith("try_files"):
 			named_location_group = re.search(r"@(.*);$", line)
 			named_location = named_location_group.group(1)
-			if production:
+			#if production:
 				#oline = line
 				#line = production_if_redirect.split("\n")
-				line = re.sub(r"@(.*);$", "/assets/js/meteor_web/$uri $uri @meteor;", line)
+			line = re.sub(r"@(.*);$", "/assets/js/meteor_web/$uri $uri @meteor;", line)
 				#line.append(oline)
-			else:
-				line = re.sub(r"@(.*);$", "$uri @meteor;", line)
+			#else:
+			#	line = re.sub(r"@(.*);$", "$uri @meteor;", line)
 
 			inside_location = False
 		elif re.match(r"location\s*@%s\s*{" % (named_location or "magic"), line.strip()):
 			inside_location_magic = True
-			if not production:
-				oline = line
-				location_root = new_location_root % (named_location or "magic")
-				line = location_root.split("\n")
-				line.append(oline)
+			#if not production:
+			#	oline = line
+			#	location_root = new_location_root % (named_location or "magic")
+			#	line = location_root.split("\n")
+			#	line.append(oline)
 		elif inside_location_magic and open_brace == 1 and re.search(r"}$", line):
 			inside_location_magic = False
 			line = [line, "\n"]
 			nlocation_api = location_api % (named_location or "magic")
 			lapi = nlocation_api.split("\n")
-			if production:
-				lapi[1] = lapi[1].replace("|^/mdesk", "")
-				lapi.pop(2)
-				lapi.pop(2)
-				loc_redirect = production_location_redirect.split("\n")
-				line.extend(loc_redirect)
+			#if production:
+			#lapi[1] = lapi[1].replace("|^/mdesk", "")
+			#lapi.pop(2)
+			#lapi.pop(2)
+			loc_redirect = production_location_redirect.split("\n")
+			line.extend(loc_redirect)
 				#error403_ = error403.split("\n")
 				#line.extend(error403_)
-			else:
-				lapi.pop(4)
+			#else:
+			#	lapi.pop(4)
 			line.extend(lapi)
 			line.extend(location_meteordesk)
 			line.extend(location_meteor)
@@ -262,9 +262,9 @@ rewrite_for_bread = """
 		#rewrite ^/m/(.*)$ http://$remote_addr/$1 last;""".split("\n")
 
 location_api = """
-		location ~* "^/api|^/desk|^/mdesk|^/index.html$" {
+		location ~* "^/api|^/desk|^/index.html$" {
 			#to support flowrouter while in development
-			rewrite ^/mdesk/(.*)$ http://$remote_addr/mdesk?page=$1 last;
+			#rewrite ^/mdesk/(.*)$ http://$remote_addr/mdesk?page=$1 last;
 			rewrite ^/desk/(.*)$ http://$remote_addr/desk?page=$1 last;
 			try_files $uri @%s;
 		}

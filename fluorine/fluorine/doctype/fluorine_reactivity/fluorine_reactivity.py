@@ -22,15 +22,15 @@ class FluorineReactivity(Document):
 
 		if self.fluorine_state == "off" and self.fluor_dev_mode == 0: #and not production_mode:
 
-			if meteor_config.get("production_mode"):
-				from fluorine.utils.reactivity import start_meteor
-				start_meteor()
+			#if meteor_config.get("production_mode"):
+			#	from fluorine.utils.reactivity import start_meteor
+			#	start_meteor()
 				#TODO check if needed to remove
 				#set_config({
 					#"developer_mode": self.fluor_dev_mode
 				#	"developer_mode": 0
 				#})
-			prepare_make_meteor_file(self.fluor_meteor_port, self.fluorine_reactivity)
+			#prepare_make_meteor_file(self.fluor_meteor_port, self.fluorine_reactivity)
 			meteor_config["production_mode"] = 1
 			#update_versions()
 			#return
