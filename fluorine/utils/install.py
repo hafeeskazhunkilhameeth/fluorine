@@ -11,19 +11,12 @@ class MeteorInstalationError(Exception):
 
 
 def before_install():
-	from shutil import copyfile
 
 
-	print "prepare to copy hooks"
 	frappe_module = os.path.dirname(frappe.__file__)
 	path_apps = os.path.realpath(os.path.join(frappe_module, "..", ".."))
 	#TODO chage the hook and build files
 	#fluorine_path = frappe.get_app_path("fluorine")
-	fluorine_path = os.path.join(path_apps, "fluorine", "fluorine")
-	hooks_default = os.path.join(fluorine_path, "templates", "hooks_default.py")
-	hooks = os.path.join(fluorine_path, "hooks.py")
-	copyfile(hooks_default, hooks)
-
 	#print "bench current working dir {}".format(os.getcwd())
 	#app_path = frappe.get_app_path("fluorine")
 	#path_reactivity = os.path.realpath(os.path.join(cwd, ".."))
@@ -37,7 +30,7 @@ def before_install():
 
 	#path_reactivity = get_path_reactivity()
 
-	make_link_to_desk()
+	#make_link_to_desk()
 
 	#from fluorine.utils.reactivity import meteor_config
 	from fluorine.utils import get_meteor_configuration_file
@@ -54,10 +47,16 @@ def before_install():
 
 
 def after_install(rebuild_website=False):
+	#from shutil import copyfile
+
 	#gitignore file for hook.py
 	#gitignore_default = os.path.join(fluorine_path, "templates", "gitignore")
 	#copyfile(gitignore_default, os.path.join(fluorine_path, ".gitignore"))
 
+	#fluorine_path = frappe.get_app_path("fluorine")
+	#hooks_default = os.path.join(fluorine_path, "templates", "hooks_default.py")
+	#hooks = os.path.join(fluorine_path, "hooks.py")
+	#copyfile(hooks_default, hooks)
 
 	version = frappe.utils.cint(frappe.__version__.split(".", 1)[0])
 	if version >= 5:

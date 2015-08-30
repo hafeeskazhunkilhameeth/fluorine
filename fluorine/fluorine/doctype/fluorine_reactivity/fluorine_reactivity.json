@@ -10,8 +10,10 @@
  "fields": [
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "default": "off", 
-   "description": "Turn on or off reactivity.", 
+   "description": "Turn on or off reactivity. In off mode and with developer mode checked you enter in old frappe web.", 
    "fieldname": "fluorine_state", 
    "fieldtype": "Select", 
    "hidden": 0, 
@@ -33,6 +35,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "default": "Reactive Web", 
    "description": "Choose where to activate reactivity.\n", 
    "fieldname": "fluorine_reactivity", 
@@ -56,6 +60,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "default": "default", 
    "description": "Change base template for web pages.", 
    "fieldname": "fluorine_base_template", 
@@ -78,6 +84,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "description": "Set the current development app. Leave blank if there is only one app - fluorine. ", 
    "fieldname": "current_dev_app", 
    "fieldtype": "Data", 
@@ -99,6 +107,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "fieldname": "column_break_4", 
    "fieldtype": "Column Break", 
    "hidden": 0, 
@@ -118,6 +128,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "fieldname": "meteor", 
    "fieldtype": "Section Break", 
    "hidden": 0, 
@@ -138,8 +150,10 @@
   }, 
   {
    "allow_on_submit": 0, 
-   "default": "0", 
-   "description": "Check to enter in develop mode.", 
+   "bold": 0, 
+   "collapsible": 0, 
+   "default": "1", 
+   "description": "Check to enter in develop mode. Uncheck only to go to production mode.", 
    "fieldname": "fluor_dev_mode", 
    "fieldtype": "Check", 
    "hidden": 0, 
@@ -160,6 +174,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "default": "http://127.0.0.1", 
    "description": "Enter the url/ip to use for meteor host.", 
    "fieldname": "fluor_meteor_host", 
@@ -182,6 +198,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "default": "3070", 
    "description": "Enter the port where meteor should connect. Note: frappe socketio.js is listen on port 3000.", 
    "fieldname": "fluor_meteor_port", 
@@ -204,6 +222,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "default": "http://127.0.0.1", 
    "description": "This must be the url or ip (without port) where meteor is running. If url is http://localhost or ip is http://127.0.0.1 then you only can test meteor from localhost.\nThis will be used in developer mode. In production mode it will be used in app mode (desk requests).", 
    "fieldname": "ddpurl", 
@@ -226,6 +246,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "default": "os.linux.x86_64", 
    "description": "By default, your application is bundled for your current architecture. This may cause difficulties if your app contains binary code due to, for example, npm packages. You can try to override that behavior choosing the target architecture.", 
    "fieldname": "meteor_target_arch", 
@@ -249,6 +271,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "default": "0", 
    "description": "Check this if you want to use your own mongodb. With you own mongodb you have  to activate oplog tailing.", 
    "fieldname": "check_mongodb", 
@@ -271,6 +295,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "fieldname": "mongodb", 
    "fieldtype": "Section Break", 
    "hidden": 1, 
@@ -291,6 +317,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "default": "http://127.0.0.1", 
    "description": "Enter the url of mongoldb.", 
    "fieldname": "fluor_mongo_host", 
@@ -313,6 +341,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "default": "27017", 
    "description": "Enter the port where mongo should connect.", 
    "fieldname": "fluor_mongo_port", 
@@ -335,6 +365,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "default": "fluorine", 
    "description": "Enter the mongo database name.", 
    "fieldname": "fluor_mongo_database", 
@@ -357,6 +389,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "fieldname": "mongo_user", 
    "fieldtype": "Data", 
    "hidden": 0, 
@@ -377,6 +411,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "fieldname": "mongo_pass", 
    "fieldtype": "Password", 
    "hidden": 0, 
@@ -397,6 +433,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "fieldname": "frappe_configurations", 
    "fieldtype": "Section Break", 
    "hidden": 0, 
@@ -417,6 +455,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "description": "This must be the site where you will test meteor.js in developer mode. If empty fluorine will choose the current site.", 
    "fieldname": "site", 
    "fieldtype": "Data", 
@@ -438,6 +478,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "fieldname": "update_fluor_apps", 
    "fieldtype": "Section Break", 
    "hidden": 1, 
@@ -458,6 +500,8 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "bold": 0, 
+   "collapsible": 0, 
    "description": "Update the fluorine apps after bench update and only in production.", 
    "fieldname": "fluor_update_fluorine_apps_btn", 
    "fieldtype": "Button", 
@@ -486,7 +530,7 @@
  "is_submittable": 0, 
  "issingle": 1, 
  "istable": 0, 
- "modified": "2015-08-26 15:45:49.820549", 
+ "modified": "2015-08-30 00:23:20.737573", 
  "modified_by": "Administrator", 
  "module": "Fluorine", 
  "name": "Fluorine Reactivity", 

@@ -17,7 +17,8 @@ def start_meteor():
 	#from file import get_common_config_file_json
 
 	conf = meteor_config
-	check_mongodb(conf)
+	#check_mongodb(conf)
+
 	#make_mongodb_default(conf)
 	#mongo = conf.get("meteor_mongo") or {}
 	#mghost = mongo.get("host") or "127.0.0.1"
@@ -144,7 +145,7 @@ def is_open_port(ip="127.0.0.1", port=3070):
 
 import sys
 
-if any("--serve"==s or "--start"==s or "serve"==s for s in sys.argv):
+if any("--serve"==s or "--start"==s or "serve"==s for s in sys.argv) and not meteor_config.get("production_mode"):
 	#import frappe
-	print "starting reactivity...{}".format(sys.argv)
+	#print "starting reactivity...{}".format(sys.argv)
 	start_meteor()

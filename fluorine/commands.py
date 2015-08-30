@@ -323,14 +323,14 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 		doc.fluor_dev_mode = 1
 		doc.fluorine_state = "on"
 
-	hh._change_hook(state="start", site=site)
-
+	meteor_config["developer_mode"] = 1
+	#hh._change_hook(state="start", site=site)
+	meteor_config["stop"] = 0
 	#use mongo from meteor by default
 	if not mongo_custom:
 		meteor_config.pop("meteor_mongo", None)
 		make_mongodb_default(meteor_config, doc.fluor_meteor_port or PORT.meteor_web)
 		#save_js_file(config_file_path, meteor_config)
-		update_common_config(meteor_config)
 		mongo_default = 0
 	else:
 		mongo_conf = meteor_config.get("meteor_mongo", None)
@@ -340,6 +340,7 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 			return
 		mongo_default = 1
 
+	update_common_config(meteor_config)
 	doc.check_mongodb = mongo_default
 	doc.save()
 
@@ -347,7 +348,7 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 	mh.remove_from_assets()
 	save_to_procfile(doc)
 	bench_generate_nginx_config(bench=bench)
-	ch._generate_nginx_conf(production=False)
+	ch._generate_fluorine_nginx_conf(production=False)
 	try:
 		src = os.path.abspath(os.path.join("..", 'config', 'nginx.conf'))
 		if platform.system() == 'Darwin':
@@ -358,6 +359,7 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 			if not os.path.exists('/etc/nginx/conf.d/frappe.conf'):
 				os.symlink(src, '/etc/nginx/conf.d/frappe.conf')
 
+		click.echo("Please issue bench start and go to http://localhost or http://127.0.0.1.")
 	except:
 		click.echo("nginx link not set. You must make a symlink to frappe-bench/config/nginx.conf from nginx conf folder.")
 		return
@@ -368,6 +370,8 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 
 def stop_meteor(doc, devmode, state, force=False, site=None, production=False, bench=".."):
 	#from fluorine.utils.file import set_config
+	from fluorine.utils import meteor_config
+	from fluorine.utils.meteor.utils import update_common_config
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile
 
 	#if state != "off" or force:
@@ -379,12 +383,15 @@ def stop_meteor(doc, devmode, state, force=False, site=None, production=False, b
 	#	set_config({
 	#		"developer_mode": 0
 	#	})
-
+	meteor_config["stop"] = 1
+	meteor_config["developer_mode"] = 1
+	update_common_config(meteor_config)
 	doc.save()
 
 	remove_from_procfile()
+	click.echo("Please issue bench start go to http://localhost:8000 or http://127.0.0.1:8000.")
 	#if not production:
-	hh._change_hook(state="stop", site=site)
+	#hh._change_hook(state="stop", site=site)
 	#else:
 	#	prepare_make_meteor_file(doc.fluor_meteor_port, doc.fluorine_reactivity)
 
@@ -411,7 +418,9 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_po
 		mgh._check_custom_mongodb(doc)
 		#stop_meteor(doc, devmode, state, production=True)
 		remove_from_procfile()
-		prepare_client_files(current_dev_app)
+		#only save the meteor packages installed in fluorine if fluorine app is in development.
+		if current_dev_app != "fluorine" or current_dev_app == "fluorine" and force:
+			prepare_client_files(current_dev_app)
 		#If debug then do not run frappe setup production and test only meteor in production mode.
 		click.echo("Make meteor bundle for Desk APP")
 		make_meteor_files(doc.fluor_meteor_host, doc.fluor_meteor_port, doc.ddpurl, doc.meteor_target_arch, doc.fluorine_reactivity)
@@ -432,12 +441,13 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_po
 		click.echo("Make production links.")
 		mh.make_production_link()
 		click.echo("Make js and css hooks.")
-		hh._change_hook(state="production", site=site)
+
+		#hh._change_hook(state="production", site=site)
 		#common_site_config.json must have meteor_dns for production mode or use default
 		ch.generate_nginx_supervisor_conf(doc, user=user, debug=debug, update=update, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path)
 
 		hosts_web, hosts_app = get_hosts(doc, production=True)
-		ch._generate_nginx_conf(hosts_web=hosts_web, hosts_app=hosts_app, production=True)
+		ch._generate_fluorine_nginx_conf(hosts_web=hosts_web, hosts_app=hosts_app, production=True, server_port=server_port)
 		mh.remove_public_link()
 
 		#if not debug:
@@ -452,6 +462,8 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_po
 		sh.build_assets(bench_path=bench)
 
 		sh.start_nginx_supervisor_services(debug=debug)
+
+		click.echo("Please go to http://localhost or http://127.0.0.1.")
 
 		return True
 
@@ -493,7 +505,7 @@ def nginx_conf(hosts_web=None, hosts_app=None, production=None):
 	"""make config file for meteor.
 		Make config file for nginx with meteor support.
 	"""
-	ch._generate_nginx_conf(hosts_web=hosts_web, hosts_app=hosts_app, production=production)
+	ch._generate_fluorine_nginx_conf(hosts_web=hosts_web, hosts_app=hosts_app, production=production)
 
 
 #def make_nginx_replace(m):
