@@ -10,4 +10,3 @@ reactivity/
 meteor_web.js
 meteor.js
 meteor_nginx_conf/
-public/js/meteor_runtime_config.js
