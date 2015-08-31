@@ -328,7 +328,6 @@ def meteor_init(doc, devmode, state, site=None, mongo_custom=False, bench=".."):
 	from fluorine.utils.meteor.utils import PORT, update_common_config
 	from fluorine.utils.reactivity import meteor_config
 
-
 	for app in ("meteor_app", "meteor_web"):
 		app_path = os.path.join(get_path_reactivity(), app)
 		program_json_path = os.path.join(app_path, ".meteor", "local", "build", "programs", "web.browser", "program.json")
@@ -337,3 +336,11 @@ def meteor_init(doc, devmode, state, site=None, mongo_custom=False, bench=".."):
 				meteor_run(app, app_path, mongo_custom=mongo_custom)
 			except Exception as e:
 				click.echo("You have to start meteor at hand before start meteor. Issue `meteor` in %s. Error: %s" % (app_path, e))
+				return
+
+	from fluorine.utils.reactivity import start_meteor
+	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import prepare_make_meteor_file
+
+	start_meteor()
+	frappe.local.request = frappe._dict()
+	prepare_make_meteor_file(doc.fluor_meteor_port, doc.fluorine_reactivity)

@@ -456,10 +456,12 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_po
 		remove_from_procfile()
 
 		meteor_init(doc, devmode, state, site=None, mongo_custom=True, bench="..")
-		from fluorine.utils.reactivity import start_meteor
-		start_meteor()
-		frappe.local.request = frappe._dict()
-		prepare_make_meteor_file(doc.fluor_meteor_port, doc.fluorine_reactivity)
+
+		#from fluorine.utils.reactivity import start_meteor
+		#start_meteor()
+		#frappe.local.request = frappe._dict()
+		#prepare_make_meteor_file(doc.fluor_meteor_port, doc.fluorine_reactivity)
+
 		#only save the meteor packages installed in fluorine if fluorine app is in development.
 		if current_dev_app != "fluorine" or current_dev_app == "fluorine" and force:
 			prepare_client_files(current_dev_app)
