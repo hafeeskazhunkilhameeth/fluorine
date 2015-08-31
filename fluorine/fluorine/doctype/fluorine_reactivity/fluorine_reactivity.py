@@ -135,6 +135,8 @@ def save_to_procfile(doc, production_debug=False):
 			else:
 				exp_mongo = export_mongo
 	"""
+	from fluorine.commands_helpers.meteor import get_meteor_settings
+
 	for app in meteor_apps:
 		export_mongo, mongo_default = get_mongo_exports(doc)
 		mthost, mtport, forwarded_count = get_root_exports(doc, app)
@@ -151,8 +153,9 @@ def save_to_procfile(doc, production_debug=False):
 			else:
 				exp_mongo = export_mongo + " && "
 
-			procfile.insert(0, "%s: (%s%s && export ROOT_URL=%s && cd apps/reactivity/%s && meteor --port %s)\n" %
-							(app, exp_mongo, forwarded_count, mthost, app, mtport))
+			msf= get_meteor_settings(app)
+			procfile.insert(0, "%s: (%s%s && export ROOT_URL=%s && cd apps/reactivity/%s && meteor --port %s%s)\n" %
+							(app, exp_mongo, forwarded_count, mthost, app, mtport, msf))
 
 		writelines(procfile_path, procfile)
 

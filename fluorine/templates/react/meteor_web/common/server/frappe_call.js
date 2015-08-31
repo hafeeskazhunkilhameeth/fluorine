@@ -4,7 +4,7 @@ if (typeof frappe === 'undefined')
 
 frappe.call = function(options){
 
-	var frappe_url = frappe.url;
+	var frappe_url = frappe.url;//+ ":8020";
 	var args = options.args || {};
 	var cookie = frappe.get_frappe_cookie(Meteor.userId(), ["sid"]);
 	var headers = options.headers || {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Accept":"application/json"};
