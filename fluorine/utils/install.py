@@ -57,13 +57,13 @@ def after_install(rebuild_website=False):
 	#hooks_default = os.path.join(fluorine_path, "templates", "hooks_default.py")
 	#hooks = os.path.join(fluorine_path, "hooks.py")
 	#copyfile(hooks_default, hooks)
-	from fluorine.utils.reactivity import start_meteor
-	from fluorine.commands_helpers import get_doctype
-	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import prepare_make_meteor_file
-	start_meteor()
-	frappe.local.request = frappe._dict()
-	doc = get_doctype("Fluorine Reactivity", frappe.local.site)
-	prepare_make_meteor_file(doc.fluor_meteor_port, doc.fluorine_reactivity)
+	#from fluorine.utils.reactivity import start_meteor
+	#from fluorine.commands_helpers import get_doctype
+	#from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import prepare_make_meteor_file
+	#start_meteor()
+	#frappe.local.request = frappe._dict()
+	#doc = get_doctype("Fluorine Reactivity", frappe.local.site)
+	#prepare_make_meteor_file(doc.fluor_meteor_port, doc.fluorine_reactivity)
 
 	version = frappe.utils.cint(frappe.__version__.split(".", 1)[0])
 	if version >= 5:
