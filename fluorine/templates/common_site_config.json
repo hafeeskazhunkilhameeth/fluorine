@@ -1,20 +1,4 @@
-{
-    "meteor_dns": {
-        "meteor_web": [
-            {
-                "host": "http://127.0.0.1", 
-                "ddpurl": "127.0.0.1", 
-                "port": 3070
-            }
-        ], 
-        "meteor_app": [
-            {
-                "host": "http://127.0.0.1", 
-                "ddpurl": "127.0.0.1", 
-                "port": 3080
-            }
-        ]
-    }, 
+{ 
     "meteor_dev": {
         "meteor_web": {
             "port": 3070
