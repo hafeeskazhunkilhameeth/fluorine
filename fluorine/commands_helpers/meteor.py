@@ -313,6 +313,7 @@ def meteor_run(doc, devmode, state, app, site=None, mongo_custom=False, bench=".
 			mongo_url = "MONGO_URL=mongodb://%s:%s/%s " % (host, port, db)
 
 	args = shlex.split("%smeteor --port %s" % (mongo_url, str(PORT.get(app))))
+	click.echo("meteor command {}".format(args))
 	meteor = subprocess.Popen(args, cwd=meteor_app, shell=False, stdout=subprocess.PIPE)
 	while True:
 		line = meteor.stdout.readline()
