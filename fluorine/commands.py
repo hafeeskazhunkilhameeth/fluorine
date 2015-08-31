@@ -222,14 +222,13 @@ def cmd_restore_common_config(site=None):
 
 	click.echo("Common config restored.")
 
-
+"""
 #TODO PARA REMOVER
 @click.command('mproduction')
 @click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite.')
 @click.option('--debug', is_flag=True)
 @click.option('--force', is_flag=True)
 def setup_production(site=None, debug=None, force=False):
-	"""Prepare Frappe for meteor."""
 	from fluorine.utils.fcache import clear_frappe_caches
 
 	bench = "../../bench-repo/"
@@ -252,7 +251,7 @@ def setup_production(site=None, debug=None, force=False):
 	if frappe.db:
 		frappe.db.commit()
 		frappe.destroy()
-
+"""
 
 @click.command('set-state')
 @click.argument('state')
@@ -428,7 +427,7 @@ def stop_meteor(doc, devmode, state, force=False, site=None, production=False, b
 
 
 def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_port=None, site=None, debug=False, update=False, force=False, user=None, bench="..", mac_sup_prefix_path="/usr/local"):
-	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile, make_final_app_client, save_to_procfile, check_meteor_apps_created,prepare_make_meteor_file
+	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile, make_final_app_client, save_to_procfile, check_meteor_apps_created, prepare_make_meteor_file
 	from fluorine.utils.meteor.utils import build_meteor_context, make_meteor_props, make_meteor_files, prepare_client_files
 
 	prodmode = check_prod_mode()
