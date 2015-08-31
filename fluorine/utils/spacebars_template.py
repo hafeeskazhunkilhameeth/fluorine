@@ -294,10 +294,10 @@ def process_react_templates(context, apps, whatfor, custom_pattern):
 	from fluorine.utils.fhooks import get_xhtml_context
 	from react_file_loader import read_client_xhtml_files
 	from fluorine.utils.fhooks import get_extra_context_func, get_general_context
-	from fluorine.utils.meteor.utils import compile_spacebars_templates
+	#from fluorine.utils.meteor.utils import compile_spacebars_templates
 	from reactivity import extras_context_methods
 
-	spacebars_templates = {}
+	#spacebars_templates = {}
 
 	list_apps_remove = frappe.local.meteor_ignores.get("remove", {}).get("apps")
 
@@ -323,16 +323,17 @@ def process_react_templates(context, apps, whatfor, custom_pattern):
 
 	get_general_context(context, apps[::-1], whatfor)
 
-	out = compile_jinja_templates(context, whatfor)
+	compile_jinja_templates(context, whatfor)
 
 	#only compile if meteor_app or meteor_frappe
+	"""
 	if spacebars_templates:
 		compiled_spacebars_js = compile_spacebars_templates(spacebars_templates)
 		arr = compiled_spacebars_js.split("__templates__\n")
 		arr.insert(0, "(function(){\n")
 		arr.append("})();\n")
 		context.compiled_spacebars_js = arr
-
+	"""
 
 def addto_meteor_templates_list(template_path):
 	from fluorine.utils.fhooks import get_xhtml_files_to_add_remove
