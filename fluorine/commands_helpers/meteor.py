@@ -297,7 +297,7 @@ def update_versions(bench=".."):
 def meteor_run(app, app_path, port=3070, mongo_custom=False):
 	from fluorine.utils.meteor.utils import PORT
 	from fluorine.utils.reactivity import meteor_config
-	import subprocess
+	import subprocess, shlex
 
 	#mongo_url = ""
 	print "starting meteor..."
@@ -311,9 +311,9 @@ def meteor_run(app, app_path, port=3070, mongo_custom=False):
 			env = os.environ.copy()
 			env["MONGO_URL"] = "mongodb://%s:%s/%s" % (host, port, db)
 
-	#args = shlex.split("meteor --port %s" % (str(PORT.get(app))))
+	args = shlex.split("meteor --port %s" % PORT.get(app))
 	#click.echo("meteor command {}".format(args))
-	meteor = subprocess.Popen(["meteor --port %s" % str(port)], cwd=app_path, shell=False, stdout=subprocess.PIPE, env=env)
+	meteor = subprocess.Popen(args, cwd=app_path, shell=False, stdout=subprocess.PIPE, env=env)
 	while True:
 		line = meteor.stdout.readline()
 		if "App running at" in line:
