@@ -291,7 +291,10 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 	devmode = doc.fluor_dev_mode
 	fluor_state = doc.fluorine_state
 	what = state.lower()
-	if what == "develop":
+	if what == "init":
+		for app in ("meteor_app", "meteor_web"):
+			meteor_init(doc, devmode, fluor_state, app, site=site, mongo_custom=mongo_custom, bench=bench)
+	elif what == "develop":
 		start_meteor(doc, devmode, fluor_state, site=site, mongo_custom=mongo_custom, bench=bench)
 	elif what == "stop":
 		stop_meteor(doc, devmode, fluor_state, force=force, site=site, bench=bench)
@@ -331,9 +334,28 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 		frappe.db.commit()
 		frappe.destroy()
 
+def meteor_init(doc, devmode, state, app, site=None, mongo_custom=False, bench=".."):
+	#from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile, make_mongodb_default, check_meteor_apps_created
+	from fluorine.utils.meteor.utils import PORT, update_common_config
+	#from fluorine.utils.reactivity import meteor_config
+	from fluorine.utils import file
+	import subprocess
+
+	path_reactivity = file.get_path_reactivity()
+	#for app in ("meteor_app", "meteor_web"):
+	meteor_app = os.path.join(path_reactivity, app)
+	print "starting meteor..."
+	meteor = subprocess.Popen(["meteor", "--port", str(PORT.get(app))], cwd=meteor_app, shell=False, stdout=subprocess.PIPE)
+	while True:
+		line = meteor.stdout.readline()
+		if "App running at" in line:
+			meteor.terminate()
+			break
+		click.echo(line)
+
 
 def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench=".."):
-	#from fluorine.utils.file import get_path_reactivity, save_js_file
+	from fluorine.utils.file import get_path_reactivity
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile, make_mongodb_default, check_meteor_apps_created
 	from fluorine.utils.meteor.utils import PORT, update_common_config
 	from fluorine.utils.reactivity import meteor_config
@@ -355,6 +377,15 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 	meteor_config["production_mode"] = 0
 	#hh._change_hook(state="start", site=site)
 	meteor_config["stop"] = 0
+
+	for app in ("meteor_app", "meteor_web"):
+		app_path = os.path.join(get_path_reactivity(), app)
+		program_json_path = os.path.join(app_path, ".meteor", "local", "build", "programs", "web.browser", "program.json")
+		if not os.path.exists(program_json_path):
+			try:
+				meteor_init(doc, devmode, state, app, site=None, mongo_custom=False, bench="..")
+			except:
+				click.echo("You have to start meteor at hand before start meteor. Issue `meteor` in %s " % app_path)
 	#use mongo from meteor by default
 	if not mongo_custom:
 		meteor_config.pop("meteor_mongo", None)
