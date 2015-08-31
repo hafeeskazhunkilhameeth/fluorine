@@ -294,7 +294,7 @@ def update_versions(bench=".."):
 	update_common_config(meteor_config)
 
 
-def meteor_run(app, app_path, mongo_custom=False):
+def meteor_run(app, app_path, port=3070, mongo_custom=False):
 	from fluorine.utils.meteor.utils import PORT
 	from fluorine.utils.reactivity import meteor_config
 	import subprocess
@@ -313,7 +313,7 @@ def meteor_run(app, app_path, mongo_custom=False):
 
 	#args = shlex.split("%smeteor --port %s" % (mongo_url, str(PORT.get(app))))
 	#click.echo("meteor command {}".format(args))
-	meteor = subprocess.Popen(["meteor"], cwd=app_path, shell=False, stdout=subprocess.PIPE, env=env)
+	meteor = subprocess.Popen(["meteor --port %s" % port], cwd=app_path, shell=False, stdout=subprocess.PIPE, env=env)
 	while True:
 		line = meteor.stdout.readline()
 		if "App running at" in line:
@@ -333,7 +333,7 @@ def meteor_init(doc, devmode, state, site=None, mongo_custom=False, bench=".."):
 		program_json_path = os.path.join(app_path, ".meteor", "local", "build", "programs", "web.browser", "program.json")
 		if not os.path.exists(program_json_path):
 			try:
-				meteor_run(app, app_path, mongo_custom=mongo_custom)
+				meteor_run(app, app_path, port=PORT.get(app), mongo_custom=mongo_custom)
 			except Exception as e:
 				click.echo("You have to start meteor at hand before start meteor. Issue `meteor` in %s. Error: %s" % (app_path, e))
 				return
