@@ -64,6 +64,7 @@ def after_install(rebuild_website=False):
 	#frappe.local.request = frappe._dict()
 	#doc = get_doctype("Fluorine Reactivity", frappe.local.site)
 	#prepare_make_meteor_file(doc.fluor_meteor_port, doc.fluorine_reactivity)
+	#print "Please issue bench fluorine set-state develop to start meteor in developer mode."
 
 	version = frappe.utils.cint(frappe.__version__.split(".", 1)[0])
 	if version >= 5:

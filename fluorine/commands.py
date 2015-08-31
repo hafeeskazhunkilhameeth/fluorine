@@ -334,31 +334,12 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 		frappe.db.commit()
 		frappe.destroy()
 
-def meteor_init(doc, devmode, state, app, site=None, mongo_custom=False, bench=".."):
-	#from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile, make_mongodb_default, check_meteor_apps_created
-	from fluorine.utils.meteor.utils import PORT, update_common_config
-	#from fluorine.utils.reactivity import meteor_config
-	from fluorine.utils import file
-	import subprocess
-
-	path_reactivity = file.get_path_reactivity()
-	#for app in ("meteor_app", "meteor_web"):
-	meteor_app = os.path.join(path_reactivity, app)
-	print "starting meteor..."
-	meteor = subprocess.Popen(["meteor", "--port", str(PORT.get(app))], cwd=meteor_app, shell=False, stdout=subprocess.PIPE)
-	while True:
-		line = meteor.stdout.readline()
-		if "App running at" in line:
-			meteor.terminate()
-			break
-		click.echo(line)
-
 
 def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench=".."):
-	from fluorine.utils.file import get_path_reactivity
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile, make_mongodb_default, check_meteor_apps_created
 	from fluorine.utils.meteor.utils import PORT, update_common_config
 	from fluorine.utils.reactivity import meteor_config
+	from fluorine.commands_helpers.meteor import meteor_init
 	import platform
 
 	#path_reactivity = get_path_reactivity()
@@ -378,14 +359,7 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 	#hh._change_hook(state="start", site=site)
 	meteor_config["stop"] = 0
 
-	for app in ("meteor_app", "meteor_web"):
-		app_path = os.path.join(get_path_reactivity(), app)
-		program_json_path = os.path.join(app_path, ".meteor", "local", "build", "programs", "web.browser", "program.json")
-		if not os.path.exists(program_json_path):
-			try:
-				meteor_init(doc, devmode, state, app, site=None, mongo_custom=False, bench="..")
-			except:
-				click.echo("You have to start meteor at hand before start meteor. Issue `meteor` in %s " % app_path)
+	meteor_init(doc, devmode, state, site=None, mongo_custom=mongo_custom, bench="..")
 	#use mongo from meteor by default
 	if not mongo_custom:
 		meteor_config.pop("meteor_mongo", None)
@@ -396,7 +370,7 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 		mongo_conf = meteor_config.get("meteor_mongo", None)
 		if not mongo_conf or mongo_conf.get("type", None) == "default":
 			click.echo("You must set mongo custom in reactivity/common_site_config.json or remove --mongo-custom option to use the mongo default.")
-			hh._change_hook(state="stop", site=site)
+			#hh._change_hook(state="stop", site=site)
 			return
 		mongo_default = 1
 
@@ -460,6 +434,7 @@ def stop_meteor(doc, devmode, state, force=False, site=None, production=False, b
 def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_port=None, site=None, debug=False, update=False, force=False, user=None, bench="..", mac_sup_prefix_path="/usr/local"):
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile, make_final_app_client, save_to_procfile, check_meteor_apps_created, prepare_make_meteor_file
 	from fluorine.utils.meteor.utils import build_meteor_context, make_meteor_props, make_meteor_files, prepare_client_files
+	from fluorine.commands_helpers.meteor import meteor_init
 
 	prodmode = check_prod_mode()
 	if state == "off" and devmode == 0 and prodmode:# or prodmode:# and force==True:
@@ -480,6 +455,7 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_po
 		#stop_meteor(doc, devmode, state, production=True)
 		remove_from_procfile()
 
+		meteor_init(doc, devmode, state, site=None, mongo_custom=True, bench="..")
 		from fluorine.utils.reactivity import start_meteor
 		start_meteor()
 		frappe.local.request = frappe._dict()

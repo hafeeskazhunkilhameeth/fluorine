@@ -292,3 +292,47 @@ def update_versions(bench=".."):
 		versions[app] = str(version)
 
 	update_common_config(meteor_config)
+
+
+def meteor_run(doc, devmode, state, app, site=None, mongo_custom=False, bench=".."):
+	from fluorine.utils.meteor.utils import PORT, update_common_config
+	from fluorine.utils.reactivity import meteor_config
+	from fluorine.utils import file
+	import subprocess
+
+	path_reactivity = file.get_path_reactivity()
+	meteor_app = os.path.join(path_reactivity, app)
+	mongo_url = ""
+	print "starting meteor..."
+	if mongo_custom:
+		mongo_conf = meteor_config.get("meteor_mongo", None)
+		if mongo_conf and mongo_conf.get("type", None) != "default":
+			db = mongo_conf.get("db")
+			host = mongo_conf.get("host").replace("http://","").replace("mongodb://","").strip(' \t\n\r')
+			port = mongo_conf.get("port")
+			mongo_url = "MONGO_URL=mongodb://%s:%s/%s " % (host, port, db)
+
+	meteor = subprocess.Popen(["%smeteor" % mongo_url, "--port", str(PORT.get(app))], cwd=meteor_app, shell=False, stdout=subprocess.PIPE)
+	while True:
+		line = meteor.stdout.readline()
+		if "App running at" in line:
+			meteor.terminate()
+			break
+		click.echo(line)
+
+
+def meteor_init(doc, devmode, state, site=None, mongo_custom=False, bench=".."):
+	from fluorine.utils.file import get_path_reactivity
+	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile, make_mongodb_default, check_meteor_apps_created
+	from fluorine.utils.meteor.utils import PORT, update_common_config
+	from fluorine.utils.reactivity import meteor_config
+
+
+	for app in ("meteor_app", "meteor_web"):
+		app_path = os.path.join(get_path_reactivity(), app)
+		program_json_path = os.path.join(app_path, ".meteor", "local", "build", "programs", "web.browser", "program.json")
+		if not os.path.exists(program_json_path):
+			try:
+				meteor_run(doc, devmode, state, app, site=None, mongo_custom=mongo_custom, bench="..")
+			except:
+				click.echo("You have to start meteor at hand before start meteor. Issue `meteor` in %s " % app_path)
