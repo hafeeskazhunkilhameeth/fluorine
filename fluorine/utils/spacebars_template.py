@@ -374,7 +374,7 @@ def fluorine_build_context(context, whatfor):
 
 	copy_project_translation(apps, whatfor, custom_pattern)
 
-	if devmode:
+	if devmode and whatfor=="meteor_app":
 		make_meteor_props(context, whatfor)
 
 	return context

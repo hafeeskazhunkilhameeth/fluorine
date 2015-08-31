@@ -449,7 +449,7 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_po
 			return
 
 		#if force==True:
-		mh.make_public_folders()
+		#mh.make_public_folders()
 
 		mgh._check_custom_mongodb(doc)
 		#stop_meteor(doc, devmode, state, production=True)

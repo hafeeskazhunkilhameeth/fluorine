@@ -341,6 +341,7 @@ def meteor_init(doc, devmode, state, site=None, mongo_custom=False, bench=".."):
 	from fluorine.utils.reactivity import start_meteor
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import prepare_make_meteor_file
 
+	make_public_folders()
 	start_meteor()
 	frappe.local.request = frappe._dict()
 	prepare_make_meteor_file(doc.fluor_meteor_port, doc.fluorine_reactivity)
