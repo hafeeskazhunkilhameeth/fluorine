@@ -100,12 +100,9 @@ def make_start_meteor_script(doc):
 		meteor_final_path = os.path.join(react_path, app.replace("meteor", "final"), "bundle/exec_meteor")
 		exp_mongo, mongo_default = get_mongo_exports(doc)
 		mthost, mtport, forwarded_count = get_root_exports(doc, app)
-		msettings= get_meteor_settings(app)
-		if msettings:
-			msf = "export %s" % msettings
-		else:
-			msf = ""
-
+		msf = get_meteor_settings(app, production=True)
+		if msf:
+			msf = "export %s" % msf
 		script =\
 """#!/usr/bin/env bash
 export ROOT_URL=%s
@@ -113,6 +110,7 @@ export PORT=%s
 %s
 %s
 %s
+
 %s main.js""" % (mthost, mtport, forwarded_count, exp_mongo, msf, node)
 		save_file(meteor_final_path, script)
 
@@ -122,12 +120,14 @@ export PORT=%s
 
 def get_meteor_settings(app, production=False):
 	from fluorine.utils import meteor_config
+	from fluorine.utils.file import read
 
 	msf=""
 	msfile = meteor_config.get("meteor_settings", {}).get(app)
 
 	if production and msfile:
-		msf = "METEOR_SETTINGS='%s'" % msfile
+		if os.path.exists(msfile):
+			msf = "METEOR_SETTINGS='%s'" % read(msfile)
 	elif msfile:
 		msf = " --settings %s" % msfile
 
