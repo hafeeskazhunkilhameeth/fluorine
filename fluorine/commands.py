@@ -327,6 +327,8 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 			#save_js_file(config_file_path, meteor_config)
 		#m = get_bench_module("config")
 		#run_bench_module(m, "generate_nginx_config")
+	else:
+		click.echo("The command %s does not exist." % what)
 
 	clear_frappe_caches()
 

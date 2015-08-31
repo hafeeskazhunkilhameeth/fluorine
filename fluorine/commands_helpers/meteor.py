@@ -120,14 +120,17 @@ export PORT=%s
 
 def get_meteor_settings(app, production=False):
 	from fluorine.utils import meteor_config
-	from fluorine.utils.file import read
+	from fluorine.utils.file import readlines
 
 	msf=""
 	msfile = meteor_config.get("meteor_settings", {}).get(app)
-
+	content = ""
 	if production and msfile:
 		if os.path.exists(msfile):
-			msf = "METEOR_SETTINGS='%s'" % read(msfile)
+			lines = readlines(msfile)
+			for line in lines:
+				content = content + line.strip(" \t\n\r")
+			msf = "METEOR_SETTINGS='%s'" % content
 	elif msfile:
 		msf = " --settings %s" % msfile
 
