@@ -369,7 +369,7 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 	else:
 		mongo_conf = meteor_config.get("meteor_mongo", None)
 		if not mongo_conf or mongo_conf.get("type", None) == "default":
-			click.echo("You must set mongo custom in reactivity/common_site_config.json or remove --mongo-custom option to use the mongo default.")
+			click.echo("You must set mongo custom in reactivity/common_site_config.json or remove --custom-mongo option to use the mongo default.")
 			#hh._change_hook(state="stop", site=site)
 			return
 		mongo_default = 1
