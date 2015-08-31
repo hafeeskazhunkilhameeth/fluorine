@@ -311,7 +311,7 @@ def meteor_run(app, app_path, mongo_custom=False):
 
 	args = shlex.split("%smeteor --port %s" % (mongo_url, str(PORT.get(app))))
 	click.echo("meteor command {}".format(args))
-	meteor = subprocess.Popen(args, cwd=app_path, shell=True, stdout=subprocess.PIPE)
+	meteor = subprocess.Popen(args, cwd=app_path, shell=False, stdout=subprocess.PIPE)
 	while True:
 		line = meteor.stdout.readline()
 		if "App running at" in line:
