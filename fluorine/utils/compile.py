@@ -14,5 +14,5 @@ def meteor_compile():
 		start_meteor()
 		doc = get_doctype("Fluorine Reactivity", frappe.local.site)
 		frappe.local.request = frappe._dict()
-		prepare_make_meteor_file(doc.fluor_meteor_port, doc.fluorine_reactivity)
+		prepare_make_meteor_file(doc.fluor_meteor_port, "Reactive Web")
 		print "compile_meteor called."
