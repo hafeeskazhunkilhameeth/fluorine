@@ -29,6 +29,17 @@ def get_hosts(doc, production=False):
 	meteor_dns = meteor_config.get("meteor_dns")
 	hosts_web = []
 	hosts_app = []
+
+	#remove :port only have meanning in ROOT_URL environment variable
+	meteor_root_url = doc.fluor_meteor_host.strip()
+	if len(re.findall(":", meteor_root_url)) > 1:
+		meteor_root_url = meteor_root_url.rsplit(":",1)[0]
+	mthost = meteor_root_url.replace("http://", "") or "127.0.0.1"
+	port = doc.fluor_meteor_port or PORT.meteor_web
+	hosts_web.append("%s:%s" % (mthost, port))
+	hosts_app.append("%s:%s" % (mthost, PORT.meteor_app))
+
+	#add others meteors
 	if meteor_dns and production==True:
 		meteor_web = meteor_dns.get("meteor_web")
 		for obj in meteor_web:
@@ -37,15 +48,7 @@ def get_hosts(doc, production=False):
 		meteor_app = meteor_dns.get("meteor_app")
 		for obj in meteor_app:
 			hosts_app.append("%s:%s" % (obj.get("host").replace("http://", ""), obj.get("port")))
-	else:
-		#remove :port only have meanning in ROOT_URL environment variable
-		meteor_root_url = doc.fluor_meteor_host.strip()
-		if len(re.findall(":", meteor_root_url)) > 1:
-			meteor_root_url = meteor_root_url.rsplit(":",1)[0]
-		mthost = meteor_root_url.replace("http://", "") or "127.0.0.1"
-		port = doc.fluor_meteor_port or PORT.meteor_web
-		hosts_web.append("%s:%s" % (mthost, port))
-		hosts_app.append("%s:%s" % (mthost, PORT.meteor_app))
+	#else:
 
 	return hosts_web, hosts_app
 
