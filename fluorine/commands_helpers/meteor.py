@@ -298,7 +298,7 @@ def meteor_run(doc, devmode, state, app, site=None, mongo_custom=False, bench=".
 	from fluorine.utils.meteor.utils import PORT
 	from fluorine.utils.reactivity import meteor_config
 	from fluorine.utils import file
-	import subprocess
+	import subprocess, shlex
 
 	path_reactivity = file.get_path_reactivity()
 	meteor_app = os.path.join(path_reactivity, app)
@@ -312,7 +312,8 @@ def meteor_run(doc, devmode, state, app, site=None, mongo_custom=False, bench=".
 			port = mongo_conf.get("port")
 			mongo_url = "MONGO_URL=mongodb://%s:%s/%s " % (host, port, db)
 
-	meteor = subprocess.Popen(["%smeteor" % mongo_url, "--port", str(PORT.get(app))], cwd=meteor_app, shell=False, stdout=subprocess.PIPE)
+	args = shlex.split("%smeteor --port %s" % (mongo_url, str(PORT.get(app))))
+	meteor = subprocess.Popen(args, cwd=meteor_app, shell=False, stdout=subprocess.PIPE)
 	while True:
 		line = meteor.stdout.readline()
 		if "App running at" in line:

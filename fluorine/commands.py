@@ -285,7 +285,7 @@ def setState(state, site=None, custom_mongo=None, user=None, server_port=None, m
 
 def _setState(site=None, state=None, debug=False, update=False, force=False, mongo_custom=False, user=None, bench="..", server_port=None, mac_sup_prefix_path="/usr/local"):
 	from fluorine.utils.fcache import clear_frappe_caches
-
+	from fluorine.commands_helpers.meteor import meteor_init
 	doc = get_doctype("Fluorine Reactivity", site)
 
 	devmode = doc.fluor_dev_mode
@@ -293,7 +293,7 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 	what = state.lower()
 	if what == "init":
 		for app in ("meteor_app", "meteor_web"):
-			meteor_init(doc, devmode, fluor_state, app, site=site, mongo_custom=mongo_custom, bench=bench)
+			meteor_init(doc, devmode, app, site=site, mongo_custom=mongo_custom, bench=bench)
 	elif what == "develop":
 		start_meteor(doc, devmode, fluor_state, site=site, mongo_custom=mongo_custom, bench=bench)
 	elif what == "stop":
