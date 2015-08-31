@@ -3,7 +3,7 @@ if (typeof frappe === 'undefined')
 
 var frappe_url = Meteor.settings.frappe_url;
 if (frappe_url === undefined )
-  frappe_url = "http://localhost";
+  frappe_url = Meteor.absoluteUrl();
 
 frappe.url = frappe_url;
 

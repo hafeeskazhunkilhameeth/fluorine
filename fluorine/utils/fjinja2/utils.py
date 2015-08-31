@@ -5,7 +5,6 @@ __author__ = 'luissaguas'
 from jinja2 import contextfunction, contextfilter
 from jinja2.utils import concat
 import frappe, re
-#from frappe.website.utils import scrub_relative_urls
 
 
 
@@ -55,13 +54,8 @@ def get_doc_from_deep(template, deep=1):
 			return get_doc_from_deep(doc.extends_path[0], deep-1)
 		return doc, deep
 	return None, 1
-	#frappe.msgprint("The is no doc with xhtml template {} for deep {}.".format(template, deep), raise_exception=1)
 
 def get_pattern_path(name, path):
-
-	#basename = os.path.basename(realpath)
-	#dirpath = os.path.dirname(realpath)
-	#path = os.path.join(dirpath, basename[:-6])
 	pattern = path + r"/(?:.+?/)?(?:(?:%s)/(?:.+)|(?:%s/?$))" % (name, name)
 	return pattern
 
@@ -114,17 +108,13 @@ def local_tkeep(ctx, tname, page, patterns=None):
 
 	if not fadd.get(appname):
 		fadd[appname] = []
-	#realpath = obj.get("realpath")
 	template_path = obj.get("template")
 	if not patterns:
-		#pattern = get_pattern_path(tname, realpath)
 		pattern = get_pattern_path(tname, template_path[:-6])
 		print "templates paths to add tname 4 {} template_path {} pattern {}".format(tname, template_path, pattern)
 		fadd.get(appname).append({"tname": page, "pattern":pattern})
 	elif tname:
 		for pattern in patterns:
-			#print "templates paths to add tname {} template_path {} pattern {}".format(tname, template_path, pattern)
-			#pat = realpath[:-6] + "/.*/"+ tname + "/" + pattern
 			pat = template_path[:-6] + r"/.*/"+ tname + "/" + pattern
 			fadd.get(appname).append({"tname": page, "pattern": pat})
 	else:
@@ -158,11 +148,9 @@ def msuper(ctx, tname, deep=1):
 		sobj = frappe.local.meteor_map_templates.get(page)
 		template = sobj.get("template_obj")
 		render = template.blocks.get(tname)
-		#code = scrub_relative_urls(concat(render(template.new_context(ctx))))
 		code = concat(render(template.new_context(ctx)))
 		code = get_msuper_inner_content(ctx, code)
 
-	print "after msuper call from template code {}".format(code)
 
 	return code
 

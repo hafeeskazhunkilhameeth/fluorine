@@ -34,7 +34,6 @@ def clear_frappe_caches(site=None):
 					site = f.read().strip()
 			except IOError:
 				site = None
-			#site = frappe.local.site
 		frappe.connect(site)
 
 	frappe.clear_cache()

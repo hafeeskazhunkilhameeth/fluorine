@@ -82,12 +82,6 @@ class MeteorTemplate(Extension):
 		stream = parser.stream
 		tag = stream.next()
 
-		# now we parse a single expression that is used as cache key.
-
-		#expression = process_args(parser, 'block_end')
-		#expressions = nodes.Const(" ".join([unicode(expr) for expr in expression]))
-		#name_tag = nodes.Const(tag.value)
-
 		hightlight = nodes.Const(0)
 		tname = stream.expect('name')
 		if tname:
@@ -213,14 +207,12 @@ class MeteorTemplate(Extension):
 
 	def highlight(self, filepath, lineno):
 
-		print "parser calls 4 {}".format(filepath)
 		filepath = filepath or ""
 		def _highlight(m):
 			import json
 			name = m.group(2)
 			content = m.group(4)
 			attrs = m.group(3)
-			#debug = """{"path":"%s"}""" % filepath
 			debug = {"path": filepath, "lineno": lineno}
 			template =\
 			"""<template name='%s'%s>\n\t<div class="{{ highlight "%s" '%s' }}">\n\t%s\n\t</div>\n</template>

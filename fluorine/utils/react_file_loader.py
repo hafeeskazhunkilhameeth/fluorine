@@ -32,16 +32,12 @@ def remove_directory(path):
 	import shutil
 	shutil.rmtree(path)
 
-#def move_to_public(files_in_lib, files_to_read, main_files, main_lib_files, compatibility_files, whatfor):
+
 def move_to_public(files, whatfor):
-	#{"name":file, "path": path}
-	import fluorine
 	hooks_js = {"client_hooks_js":[]}
 	fpath = assets_public_path
 
 	fluorine_publicjs_path = os.path.join(frappe.get_app_path("fluorine"), "public", "js", "react")
-	#empty folder
-	#file.remove_folder_content(fluorine_publicjs_path)
 
 	for f in files:
 		hooks_js["client_hooks_js"].extend(prepare_files_and_copy(f, fpath))
@@ -113,7 +109,6 @@ def get_custom_pattern(whatfor, custom_pattern=None):
 
 
 def read_client_xhtml_files(start_folder, whatfor, appname, meteor_ignore=None, custom_pattern=None):
-	#from fluorine.utils.file import meteor_ignore_files, meteor_ignore_folders
 	import fnmatch
 	from file import check_remove_files_folders
 
@@ -132,10 +127,6 @@ def read_client_xhtml_files(start_folder, whatfor, appname, meteor_ignore=None, 
 	appname_files_folder_remove = list_meteor_files_folders_remove.get(appname)
 
 	for root, dirs, files in os.walk(start_folder):
-
-		#start with templates/react
-		#meteor_relpath = os.path.relpath(root, frappe.get_app_path(appname))
-		#meteor_ignore_folders(appname, meteor_relpath, root, dirs, meteor_ignore=meteor_ignore)
 
 		ign_dirs = pattern(start_folder, dirs)
 		try:
@@ -168,8 +159,6 @@ def read_client_xhtml_files(start_folder, whatfor, appname, meteor_ignore=None, 
 		for f in files:
 			if check_remove_files_folders(f,  all_files_folder_remove) or check_remove_files_folders(f, appname_files_folder_remove):
 				continue
-			#if meteor_ignore_files(appname, meteor_relpath, root, f, meteor_ignore=meteor_ignore):
-			#	continue
 			ext = f.rsplit(".", 1)
 			path = os.path.join(root, f)
 			obj = {"name":f, "path": path, "relpath": relpath, "filePath": root, "fileName": ext[0], "deep": deeper}

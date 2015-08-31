@@ -29,7 +29,6 @@ def _generate_fluorine_nginx_conf(hosts_web=None, hosts_app=None, production=Non
 		else:
 			hosts_app = get_hosts(doc, production=production)
 
-	#config_path = os.path.join(os.path.abspath(".."), "config")
 	config_path = os.path.join("..", "config")
 	config_file = os.path.join(config_path, "nginx.conf")
 
@@ -54,46 +53,23 @@ def _generate_fluorine_nginx_conf(hosts_web=None, hosts_app=None, production=Non
 			inside_location = True
 		elif inside_server and re.match(r"root", line.strip()):
 			line = [line, "\n"]
-			#if production:
-				#line.extend((production_if_redirect % (":" + str(server_port) if server_port else "", )).split("\n"))
 			line.extend(production_if_redirect.split("\n"))
-			#else:
-			#	line.extend(rewrite_for_bread)
 
 		elif inside_location and line.strip().startswith("try_files"):
 			named_location_group = re.search(r"@(.*);$", line)
 			named_location = named_location_group.group(1)
-			#if production:
-				#oline = line
-				#line = production_if_redirect.split("\n")
 			line = re.sub(r"@(.*);$", "/assets/js/meteor_web/$uri $uri @meteor;", line)
-				#line.append(oline)
-			#else:
-			#	line = re.sub(r"@(.*);$", "$uri @meteor;", line)
 
 			inside_location = False
 		elif re.match(r"location\s*@%s\s*{" % (named_location or "magic"), line.strip()):
 			inside_location_magic = True
-			#if not production:
-			#	oline = line
-			#	location_root = new_location_root % (named_location or "magic")
-			#	line = location_root.split("\n")
-			#	line.append(oline)
 		elif inside_location_magic and open_brace == 1 and re.search(r"}$", line):
 			inside_location_magic = False
 			line = [line, "\n"]
 			nlocation_api = location_api % (named_location or "magic")
 			lapi = nlocation_api.split("\n")
-			#if production:
-			#lapi[1] = lapi[1].replace("|^/mdesk", "")
-			#lapi.pop(2)
-			#lapi.pop(2)
 			loc_redirect = production_location_redirect.split("\n")
 			line.extend(loc_redirect)
-				#error403_ = error403.split("\n")
-				#line.extend(error403_)
-			#else:
-			#	lapi.pop(4)
 			line.extend(lapi)
 			line.extend(location_meteordesk)
 			line.extend(location_meteor)
@@ -141,14 +117,9 @@ def make_supervisor(doc):
 	from fluorine.utils.file import writelines, readlines, get_path_reactivity
 	from meteor import get_meteor_environment
 
-	#TODO REMOVE
-	#m = get_bench_module("config")
-	#run_bench_module(m, "generate_supervisor_config")
-
 	conf = frappe._dict()
 	conf.user = getpass.getuser()
 	conf.bench_dir = os.path.abspath("..")
-	#sites_dir = os.path.abspath(".")
 	config_path = os.path.join(conf.bench_dir, "config")
 	config_file = os.path.join(config_path, 'supervisor.conf')
 	content = readlines(config_file)
@@ -160,8 +131,6 @@ def make_supervisor(doc):
 		conf.progname = "meteor_" + final
 		conf.final_server_path = os.path.join(path_reactivity, final, "bundle")
 		content.extend(supervisor_meteor_conf.format(**conf))
-		#final_web_path = os.path.join(path_reactivity, "final_web", "bundle")
-		#conf.final_server_path = final_app_path
 
 	writelines(config_file, content)
 
@@ -174,11 +143,7 @@ def generate_nginx_supervisor_conf(doc, user=None, debug=None, update=False, ben
 	supervisor_conf_filename = "frappe.conf"
 
 	if platform.system() == "Darwin" and not debug:
-		#m = get_bench_module("config", bench=bench)
-		#run_bench_module(m, "generate_nginx_config")
 		bench_generate_nginx_config(bench=bench)
-		#m = get_bench_module("config", bench=bench)
-		#run_bench_module(m, "generate_supervisor_config", user=user)
 		bench_generate_supervisor_config(bench=bench, user=user)
 
 		sup_conf_dir = get_mac_supervisor_confdir(path=mac_sup_prefix_path)
@@ -195,7 +160,6 @@ def generate_nginx_supervisor_conf(doc, user=None, debug=None, update=False, ben
 				final_path = os.path.join(sup_conf_dir, get_supervisor_conf_filename(bench=bench))
 				if os.path.exists(final_path) or os.path.exists('/etc/nginx/conf.d/frappe.conf'):
 					frappe.throw("Can continue: the symlink to supervisor config file %s exist and must be remove it.\nCheck also nginx conf file /etc/nginx/conf.d/frappe.conf" % final_path)
-				#	os.unlink(final_path)
 				bench_setup_production(user=user, bench=bench)
 			except OSError as e:
 				if e.errno != errno.EEXIST:
@@ -206,8 +170,6 @@ def generate_nginx_supervisor_conf(doc, user=None, debug=None, update=False, ben
 
 		make_supervisor(doc)
 	else:
-		#m = bh.get_bench_module("config", bench=bench)
-		#bh.run_bench_module(m, "generate_nginx_config")
 		bench_generate_nginx_config(bench=bench)
 
 
@@ -257,10 +219,6 @@ new_location_root = """
 		}
 """
 
-rewrite_for_bread = """
-		#because we use mdesk intead of desk brand icon start with /m/assets; Only in developer mode
-		#rewrite ^/m/(.*)$ http://$remote_addr/$1 last;""".split("\n")
-
 location_api = """
 		location ~* "^/api|^/desk|^/index.html$" {
 			#to support flowrouter while in development
@@ -301,11 +259,11 @@ location_meteor = """
 
 production_if_redirect = """
 		#fix the frappe POST to root url '/'
+		set $referer 0;
 		if ($request_method = POST){
 			set $post 1;
 		}
 
-		#if ($http_referer = $scheme://$host%s/desk){
 		if ($http_referer ~* [http://|https://](.*)/desk){
 			set $referer "${post}1";
 		}
@@ -313,8 +271,6 @@ production_if_redirect = """
 		if ($referer = 11){
 			rewrite ^/$ /tmp last;
 		}
-		#fix redirect from frappe when logout
-		#error_page 403 = @resolve;
 """
 
 production_location_redirect = """
@@ -322,12 +278,6 @@ production_location_redirect = """
 			internal;
 			rewrite $uri / break;
 			try_files $uri @magic;
-		}
-"""
-#Not necessary
-error403 = """
-		location @resolve {
-			try_files $uri @meteor;
 		}
 """
 

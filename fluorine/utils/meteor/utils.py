@@ -15,7 +15,6 @@ default_path_prefix = "/meteordesk"
 PORT = frappe._dict({"meteor_web": default_port, "meteor_app": default_port + 10})
 
 def meteor_url_path_prefix(whatfor):
-	#return os.path.join("assets", "fluorine",  whatfor, "webbrowser")
 	if whatfor == "meteor_app":
 		url_prefix = default_path_prefix
 	else:
@@ -25,17 +24,9 @@ def meteor_url_path_prefix(whatfor):
 
 
 def build_meteor_context(context, devmode, whatfor):
-	#import random
 	from fluorine.utils.reactivity import meteor_config
 
 	conf = meteor_config
-
-	#if not devmode:
-	#	meteor_dns = conf.get("meteor_dns") or {}
-	#	all_dns = meteor_dns.get(whatfor)
-	#	n = random.randint(0, len(all_dns) - 1)
-	#	meteor = all_dns[n]
-	#else:
 	meteor = conf.get("meteor_dev") or {}
 
 	meteor_conf = meteor.get(whatfor) or {}
@@ -59,7 +50,7 @@ def build_meteor_context(context, devmode, whatfor):
 
 		ddpurl_port = ddpurl + (prefix if prefix else default_path_prefix)
 
-	context.meteor_root_url = host#"http://127.0.0.1/meteordesk"
+	context.meteor_root_url = host
 	context.meteor_root_url_port = meteor_host
 	context.meteor_url_path_prefix = meteor_url_path_prefix(whatfor)
 	context.meteor_ddp_default_connection_url = ddpurl_port
@@ -104,11 +95,8 @@ def make_auto_update_version(path, meteorRelease, root_url, root_prefix, whatfor
 	from fluorine.utils import file
 
 	runtimeCfg = OrderedDict()
-	runtimeCfg["meteorRelease"] = meteorRelease#"METEOR@1.1.0.2"
-	#if whatfor == "meteor_web":
-	runtimeCfg["ROOT_URL"] = root_url#"http://192.168.1.100"#root_url#"http://localhost"
-	#else:
-	#	runtimeCfg["ROOT_URL"] = root_url + "/meteordesk" #"http://localhost"
+	runtimeCfg["meteorRelease"] = meteorRelease
+	runtimeCfg["ROOT_URL"] = root_url
 	if whatfor == "meteor_web":
 		runtimeCfg["ROOT_URL_PATH_PREFIX"] = root_prefix
 	else:
@@ -116,15 +104,11 @@ def make_auto_update_version(path, meteorRelease, root_url, root_prefix, whatfor
 
 	if appId:
 		runtimeCfg["appId"] = appId
-	#runtimeCfg["appId"] = "1uo02wweyt6o11xsntyy"
 
 	manifest = file.read(path)
 	manifest = json.loads(manifest).get("manifest")
 	autoupdateVersion, autoupdateVersionRefresh, frappe_manifest_js, frappe_manifest_css = meteor_hash_version(manifest, runtimeCfg, whatfor)
 	print "sha1 digest {} {}".format(autoupdateVersion, autoupdateVersionRefresh)
-	#runtimeCfg["autoupdateVersion"] = autoupdateVersion
-	#autoupdateVersionRefresh = meteor_hash_version(manifest, runtimeCfg, css=True)
-	#print "sha1 digest ", autoupdateVersionRefresh
 	return autoupdateVersion, autoupdateVersionRefresh, frappe_manifest_js, frappe_manifest_css
 
 
@@ -133,36 +117,24 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 	sh2 = hashlib.sha1()
 	frappe_manifest_js = []
 	frappe_manifest_css = []
-	#runtimeCfg = {"meteorRelease": meteorRelease,
-	#            "ROOT_URL": 'http://localhost',
-	#             "ROOT_URL_PATH_PREFIX": ""}
-	#runtimeCfg = """{'meteorRelease': %s,'ROOT_URL': 'http://localhost','ROOT_URL_PATH_PREFIX': ''}""" % meteorRelease
+
 	rt = json.dumps(runtimeCfg).replace(" ", "").encode('utf8')
 	print "json.dumps ", rt
 	sh1.update(rt)
 	sh2.update(rt)
 
 	if whatfor == "meteor_app":
-		#prefix = "assets/fluorine/%s/webbrowser/" % whatfor
 		prefix = "/meteordesk"
 	else:
 		prefix = ""
 
 	for m in manifest:
-		#if m.get("path").startswith("assets") and m.get("type") == "asset":
-		#	continue
 		if m.get("where") == "client" or m.get("where") == "internal":
 			path = m.get("path")
 			mhash = m.get("hash")
 			if m.get("where") == "client":
-				"""url =  m.get("url").split("?")[0]
-				app = url.split("/", 2)[1]
-				is_app = ""
-				if app in frappe.get_installed_apps():
-					is_app = "/app"
-				nurl = prefix + is_app + url"""
 				if whatfor == "meteor_app":
-					nurl = prefix + m.get("url") #path
+					nurl = prefix + m.get("url")
 				else:
 					nurl = m.get("url")
 				if m.get("type") == "css":
@@ -176,13 +148,7 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 							frappe_manifest_js.append(nurl)
 					else:
 						frappe_manifest_js.append(nurl)
-			#if m.get("type") == "css":
-			#	sh2.update(m.get("path"))
-			#	sh2.update(m.get("hash"))
-			#	continue
-			#sh1.update(m.get("path"))
 			sh1.update(path)
-			#sh1.update(m.get("hash"))
 			sh1.update(mhash)
 
 	return sh1.hexdigest(), sh2.hexdigest(), frappe_manifest_js, frappe_manifest_css
@@ -208,15 +174,7 @@ def make_meteor_props(context, whatfor, production=0):
 				make_auto_update_version(progarm_path, context.meteorRelease, context.meteor_root_url, "", whatfor, appId=context.appId)
 
 	app_path = frappe.get_app_path("fluorine")
-	#meteor_runtime_path = os.path.join(app_path, "public", whatfor, "meteor_runtime_web_config.js")
-	#if not production or whatfor=="meteor_app":
-	#meteor_root_url_prefix = os.path.join(app_path, "public", whatfor, "meteor_url_prefix.js")
-	#meteor_root_url_prefix = os.path.join(app_path, "public", "js", "meteor_url_prefix.js")
-
-	#if whatfor == "meteor_app":
-	context.meteor_package_js = [os.path.join("assets", "fluorine", whatfor, "meteor_runtime_config.js")] + manifest_js #+ [os.path.join("assets", "fluorine", whatfor, "meteor_url_prefix.js")]
-	#else:
-	#	context.meteor_package_js = [os.path.join("assets", "fluorine", whatfor, "meteor_runtime_config.js")] + manifest_js
+	context.meteor_package_js = [os.path.join("assets", "fluorine", whatfor, "meteor_runtime_config.js")] + manifest_js
 	context.meteor_package_css = manifest_css
 	context.meteor_runtime_config = True
 
@@ -236,13 +194,6 @@ def make_meteor_props(context, whatfor, production=0):
 		except:
 			pass
 
-	#save_meteor_root_prefix(meteor_url_path_prefix(whatfor), meteor_root_url_prefix)
-	#save_meteor_root_prefix(os.path.join("assets", "fluorine",  whatfor, "webbrowser"), meteor_root_url_prefix)
-
-"""
-def save_meteor_root_prefix(prefix, path):
-	save_meteor_props("__meteor_runtime_config__.ROOT_URL_PATH_PREFIX = '%s';" % prefix, path)
-"""
 
 def update_common_config(config):
 	from fluorine.utils.file import get_path_reactivity, save_js_file
@@ -273,27 +224,17 @@ def prepare_client_files(curr_app):
 	from fluorine.utils.react_file_loader import remove_directory
 	from fluorine.utils.file import get_path_reactivity, save_file
 	from fluorine.commands_helpers.meteor import get_active_apps
-	#from shutil import copyfile
 
-	#fluorine_path = frappe.get_app_path("fluorine")
 	react_path = get_path_reactivity()
 	app_path = frappe.get_app_path(curr_app)
-	#meteor_js_path = os.path.join(fluorine_path, "public", "js", "meteor")
 
 	for whatfor in ("meteor_web", "meteor_app"):
-	#meteor_final_path = os.path.join(react_path, "final_%s" % (whatfor.split("_")[1],))
 		meteor_final_path = os.path.join(react_path, whatfor.replace("meteor", "final"))
 		if os.path.exists(meteor_final_path):
 			try:
 				remove_directory(os.path.join(meteor_final_path, "bundle"))
 			except:
 				pass
-
-		#if os.path.exists(meteor_js_path):
-		#	try:
-		#		remove_directory(meteor_js_path)
-		#	except:
-		#		pass
 
 		apps = get_active_apps()
 		apps.remove(curr_app)
@@ -310,102 +251,18 @@ def prepare_client_files(curr_app):
 					installed_packages.remove(pckg)
 
 		save_file(dst, "\n".join(installed_packages))
-		#copyfile(src, dst)
 
-	#fluorine_dst_temp_path = os.path.join(frappe.get_app_path("fluorine"), "templates", "react", "temp")
-
-	#dst = os.path.join(react_path, "app")
-	#remove_tmp_app_dir(fluorine_dst_temp_path, dst)
-	#if devmode:
-	#	return
-	#frappe.create_folder(dst)
-	#file.copy_all_files_with_symlink(fluorine_dst_temp_path, dst, whatfor, extension=["js", "html"])
-
-
+"""
 def make_meteor_files(mthost, mtport, mtddpurl, architecture, whatfor):
-	#devmode = frappe.utils.cint(devmode)
-	#from frappe.website.context import get_context
-	#from fluorine.utils.meteor.utils import build_meteor_context, make_meteor_props
 	from fluorine.utils.file import make_meteor_file
-	#from fluorine.utils.fcache import clear_frappe_caches
-	#from fluorine.utils.spacebars_template import get_app_pages, get_web_pages
-	#clear_frappe_caches()
-	#whatfor = ["common"] if devmode else ["meteor_web", "meteor_app"]
 	_whatfor = {"Both": ("meteor_web", "meteor_app"), "Reactive Web": ("meteor_web",), "Reactive App": ("meteor_app",)}
 
-	#prepare_compile_environment()
 	for w in _whatfor.get(whatfor):
-		#prepare_client_files(w)
-		#if whatfor == "Both" and w == "meteor_app":
-		#	mtport = int(mtport) + 80
-		#	frappe.local.path = "mdesk"
-		#	get_context("mdesk")
-			#frappe.get_template(context.base_template_path).render(context)
-		#else:
-		#	frappe.local.path = "fluorine_home"
-		#	get_context("fluorine_home")
-			#frappe.get_template(context.base_template_path).render(context)
-
 		make_meteor_file(jquery=0, whatfor=w, mtport=mtport, mthost=mthost, architecture=architecture)
-		#context = frappe._dict()
-		#build_meteor_context(context, 0, w)
-		#make_meteor_props(context, w, production=1)
+"""
 
-	#TODO REMOVER
-	#if "meteor_app" in _whatfor.get(whatfor):
-	#	make_final_app_client(meteor_root_url=mthost, meteor_port=int(mtport), meteor_ddpurl=mtddpurl)
-
-	#fluorine_publicjs_path = os.path.join(frappe.get_app_path("fluorine"), "public", "js", "react")
-	#file.remove_folder_content(fluorine_publicjs_path)
-	#file.make_meteor_config_file(mthost, mtport, version)
-
-	#if devmode:
-	#	restart_reactivity(mthost=mthost, mtport=mtport, mghost=mghost, mgport=mgport, mgdb=mgdb)
-
-
-def make_heritage(block, context):
-	import re
-	#for block, render in out.items():
-	#in_first_block_render, data_first_block_render, outer_first_block_render = context.spacebars_data.get(block, None), context.data.get(block, None),\
-	#context.block
-	in_first_block_render = context.get(block, None)
-	#print frappe.utils.pprint_dict(context)
-	#print "make_heritages  template {} data.path {}".format(context["template"], context.get("path"))
-	if in_first_block_render:
-		contents = re.sub("<template name=['\"](.+?)['\"](.*?)>(.*?)</template>", template_replace, in_first_block_render, flags=re.S)
-		#print "my new context block {}".format(context.get(block, None))
-		context["_" + block] = contents
-	#if data_first_block_render:
-	#	context["__" + block] = data_first_block_render
-	#if outer_first_block_render:
-	#	context["___" + block] = outer_first_block_render
-
-
+"""
 def template_replace(m):
 	content = m.group(3)
 	return content
-
-
-def compile_spacebars_templates(context):
-	import zerorpc, re
-	import subprocess
-	from fluorine.utils.file import get_path_reactivity
-
-	templates = []
-	for name, template in context.items():
-		#template = context.get(name, "")
-		m = re.match(r".*?<template\s+.*?>(.*?)</template>", template, re.S)
-		if m:
-			print "m.group(1) name {} group(1) {}".format(name, m.group(1))
-			templates.append({"name":name, "code": m.group(1)})
-
-	path = get_path_reactivity()
-	print "path in compile_spacebars_templates {}".format(os.path.join(path, "compile_spacebars_js.js"))
-	node = subprocess.Popen(["node", os.path.join(path, "server/compile_spacebars_js.js"), os.path.join(path, "fluorine_program.json")], cwd=os.path.join(path, "server"), shell=False, close_fds=True)
-	c = zerorpc.Client()
-	c.connect("tcp://127.0.0.1:4242")
-	#for key, val in out.items():
-	compiled_templates = c.compile(templates)
-	node.kill()
-
-	return compiled_templates
+"""

@@ -20,6 +20,7 @@ def check_prod_mode():
 def get_hosts(doc, production=False):
 	from fluorine.utils.meteor.utils import default_path_prefix, PORT
 	from fluorine.utils.file import get_path_reactivity
+	import re
 
 	#CONFIG FILE
 	path_reactivity = get_path_reactivity()
@@ -37,7 +38,11 @@ def get_hosts(doc, production=False):
 		for obj in meteor_app:
 			hosts_app.append("%s:%s" % (obj.get("host").replace("http://", ""), obj.get("port")))
 	else:
-		mthost = doc.fluor_meteor_host.strip().replace("http://", "") or "127.0.0.1"
+		#remove :port only have meanning in ROOT_URL environment variable
+		meteor_root_url = doc.fluor_meteor_host.strip()
+		if len(re.findall(":", meteor_root_url)) > 1:
+			meteor_root_url = meteor_root_url.rsplit(":",1)[0]
+		mthost = meteor_root_url.replace("http://", "") or "127.0.0.1"
 		port = doc.fluor_meteor_port or PORT.meteor_web
 		hosts_web.append("%s:%s" % (mthost, port))
 		hosts_app.append("%s:%s" % (mthost, PORT.meteor_app))
@@ -71,15 +76,3 @@ def get_default_site():
 			frappe.throw("There is no default site. Check if reactivity/common_site_config.json for site option or if sites/currentsite.txt exist or provide the site with --site option.")
 
 	return site
-
-"""
-def get_default_site():
-	import click
-
-	try:
-		with open("currentsite.txt") as f:
-			site = f.read().strip()
-			return site
-	except IOError:
-		click.echo("There is no default site. Check if sites/currentsite.txt exist or provide the site with --site option.")
-"""

@@ -54,14 +54,12 @@ def fluor_get_hooks(hook=None, default=None, app_name=None):
 		remove_from_hooks(hooks, stop=True)
 	else:
 		remove_from_hooks(hooks)
-		#print "hooks in my fluor_get_hooks appname {} hooks {}".format(app_name, hooks)
 	return hooks
 
 
 def fluor_get_context(path):
 	from fluorine.templates.pages import mdesk
 
-	#print "path fluor_get_context 2 {}".format(path)
 	context = frappe_get_context(path)
 	if path == "desk":
 		context = mdesk.get_context(context)
@@ -87,7 +85,6 @@ def get_encoding():
 
 
 def check_dev_mode():
-	#from fluorine.utils.file import get_path_reactivity, get_fluorine_conf
 
 	if not meteor_config:
 		get_meteor_configuration_file()
@@ -124,7 +121,6 @@ get_installed_apps()
 
 
 if check_dev_mode():
-	#import logging
 	#PATCH HOOKS
 	frappe_get_hooks = frappe.get_hooks
 	frappe.get_hooks = fluor_get_hooks
@@ -135,12 +131,4 @@ if check_dev_mode():
 		frappe_get_context = frappe.website.context.get_context
 		frappe.website.context.get_context = fluor_get_context
 
-		#frappe_conf = frappe.get_site_config()
-		#logger = logging.getLogger("frappe")
-		#logger.error('Hello baby %s' % frappe_conf)
-		#frappe_developer_mode = frappe_conf.developer_mode
-		#if frappe_conf.developer_mode:
-
-		#print "Enter Reactivity State!!!"
-		#import spacebars_template
 		import reactivity

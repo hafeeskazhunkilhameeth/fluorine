@@ -12,28 +12,10 @@ def check_mongodb(conf):
 		return False
 
 def start_meteor():
-	#import frappe
-	#from fluorine.utils.mongodb.utils import is_mongodb_ready, set_frappe_users, save_mongodb_config
-	#from file import get_common_config_file_json
-
 	conf = meteor_config
-	#check_mongodb(conf)
-
-	#make_mongodb_default(conf)
-	#mongo = conf.get("meteor_mongo") or {}
-	#mghost = mongo.get("host") or "127.0.0.1"
-	#mgport = mongo.get("port") or 3001#port of meteor local mongodb
-	#mgdb = mongo.get("db") or "fluorine_test"
-
 	frappesite = conf.get("site")
 
 	extras_context_methods.update(get_extras_context_method(frappesite))
-
-	#common_file = get_common_config_file_json()
-	#if not is_mongodb_ready(common_file):
-	#	set_frappe_users(mghost, mgport, mgdb)
-	#	common_file["mongodb_users_ready"] = 1
-	#	save_mongodb_config(common_file)
 
 	global start_db
 
@@ -79,7 +61,6 @@ def process_permission_apps(apps):
 	return list_apps_remove
 
 def process_permission_files_folders(ff):
-	#import frappe
 	from fluorine.utils.fjinja2.utils import c
 
 	list_ff_add = frappe._dict()
@@ -103,7 +84,7 @@ def process_permission_files_folders(ff):
 	return list_ff_add, list_ff_remove
 
 def make_meteor_ignor_files():
-	import file#, frappe
+	import file
 	path_reactivity = file.get_path_reactivity()
 	perm_path = os.path.join(path_reactivity, "permission_files.json")
 
@@ -129,26 +110,10 @@ def make_meteor_ignor_files():
 	})
 
 	return list_ignores
-	#print "list apps to remove {}".format(list_ignores)
 
-"""
-def is_open_port(ip="127.0.0.1", port=3070):
-	import socket
-	is_open = False
-	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	result = sock.connect_ex((ip,port))
-	if result == 0:
-		is_open = True
-	sock.close()
-	return is_open
-"""
 
-#import sys
 import logging
 logger = logging.getLogger("frappe")
-#if any("--serve"==s or "--start"==s or "serve"==s for s in sys.argv) and not meteor_config.get("production_mode"):
 if not meteor_config.get("production_mode") and not meteor_config.get("stop"):
-	#import frappe
-	#print "starting reactivity...{}".format(sys.argv)
 	logger.error('starting reactivity... 6' )
 	start_meteor()
