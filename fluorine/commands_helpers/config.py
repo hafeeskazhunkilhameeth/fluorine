@@ -116,6 +116,7 @@ def make_supervisor(doc):
 	import getpass
 	from fluorine.utils.file import writelines, readlines, get_path_reactivity
 	from meteor import get_meteor_environment
+	from fluorine.utils.reactivity import meteor_config
 
 	conf = frappe._dict()
 	conf.user = getpass.getuser()
@@ -126,11 +127,16 @@ def make_supervisor(doc):
 	content.append("\n")
 	path_reactivity = get_path_reactivity()
 
+	meteor_dev = meteor_config.get("meteor_dev") or {}
+
 	for final in ("final_app", "final_web"):
-		conf.meteorenv = get_meteor_environment(doc, final.replace("final", "meteor"))
-		conf.progname = "meteor_" + final
-		conf.final_server_path = os.path.join(path_reactivity, final, "bundle")
-		content.extend(supervisor_meteor_conf.format(**conf))
+		app_name = final.replace("final", "meteor")
+		meteor = meteor_dev.get(app_name) or {}
+		if meteor.get("production"):
+			conf.meteorenv = get_meteor_environment(doc, app_name)
+			conf.progname = "meteor_" + final
+			conf.final_server_path = os.path.join(path_reactivity, final, "bundle")
+			content.extend(supervisor_meteor_conf.format(**conf))
 
 	writelines(config_file, content)
 
