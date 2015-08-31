@@ -100,7 +100,12 @@ def make_start_meteor_script(doc):
 		meteor_final_path = os.path.join(react_path, app.replace("meteor", "final"), "bundle/exec_meteor")
 		exp_mongo, mongo_default = get_mongo_exports(doc)
 		mthost, mtport, forwarded_count = get_root_exports(doc, app)
-		msf= get_meteor_settings(app)
+		msettings= get_meteor_settings(app)
+		if msettings:
+			msf = "export %s" % msettings
+		else:
+			msf = ""
+
 		script =\
 """#!/usr/bin/env bash
 export ROOT_URL=%s
@@ -108,22 +113,27 @@ export PORT=%s
 %s
 %s
 %s
-%s main.js""" % (mthost, mtport, forwarded_count, exp_mongo, node, msf)
+%s main.js""" % (mthost, mtport, forwarded_count, exp_mongo, msf, node)
 		save_file(meteor_final_path, script)
 
 		st = os.stat(meteor_final_path)
 		os.chmod(meteor_final_path, st.st_mode | stat.S_IEXEC)
 
 
-def get_meteor_settings(app):
+def get_meteor_settings(app, production=False):
 	from fluorine.utils import meteor_config
 
 	msf=""
 	msfile = meteor_config.get("meteor_settings", {}).get(app)
-	if msfile:
+
+	if production and msfile:
+		msf = "METEOR_SETTINGS='%s'" % msfile
+	elif msfile:
 		msf = " --settings %s" % msfile
 
 	return msf
+
+
 def get_meteor_environment(doc, whatfor):
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import get_mongo_exports, get_root_exports
 	#from fluorine.utils.meteor.utils import default_path_prefix, PORT
@@ -178,7 +188,12 @@ def get_meteor_environment(doc, whatfor):
 	"""
 	conf.root_url, conf.port, forwarded_count = get_root_exports(doc, whatfor)
 	conf.forwarded_count = forwarded_count.replace("export", "").strip()
-	conf.msettings = "METEOR_SETTINGS='%s', " % get_meteor_settings(whatfor)
+	msettings = get_meteor_settings(whatfor, production=True)
+	if msettings:
+		conf.msettings = "%s, " % msettings
+	else:
+		conf.msettings = ""
+
 	#SUPERVISOR
 	env = "{msettings}PORT={port}, ROOT_URL='{root_url}', MONGO_URL='{mongo_url}'{mail_url}, {forwarded_count}".format(**conf)
 

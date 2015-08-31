@@ -35,7 +35,10 @@
     "meteor_folder": {
         "compile": 1, 
         "folder_refresh": 1
-    }, 
+    },
+	"stop":0,
+	"production_mode":0,
+	"meteor_settings":{},
 	"meteor_http_forwarded_count": "1", 
-    "developer_mode": 0
+    "developer_mode": 1
 }
