@@ -295,7 +295,7 @@ def update_versions(bench=".."):
 
 
 def meteor_run(doc, devmode, state, app, site=None, mongo_custom=False, bench=".."):
-	from fluorine.utils.meteor.utils import PORT, update_common_config
+	from fluorine.utils.meteor.utils import PORT
 	from fluorine.utils.reactivity import meteor_config
 	from fluorine.utils import file
 	import subprocess
@@ -334,5 +334,5 @@ def meteor_init(doc, devmode, state, site=None, mongo_custom=False, bench=".."):
 		if not os.path.exists(program_json_path):
 			try:
 				meteor_run(doc, devmode, state, app, site=None, mongo_custom=mongo_custom, bench="..")
-			except:
-				click.echo("You have to start meteor at hand before start meteor. Issue `meteor` in %s " % app_path)
+			except Exception as e:
+				click.echo("You have to start meteor at hand before start meteor. Issue `meteor` in %s. Error: %s" % (app_path, e))
