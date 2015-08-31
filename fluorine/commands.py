@@ -558,7 +558,7 @@ commands = [
 	cmd_add_meteor_packages,
 	cmd_remove_meteor_packages,
 	cmd_restore_common_config,
-	setup_production,
+	#setup_production,
 	cmd_update_version,
 	cmd_check_updates,
 	setState
