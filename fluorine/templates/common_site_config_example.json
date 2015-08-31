@@ -1,0 +1,41 @@
+{
+    "meteor_dev": {
+        "meteor_web": {
+            "port": 3070,
+			"production":1
+        }, 
+        "host": "http://127.0.0.1:8020", 
+        "meteor_app": {
+            "ROOT_URL_PATH_PREFIX": "/meteordesk", 
+            "port": 3080, 
+            "ddpurl": "http://192.168.1.100:8020",
+			"production":1
+        }
+    }, 
+    "versions": {
+        "jasper_erpnext_report": "1.2.2", 
+        "fluorine": "0.0.1", 
+        "base_vat": "0.0.2"
+    }, 
+    "meteor_mongo": {
+        "db": "meteor", 
+        "host": "127.0.0.1", 
+        "type": "default", 
+        "port": "3071"
+    }, 
+    "meteor_folder": {
+        "compile": 1, 
+        "folder_refresh": 1
+    }, 
+    "stop": 0, 
+    "site": "site2.local", 
+    "current_dev_app": "fluorine", 
+    "mongodb_users_ready": 0, 
+    "sites_path": "", 
+    "meteor_http_forwarded_count": "1", 
+    "production_mode": 0, 
+    "developer_mode": 1, 
+    "meteor_settings": {
+        "meteor_web": ""
+    }
+}

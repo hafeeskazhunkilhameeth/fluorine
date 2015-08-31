@@ -1,14 +1,16 @@
 { 
     "meteor_dev": {
         "meteor_web": {
-            "port": 3070
+            "port": 3070,
+			"production":1
         }, 
         "host": "http://127.0.0.1", 
         "ddpurl": "http://127.0.0.1", 
         "meteor_app": {
             "ROOT_URL_PATH_PREFIX": "/meteordesk", 
             "port": 3080, 
-            "ddpurl": "http://127.0.0.1"
+            "ddpurl": "http://127.0.0.1",
+			"production":1
         }
     }, 
     "meteor_mongo": {

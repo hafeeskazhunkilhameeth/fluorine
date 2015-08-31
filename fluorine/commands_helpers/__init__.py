@@ -26,21 +26,32 @@ def get_hosts(doc, production=False):
 	path_reactivity = get_path_reactivity()
 	meteor_config = frappe.get_file_json(os.path.join(path_reactivity, "common_site_config.json"))
 
+	meteor_config.get("")
+
 	meteor_dns = meteor_config.get("meteor_dns")
 	hosts_web = []
 	hosts_app = []
 
+	meteor_dev = meteor_config.get("meteor_dev") or {}
+	meteor_web = meteor_dev.get("meteor_web") or {}
+	use_web_in_production = meteor_web.get("production")
+
+	meteor_desk = meteor_dev.get("meteor_app") or {}
+	use_desk_in_production = meteor_desk.get("production")
 	#remove :port only have meanning in ROOT_URL environment variable
 	meteor_root_url = doc.fluor_meteor_host.strip()
 	if len(re.findall(":", meteor_root_url)) > 1:
 		meteor_root_url = meteor_root_url.rsplit(":",1)[0]
 	mthost = meteor_root_url.replace("http://", "") or "127.0.0.1"
 	port = doc.fluor_meteor_port or PORT.meteor_web
-	hosts_web.append("%s:%s" % (mthost, port))
-	hosts_app.append("%s:%s" % (mthost, PORT.meteor_app))
+
+	if use_web_in_production or not production:
+		hosts_web.append("%s:%s" % (mthost, port))
+	if use_desk_in_production or not production:
+		hosts_app.append("%s:%s" % (mthost, PORT.meteor_app))
 
 	#add others meteors
-	if meteor_dns and production==True:
+	if meteor_dns and production:
 		meteor_web = meteor_dns.get("meteor_web")
 		for obj in meteor_web:
 			hosts_web.append("%s:%s" % (obj.get("host").replace("http://", ""), obj.get("port")))

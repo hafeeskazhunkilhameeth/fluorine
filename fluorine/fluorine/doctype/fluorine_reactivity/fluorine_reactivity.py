@@ -136,12 +136,12 @@ def save_to_common_site_config(doc, meteor_config=None):
 	meteor_dev = f.get("meteor_dev")
 
 	if not meteor_dev.get("meteor_web"):
-		meteor_dev["meteor_web"] = {}
+		meteor_dev["meteor_web"] = {"production":1}
 
 	meteor_web = meteor_dev.get("meteor_web")
 
 	if not meteor_dev.get("meteor_app"):
-		meteor_dev["meteor_app"] = {}
+		meteor_dev["meteor_app"] = {"production":1}
 
 	meteor_app = meteor_dev.get("meteor_app")
 
