@@ -194,8 +194,11 @@ def set_current_app(app):
 	from fluorine.utils.reactivity import meteor_config
 	from fluorine.utils.meteor.utils import update_common_config
 
-	meteor_config["current_dev_app"] = app
-	update_common_config(meteor_config)
+	if meteor_config and meteor_config.get("developer_mode"):
+		meteor_config["current_dev_app"] = app
+		update_common_config(meteor_config)
+	else:
+		click.echo("You must be in developer mode to change current dev app.")
 
 
 @click.command('restore-common-config')
@@ -458,7 +461,10 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_po
 
 	sh.start_nginx_supervisor_services(debug=debug)
 
-	click.echo("Please go to http://localhost or http://127.0.0.1.")
+	if debug:
+		click.echo("Please issue `bench start` and go to http://localhost or http://127.0.0.1.")
+	else:
+		click.echo("Please go to http://localhost or http://127.0.0.1.")
 
 	return True
 
