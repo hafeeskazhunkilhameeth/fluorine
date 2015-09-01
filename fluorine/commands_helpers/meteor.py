@@ -2,6 +2,7 @@ __author__ = 'luissaguas'
 
 
 import frappe, click, os
+from fluorine.utils import whatfor_all, meteor_desk_app, meteor_web_app
 
 
 def make_production_link():
@@ -9,7 +10,7 @@ def make_production_link():
 
 	path_reactivity = get_path_reactivity()
 	final_web_path = os.path.join(path_reactivity, "final_web", "bundle", "programs", "web.browser")
-	meteor_web_path = os.path.join("assets", "js", "meteor_web")
+	meteor_web_path = os.path.join("assets", "js", meteor_web_app)
 	if os.path.exists(final_web_path):
 		try:
 			os.symlink(final_web_path, meteor_web_path)
@@ -19,7 +20,7 @@ def make_production_link():
 
 def make_public_folders():
 
-	for whatfor in ("meteor_app", "meteor_web"):
+	for whatfor in whatfor_all:#("meteor_app", "meteor_web"):
 		app_path = frappe.get_app_path("fluorine")
 		public_app_folder = os.path.join(app_path, "public", whatfor)
 		frappe.create_folder(public_app_folder)
@@ -37,23 +38,23 @@ def copy_meteor_runtime_config():
 def get_meteor_app_files():
 	from shutil import copyfile
 
-	meteor_app_path = os.path.join("assets", "js", "meteor_app")
+	meteor_app_path = os.path.join("assets", "js", meteor_desk_app)
 	meteordesk_path = os.path.join(meteor_app_path, "meteordesk")
 	app_include_js = []
 	app_include_css = []
 
 	if os.path.exists(meteordesk_path):
-		app_include_js.append("assets/js/meteor_app/meteor_runtime_config.js")
+		app_include_js.append("assets/js/%s/meteor_runtime_config.js" % meteor_desk_app)
 		progfile = frappe.get_file_json(os.path.join(meteordesk_path, "program.json"))
 		manifest = progfile.get("manifest")
 		for obj in manifest:
 			if obj.get("type") == "js" and obj.get("where") == "client":
-				app_include_js.append("assets/js/meteor_app/meteordesk" + obj.get("url"))
+				app_include_js.append("assets/js/%s/meteordesk%s" % (meteor_desk_app, obj.get("url")))#+ obj.get("url"))
 			elif obj.get("type") == "css" and obj.get("where") == "client":
-				app_include_css.append("assets/js/meteor_app/meteordesk" + obj.get("url"))
+				app_include_css.append("assets/js/%s/meteordesk%s" % (meteor_desk_app, obj.get("url")))
 
 		fluorine_path = frappe.get_app_path("fluorine")
-		src = os.path.join(fluorine_path, "public", "meteor_app", "meteor_runtime_config.js")
+		src = os.path.join(fluorine_path, "public", meteor_desk_app, "meteor_runtime_config.js")
 		dst = os.path.join(meteor_app_path, "meteor_runtime_config.js")
 		copyfile(src, dst)
 
@@ -66,8 +67,8 @@ def run_npm():
 	import subprocess
 
 	path_reactivity = get_path_reactivity()
-	final_app_path = os.path.join(path_reactivity, "final_app", "bundle", "programs", "server")
-	final_web_path = os.path.join(path_reactivity, "final_web", "bundle", "programs", "server")
+	final_app_path = os.path.join(path_reactivity, meteor_desk_app.replace("meteor", "final"), "bundle", "programs", "server")
+	final_web_path = os.path.join(path_reactivity, meteor_web_app.replace("meteor", "final"), "bundle", "programs", "server")
 	click.echo("npm install meteor server Desk APP")
 	subprocess.call(["npm", "install"], cwd=final_app_path)
 	click.echo("npm install meteor server WEB")
@@ -87,7 +88,7 @@ def make_start_meteor_script(doc):
 
 	node = find_executable("node") or find_executable("nodejs")
 
-	for app in ("meteor_app", "meteor_web"):
+	for app in whatfor_all:#("meteor_app", "meteor_web"):
 		meteor_final_path = os.path.join(react_path, app.replace("meteor", "final"), "bundle/exec_meteor")
 		exp_mongo, mongo_default = get_mongo_exports(doc)
 		mthost, mtport, forwarded_count = get_root_exports(doc, app)
@@ -161,7 +162,7 @@ def remove_public_link():
 	app_path = frappe.get_app_path("fluorine")
 	public_folder = os.path.join(app_path, "public")
 
-	for app in ("meteor_app", "meteor_web"):
+	for app in whatfor_all:#("meteor_app", "meteor_web"):
 		folder = os.path.join(public_folder, app)
 		remove_directory(folder)
 
@@ -171,14 +172,14 @@ def make_public_link():
 	app_path = frappe.get_app_path("fluorine")
 	public_folder = os.path.join(app_path, "public")
 
-	for app in ("meteor_app", "meteor_web"):
+	for app in whatfor_all:#("meteor_app", "meteor_web"):
 		folder = os.path.join(public_folder, app)
 		if not os.path.exists(folder):
 			frappe.create_folder(folder)
 
 def remove_from_assets():
 	try:
-		meteor_path = os.path.join("assets", "js", "meteor_web")
+		meteor_path = os.path.join("assets", "js", meteor_web_app)
 		os.unlink(meteor_path)
 	except:
 		pass
@@ -204,8 +205,8 @@ def get_active_apps():
 	active_apps = []
 	for app in apps:
 		app_path = frappe.get_app_path(app)
-		meteor_app = os.path.join(app_path, "templates", "react", "meteor_app")
-		meteor_web = os.path.join(app_path, "templates", "react", "meteor_web")
+		meteor_app = os.path.join(app_path, "templates", "react", meteor_desk_app)
+		meteor_web = os.path.join(app_path, "templates", "react", meteor_web_app)
 		if (os.path.exists(meteor_app) or os.path.exists(meteor_web)) and app not in ign_apps:
 			active_apps.append(app)
 
@@ -276,10 +277,10 @@ def meteor_run(app, app_path, mongo_custom=False):
 		click.echo(line)
 
 
-def meteor_init(doc, mongo_custom=False):
+def meteor_init(mongo_custom=False):
 	from fluorine.utils.file import get_path_reactivity
 
-	for app in ("meteor_app", "meteor_web"):
+	for app in whatfor_all:#("meteor_app", "meteor_web"):
 		app_path = os.path.join(get_path_reactivity(), app)
 		program_json_path = os.path.join(app_path, ".meteor", "local", "build", "programs", "web.browser", "program.json")
 		if not os.path.exists(program_json_path):
@@ -289,10 +290,15 @@ def meteor_init(doc, mongo_custom=False):
 				click.echo("You have to start meteor at hand before start meteor. Issue `meteor` in %s. Error: %s" % (app_path, e))
 				return
 
+
+def make_context(doc):
+	from fluorine.utils import prepare_environment
 	from fluorine.utils.reactivity import start_meteor
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import prepare_make_meteor_file
 
 	make_public_folders()
+	prepare_environment()
 	start_meteor()
 	frappe.local.request = frappe._dict()
 	prepare_make_meteor_file(doc.fluor_meteor_port, "Both")
+

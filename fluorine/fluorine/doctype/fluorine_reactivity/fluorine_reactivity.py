@@ -198,17 +198,17 @@ def prepare_to_update():
 
 
 def prepare_make_meteor_file(mtport, whatfor):
-	from frappe.website.context import get_context
+	#from frappe.website.context import get_context
 	from fluorine.templates.pages.fluorine_home import get_context as fluorine_get_context
+	from fluorine.utils import whatfor_all, meteor_desk_app, meteor_web_app, fluor_get_context as get_context
 
-
-	_whatfor = {"Both": ("meteor_web", "meteor_app"), "Reactive Web": ("meteor_web",), "Reactive App": ("meteor_app",)}
+	_whatfor = {"Both": whatfor_all, "Reactive Web": (meteor_web_app,), "Reactive App": (meteor_desk_app,)}
 
 
 	prepare_compile_environment()
 
 	for w in _whatfor.get(whatfor):
-		if whatfor == "Both" and w == "meteor_app":
+		if whatfor == "Both" and w == meteor_desk_app:
 			#mtport = int(mtport) + 10
 			frappe.local.path = "desk"
 			get_context("desk")
@@ -289,6 +289,8 @@ def remove_tmp_app_dir(src, dst):
 		pass
 
 def make_mongodb_default(conf, port=3070):
+	from fluorine.utils import meteor_web_app
+
 	if is_open_port(port=port):
 		frappe.throw("port {} is open, please close. If you change from production then stop supervisor (sudo supervisorctl stop all).".format(port))
 		return
@@ -296,7 +298,7 @@ def make_mongodb_default(conf, port=3070):
 		import subprocess
 		from fluorine.utils import file
 		path_reactivity = file.get_path_reactivity()
-		meteor_web = os.path.join(path_reactivity, "meteor_web")
+		meteor_web = os.path.join(path_reactivity, meteor_web_app)
 		print "getting mongo config..."
 		meteor = subprocess.Popen(["meteor", "--port", str(port)], cwd=meteor_web, shell=False, stdout=subprocess.PIPE)
 		mongodb = None
@@ -326,10 +328,11 @@ def make_mongodb_default(conf, port=3070):
 def check_meteor_apps_created(doc, with_error=True):
 	from fluorine.utils.file import get_path_reactivity
 	from frappe import _
+	from fluorine.utils import meteor_desk_app, meteor_web_app
 
 	path_reactivity = get_path_reactivity()
-	meteor_web = os.path.join(path_reactivity, "meteor_web", ".meteor")
-	meteor_app = os.path.join(path_reactivity, "meteor_app", ".meteor")
+	meteor_web = os.path.join(path_reactivity, meteor_web_app, ".meteor")
+	meteor_app = os.path.join(path_reactivity, meteor_desk_app, ".meteor")
 	msg = "Please install meteor app first. From command line issue 'bench fluorine create-meteor-apps.'"
 	error = False
 

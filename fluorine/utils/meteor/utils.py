@@ -6,16 +6,16 @@ __author__ = 'luissaguas'
 import frappe
 from collections import OrderedDict
 import hashlib, json, os
-
+from fluorine.utils import whatfor_all, meteor_desk_app, meteor_web_app
 
 default_port = 3070
 default_host = "http://127.0.0.1"
 default_path_prefix = "/meteordesk"
 
-PORT = frappe._dict({"meteor_web": default_port, "meteor_app": default_port + 10})
+PORT = frappe._dict({meteor_web_app: default_port, meteor_desk_app: default_port + 10})
 
 def meteor_url_path_prefix(whatfor):
-	if whatfor == "meteor_app":
+	if whatfor == meteor_desk_app:
 		url_prefix = default_path_prefix
 	else:
 		url_prefix = ""
@@ -33,7 +33,7 @@ def build_meteor_context(context, devmode, whatfor):
 	context.mport = meteor_conf.get("port") or PORT.get(whatfor)
 
 	prefix = meteor_conf.get("ROOT_URL_PATH_PREFIX")
-	if whatfor == "meteor_web":
+	if whatfor == meteor_web_app:
 		host = meteor.get("host", default_host) + (prefix if prefix else "")
 	else:
 		host = meteor.get("host", default_host) + (prefix if prefix else default_path_prefix)
@@ -42,9 +42,9 @@ def build_meteor_context(context, devmode, whatfor):
 
 	meteor_host =  host + ":" + str(context.mport)
 	ddpurl_port = None
-	if whatfor == "meteor_web" and ddpurl:
+	if whatfor == meteor_web_app and ddpurl:
 		ddpurl_port = ddpurl + (prefix if prefix else "")
-	elif whatfor == "meteor_app":
+	elif whatfor == meteor_desk_app:
 		if not ddpurl:
 			ddpurl = default_host
 
@@ -80,13 +80,13 @@ def get_meteor_config(mthost, mtddpurlport, meteor_url_path_prefix, version, ver
 	%(jquery)s
 	""" % {"appId": "'appId':'" + appId + "',\n\t\t" if devmod else "", "meteorRelease": mrelease, "meteor_root_url": mthost, "meteor_url_path_prefix": meteor_url_path_prefix,
 				"meteor_autoupdate_version": version, "meteor_autoupdate_version_freshable": version_fresh,
-				"meteor_ddp_default_connection_url": ",\n\t\t'DDP_DEFAULT_CONNECTION_URL': '" + mtddpurlport + "'" if whatfor == "meteor_app" else "", "jquery": """
+				"meteor_ddp_default_connection_url": ",\n\t\t'DDP_DEFAULT_CONNECTION_URL': '" + mtddpurlport + "'" if whatfor == meteor_desk_app else "", "jquery": """
 if (typeof Package === 'undefined')
 	Package = {};
 Package.jquery = {
 	$: $,
 	jQuery: jQuery
-}; """ if whatfor == "meteor_app" else ""}
+}; """ if whatfor == meteor_desk_app else ""}
 
 	return meteor_config
 
@@ -123,7 +123,7 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 	sh1.update(rt)
 	sh2.update(rt)
 
-	if whatfor == "meteor_app":
+	if whatfor == meteor_desk_app:
 		prefix = "/meteordesk"
 	else:
 		prefix = ""
@@ -133,7 +133,7 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 			path = m.get("path")
 			mhash = m.get("hash")
 			if m.get("where") == "client":
-				if whatfor == "meteor_app":
+				if whatfor == meteor_desk_app:
 					nurl = prefix + m.get("url")
 				else:
 					nurl = m.get("url")
@@ -143,7 +143,7 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 					sh2.update(mhash)
 					continue
 				elif m.get("type") == "js":
-					if whatfor == "meteor_app":
+					if whatfor == meteor_desk_app:
 						if "jquery" not in path:
 							frappe_manifest_js.append(nurl)
 					else:
@@ -186,7 +186,7 @@ def make_meteor_props(context, whatfor, production=0):
 
 	public_app_folder = os.path.join(app_path, "public", whatfor)
 	meteor_runtime_path = os.path.join(public_app_folder, "meteor_runtime_config.js")
-	if not production or whatfor=="meteor_app":
+	if not production or whatfor==meteor_desk_app:
 		save_meteor_props(props, meteor_runtime_path)
 	else:
 		try:
@@ -228,7 +228,7 @@ def prepare_client_files(curr_app):
 	react_path = get_path_reactivity()
 	app_path = frappe.get_app_path(curr_app)
 
-	for whatfor in ("meteor_web", "meteor_app"):
+	for whatfor in whatfor_all:#("meteor_web", "meteor_app"):
 		meteor_final_path = os.path.join(react_path, whatfor.replace("meteor", "final"))
 		if os.path.exists(meteor_final_path):
 			try:
@@ -256,7 +256,7 @@ def prepare_client_files(curr_app):
 def make_meteor_files(mthost, mtport, mtddpurl, architecture):
 	from fluorine.utils.file import make_meteor_file
 
-	for w in ("meteor_web", "meteor_app"):
+	for w in whatfor_all:#("meteor_web", "meteor_app"):
 		make_meteor_file(whatfor=w, mtport=mtport, mthost=mthost, architecture=architecture)
 
 

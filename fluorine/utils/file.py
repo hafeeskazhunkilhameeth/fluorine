@@ -31,8 +31,11 @@ def save_custom_template(template_path):
 	save_file(tplt, content)
 
 
-def make_meteor_file(mtport=3070, mthost="http://127.0.0.1", architecture="os.linux.x86_64", whatfor="meteor_web"):
+def make_meteor_file(mtport=3070, mthost="http://127.0.0.1", architecture="os.linux.x86_64", whatfor=None):
+	from fluorine.utils import meteor_web_app
 	import shlex
+
+	whatfor = whatfor or meteor_web_app
 
 	path = get_path_reactivity()
 	args = shlex.split("meteor build --directory %s --server %s --architecture %s %s" % (os.path.join(path, whatfor.replace("meteor", "final")), mthost + ':' + str(mtport), architecture,\
@@ -281,8 +284,9 @@ common_pattern = c(r"templates/(.*)/?common/(.*)")
 
 #@profile
 def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
+	from fluorine.utils import meteor_desk_app, meteor_web_app
 
-	_whatfor = ["meteor_app", "meteor_web"]
+	_whatfor = [meteor_desk_app, meteor_web_app]
 	folders_path = []
 	exclude = ["private", "public"]
 	custom_pattern = custom_pattern or []
@@ -369,8 +373,9 @@ def make_private(meteorpath, dst_private_path, app, whatfor, custom_pattern=None
 
 
 def _make_public_private(folder_path, dst_folder_path, app, whatfor, folder, custom_pattern=None):
+	from fluorine.utils import meteor_desk_app, meteor_web_app
 
-	_whatfor = ["meteor_app", "meteor_web"]
+	_whatfor = [meteor_desk_app, meteor_web_app]
 	exclude = []
 	try:
 		for w in whatfor:
@@ -414,7 +419,10 @@ def check_remove(source):
 
 
 def process_pubpriv_folder(meteorpath, dst, app, app_folders, pattern, meteor_ignore=None):
-	ign_top = ("meteor_app", "meteor_web", "meteor_frappe", "temp")
+	from fluorine.utils import meteor_desk_app, meteor_web_app
+
+	ign_top = (meteor_desk_app, meteor_web_app, "temp")
+
 	for root, dirs, files in os.walk(meteorpath):
 		meteor_relpath = os.path.relpath(root, frappe.get_app_path(app))
 		meteor_ignore_folders(app, meteor_relpath, root, dirs, meteor_ignore=meteor_ignore)
@@ -436,7 +444,9 @@ def process_pubpriv_folder(meteorpath, dst, app, app_folders, pattern, meteor_ig
 
 
 def process_top_folder(meteorpath, dst, app, app_folders, pattern, meteor_ignore=None):
-	ign_top = ("meteor_app", "meteor_web", "meteor_frappe", "public", "private", "temp")
+	from fluorine.utils import meteor_desk_app, meteor_web_app
+
+	ign_top = (meteor_desk_app, meteor_web_app, "public", "private", "temp")
 	destpath = os.path.join(dst, app_folders)
 	for root, dirs, files in os.walk(meteorpath):
 		meteor_relpath = os.path.relpath(root, frappe.get_app_path(app))

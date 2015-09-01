@@ -3,6 +3,7 @@ __author__ = 'luissaguas'
 
 import frappe, os
 
+from fluorine.utils import whatfor_all, meteor_desk_app, meteor_web_app
 from fluorine.utils import file
 from fluorine.utils import assets_public_path
 from fluorine.utils.fjinja2.utils import c
@@ -80,7 +81,7 @@ def get_dirs_from_list(appname, list_files):
 def get_custom_pattern(whatfor, custom_pattern=None):
 	from shutil import ignore_patterns
 
-	_whatfor = ["meteor_app", "meteor_web", "meteor_frappe"]
+	_whatfor = [meteor_desk_app, meteor_web_app]
 	exclude = [""]
 	custom_pattern = custom_pattern or []
 	ignored_names_top = ["public","tests","server","temp","private"]
@@ -90,7 +91,7 @@ def get_custom_pattern(whatfor, custom_pattern=None):
 
 	is_for_meteor_frappe = "meteor_frappe" in whatfor
 	if is_for_meteor_frappe:
-		ignored_names_top.extend(["meteor_app", "meteor_web"])
+		ignored_names_top.extend([meteor_desk_app, meteor_web_app])
 
 	try:
 		for w in whatfor:

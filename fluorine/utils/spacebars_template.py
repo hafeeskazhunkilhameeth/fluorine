@@ -75,14 +75,14 @@ def fluorine_get_floader(encoding="utf-8"):
 
 
 def compile_jinja_templates(context, whatfor):
-
+	from fluorine.utils import meteor_desk_app
 	from fluorine.utils import get_encoding
 	from file import save_file
 	from fluorine.utils.fjinja2.utils import STARTTEMPLATE_SUB_ALL
 
 	out = {}
 	toadd = {}
-	print "frappe.local.meteor_map_templates 2 {}".format(frappe.local.meteor_map_templates.keys())
+
 	keys = frappe.local.meteor_map_templates.keys()
 
 	for template_path in keys:
@@ -106,7 +106,7 @@ def compile_jinja_templates(context, whatfor):
 						tcont[name] = m.group(0)
 					add = add_to_path(context, template, refs, tcont)
 					toadd.update(add)
-					if whatfor in ("meteor_app", "meteor_frappe"):
+					if whatfor in (meteor_desk_app, "meteor_frappe"):
 						out.update(tcont)
 		except Exception as e:
 			file_temp_path = obj.get("file_temp_path")
@@ -195,6 +195,7 @@ def prepare_common_page_context(context, whatfor):
 
 def get_app_pages(context):
 	from fluorine.utils.module import get_app_context
+	from fluorine.utils import meteor_desk_app
 
 	def get_frappe_context(context):
 
@@ -204,7 +205,7 @@ def get_app_pages(context):
 		ret = get_app_context(context, path, app, app_path, "desk.py")
 		return ret
 
-	context, devmode = prepare_common_page_context(context, "meteor_app")
+	context, devmode = prepare_common_page_context(context, meteor_desk_app)
 
 	fcontext = get_frappe_context(context)
 
@@ -226,8 +227,9 @@ def get_app_pages(context):
 
 
 def get_web_pages(context):
+	from fluorine.utils import meteor_web_app
 
-	context, devmode = prepare_common_page_context(context, "meteor_web")
+	context, devmode = prepare_common_page_context(context, meteor_web_app)
 
 	context.meteor_web_include_css = frappe.get_hooks("meteor_web_include_css")
 	context.meteor_web_include_js = frappe.get_hooks("meteor_web_include_js")
@@ -243,8 +245,8 @@ def get_web_pages(context):
 
 
 def fluorine_build_context(context, whatfor):
-	from fluorine.utils import APPS as apps
-	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation#, save_js_file
+	from fluorine.utils import APPS as apps, meteor_desk_app
+	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation
 	from reactivity import list_ignores
 	from fluorine.utils.meteor.utils import make_meteor_props
 	from react_file_loader import get_custom_pattern
@@ -284,7 +286,7 @@ def fluorine_build_context(context, whatfor):
 
 	copy_project_translation(apps, whatfor, custom_pattern)
 
-	if devmode and whatfor=="meteor_app":
+	if devmode and whatfor==meteor_desk_app:
 		make_meteor_props(context, whatfor)
 
 	return context

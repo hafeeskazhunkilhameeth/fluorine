@@ -7,4 +7,4 @@ if (frappe_url === undefined )
 
 frappe.url = frappe_url;
 
-console.log("in server side frappe_url ", frappe_url);
+console.log("in meteor server side frappe_url ", frappe_url);

@@ -3,7 +3,7 @@ __author__ = 'saguas'
 
 import frappe, os
 from frappe.website import render, statics
-
+from fluorine.utils import whatfor_all
 
 
 class MeteorInstalationError(Exception):
@@ -11,7 +11,6 @@ class MeteorInstalationError(Exception):
 
 
 def before_install():
-
 
 	frappe_module = os.path.dirname(frappe.__file__)
 	path_apps = os.path.realpath(os.path.join(frappe_module, "..", ".."))
@@ -26,7 +25,7 @@ def before_install():
 	get_meteor_configuration_file()
 
 	create_meteor_apps(path_reactivity=path_reactivity)
-	for whatfor in ("meteor_app", "meteor_web"):
+	for whatfor in whatfor_all:#("meteor_app", "meteor_web"):
 		meteor_add_package("fluorine", whatfor, path_reactivity=path_reactivity)
 
 	from fluorine.commands_helpers.meteor import update_versions
@@ -81,7 +80,7 @@ def create_meteor_apps(path_reactivity=None):
 		path_reactivity = get_path_reactivity()
 
 	try:
-		for app in ("meteor_app", "meteor_web"):
+		for app in whatfor_all:#("meteor_app", "meteor_web"):
 			if not os.path.exists(os.path.join(path_reactivity, app)):
 				p = subprocess.Popen(["meteor", "create", app], cwd=path_reactivity, shell=False, close_fds=True)
 				p.wait()

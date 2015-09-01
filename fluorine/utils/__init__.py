@@ -10,6 +10,9 @@ assets_public_path = "/assets/fluorine/js/react"
 
 APPS = None
 
+meteor_web_app = "meteor_web"
+meteor_desk_app = "meteor_app"
+whatfor_all = (meteor_web_app, meteor_desk_app)
 
 def get_attr_from_json(attrs, _json_):
 	"""
@@ -80,10 +83,10 @@ def fluor_get_hooks(hook=None, default=None, app_name=None):
 
 
 def fluor_get_context(path):
-	from fluorine.templates.pages import mdesk
 
 	context = frappe_get_context(path)
 	if path == "desk":
+		from fluorine.templates.pages import mdesk
 		context = mdesk.get_context(context)
 
 	return context
@@ -140,11 +143,11 @@ def get_meteor_configuration_file():
 
 frappe_get_hooks = None
 
-
 def patch_hooks():
 	global frappe_get_hooks
 	frappe_get_hooks = frappe.get_hooks
 	frappe.get_hooks = fluor_get_hooks
+
 
 frappe_get_context = None
 
@@ -158,11 +161,22 @@ def patch_frappe_get_context():
 
 get_installed_apps()
 
+def prepare_environment():
+
+	if frappe_get_hooks == None:
+		patch_hooks()
+	else:
+		print "error hooks"
+
+	if not meteor_config.get("stop"):
+		#PATCH get_context
+		if frappe_get_context == None:
+			patch_frappe_get_context()
+		else:
+			print "error get_context"
+
 
 if check_dev_mode():
 	#PATCH HOOKS
-	patch_hooks()
-	if not meteor_config.get("stop"):
-		#PATCH get_context
-		patch_frappe_get_context()
-		import reactivity
+	prepare_environment()
+	import reactivity

@@ -2,9 +2,9 @@
 {% meteor ApplicationLayout %}
     <template name="ApplicationLayout">
         {{.if app_ready}}
-              <nav class="{{%header_classes}}" role="{{%header_roles}}">
+              <nav class="{{%header_classes}}">
                   <div class="container">
-                      <div class="container-fluid">
+                      <!--<div class="container-fluid">-->
                           <!--<div class="row">
                               <div class="col-sm-8 col-sm-offset-2">
                                 {{> yield "header"}}
@@ -14,7 +14,7 @@
 
                             {{> meteor_menu}}
 
-                      </div>
+                      <!--</div>-->
                   </div>
               </nav>
         {{/if}}
@@ -47,7 +47,7 @@
 {% meteor meteor_menu %}
     <template name="meteor_menu">
         <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#collapse-menu" aria-expanded="false">
                 <span class="sr-only">{{%_ "Toggle navigation"}}</span>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
@@ -55,7 +55,7 @@
           </button>
             <a href="/" class="navbar-brand">{{navbar_brand_name or _("Meteor For Frappe") }}</a>
         </div>
-        <div class="collapse navbar-collapse">
+        <div class="collapse navbar-collapse" id="collapse-menu" aria-expanded="false" style="height: 1px;">
 
             <ul class="nav navbar-nav navbar-right">
                 {{.if fullLogin}}
@@ -80,6 +80,7 @@
                         <button type="button" class="compile btn btn-warning navbar-btn">{{%_ "Compile"}}</button>
                     </li>
             </ul>
+        <!--/.nav-collapse -->
         </div>
     </template>
 {% endmeteor %}

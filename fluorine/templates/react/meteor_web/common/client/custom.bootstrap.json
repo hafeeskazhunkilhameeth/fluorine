@@ -31,7 +31,7 @@
     "media"                : false,
     "list-group"           : false,
     "panels"               : true,
-    "responsive-embed"     : false,
+    "responsive-embed"     : true,
     "wells"                : false,
     "close"                : false,
 
@@ -49,6 +49,6 @@
     "transition"           : true,
 
     "utilities"            : true,
-    "responsive-utilities" : false
+    "responsive-utilities" : true
   }
 }

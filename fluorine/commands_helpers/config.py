@@ -14,12 +14,12 @@ def get_custom_packages_files():
 	return (file_add, file_remove)
 
 
-def _generate_fluorine_nginx_conf(hosts_web=None, hosts_app=None, production=None, server_port=None):
+def _generate_fluorine_nginx_conf(hosts_web=None, hosts_app=None, production=None, site=None):
 	from fluorine.utils.file import save_file, readlines
 	import re
 
 	if not hosts_web or not hosts_app:
-		site = get_default_site()
+		site = site or get_default_site()
 		doc = get_doctype("Fluorine Reactivity", site)
 
 		if not hosts_web and not hosts_app:

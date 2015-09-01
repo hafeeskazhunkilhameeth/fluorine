@@ -17,7 +17,6 @@ STARTDIV_SUB_ALL = r"<\s*div\s+class\s*=\s*(['\"])%s\1\s*>(.*?)<\s*/\s*div\s*>"
 def is_in_extend_path(doc, template):
 	for d in doc.docs:
 		if d.template == template:
-			print "one template found in is:in 5 {}".format(d.template)
 			return d
 		found = is_in_extend_path(d, template)
 		if found:
@@ -111,7 +110,6 @@ def local_tkeep(ctx, tname, page, patterns=None):
 	template_path = obj.get("template")
 	if not patterns:
 		pattern = get_pattern_path(tname, template_path[:-6])
-		print "templates paths to add tname 4 {} template_path {} pattern {}".format(tname, template_path, pattern)
 		fadd.get(appname).append({"tname": page, "pattern":pattern})
 	elif tname:
 		for pattern in patterns:
@@ -128,7 +126,6 @@ def get_msuper_inner_content(ctx, source):
 		source = s.group(4)
 		#TODO remove not? or remove all code below
 		if not ctx.get("developer_mode"):
-			print "in developer mode inside msuper helper"
 			m = re.search(STARTDIV_SUB_ALL % (name,), source, re.S|re.M)
 			if m:
 				source = m.group(2)
@@ -192,5 +189,4 @@ def mdom_filter(ctx, source, page, **keyargs):
 
 
 def mecho(value, content=""):
-	print "mecho content is value 2 {} content {}".format(value, content)
 	return value + "  " + content
