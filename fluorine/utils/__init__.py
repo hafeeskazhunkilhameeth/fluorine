@@ -10,6 +10,28 @@ assets_public_path = "/assets/fluorine/js/react"
 
 APPS = None
 
+
+def get_attr_from_json(attrs, _json_):
+	"""
+	Example:
+	{
+		meteor_web:{
+			host:'http://localhost',
+			port: 3070
+		}
+	}
+
+	To get attribute port:
+		attrs = ["meteor_web", "port"]
+	"""
+	tmp_attr = _json_
+
+	for attr in attrs:
+		tmp_attr = tmp_attr.get(attr) or {}
+
+	return tmp_attr
+
+
 def remove_from_hooks(hooks, stop=False):
 
 	base_template = "templates/fluorine_base.html"
@@ -116,19 +138,31 @@ def get_meteor_configuration_file():
 
 	return meteor_config
 
+frappe_get_hooks = None
+
+
+def patch_hooks():
+	global frappe_get_hooks
+	frappe_get_hooks = frappe.get_hooks
+	frappe.get_hooks = fluor_get_hooks
+
+frappe_get_context = None
+
+def patch_frappe_get_context():
+	import frappe.website.context
+
+	global frappe_get_context
+	frappe_get_context = frappe.website.context.get_context
+	frappe.website.context.get_context = fluor_get_context
+
 
 get_installed_apps()
 
 
 if check_dev_mode():
 	#PATCH HOOKS
-	frappe_get_hooks = frappe.get_hooks
-	frappe.get_hooks = fluor_get_hooks
-
+	patch_hooks()
 	if not meteor_config.get("stop"):
 		#PATCH get_context
-		import frappe.website.context
-		frappe_get_context = frappe.website.context.get_context
-		frappe.website.context.get_context = fluor_get_context
-
+		patch_frappe_get_context()
 		import reactivity

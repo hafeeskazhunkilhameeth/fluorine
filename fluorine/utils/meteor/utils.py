@@ -252,14 +252,13 @@ def prepare_client_files(curr_app):
 
 		save_file(dst, "\n".join(installed_packages))
 
-"""
-def make_meteor_files(mthost, mtport, mtddpurl, architecture, whatfor):
-	from fluorine.utils.file import make_meteor_file
-	_whatfor = {"Both": ("meteor_web", "meteor_app"), "Reactive Web": ("meteor_web",), "Reactive App": ("meteor_app",)}
 
-	for w in _whatfor.get(whatfor):
-		make_meteor_file(jquery=0, whatfor=w, mtport=mtport, mthost=mthost, architecture=architecture)
-"""
+def make_meteor_files(mthost, mtport, mtddpurl, architecture):
+	from fluorine.utils.file import make_meteor_file
+
+	for w in ("meteor_web", "meteor_app"):
+		make_meteor_file(whatfor=w, mtport=mtport, mthost=mthost, architecture=architecture)
+
 
 """
 def template_replace(m):

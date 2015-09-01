@@ -31,7 +31,7 @@ def save_custom_template(template_path):
 	save_file(tplt, content)
 
 
-def make_meteor_file(packages=None, jquery=0, client_only=0, mtport=3070, mthost="http://127.0.0.1", architecture="os.linux.x86_64", whatfor="meteor_web"):
+def make_meteor_file(mtport=3070, mthost="http://127.0.0.1", architecture="os.linux.x86_64", whatfor="meteor_web"):
 	import shlex
 
 	path = get_path_reactivity()
@@ -40,7 +40,7 @@ def make_meteor_file(packages=None, jquery=0, client_only=0, mtport=3070, mthost
 	print "start make meteor... {}".format(whatfor)
 	subprocess.call(args, cwd=os.path.join(path, whatfor), close_fds=True)
 
-
+"""
 def make_meteor_config_file(mthost, mtport, version):
 	import fluorine
 	from fluorine.utils.meteor.utils import get_meteor_config
@@ -49,6 +49,7 @@ def make_meteor_config_file(mthost, mtport, version):
 	module_path = os.path.dirname(fluorine.__file__)
 	meteor_config_file = os.path.join(module_path, "public", "js", "meteor_config.js")
 	save_file(meteor_config_file, config)
+"""
 
 def remove_file(file):
 	import fluorine

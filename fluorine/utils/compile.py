@@ -15,4 +15,4 @@ def meteor_compile():
 		frappe.set_user("Administrator")
 		doc = get_doctype("Fluorine Reactivity", frappe.local.site)
 		prepare_make_meteor_file(doc.fluor_meteor_port, "Reactive Web")
-		print "compile_meteor called."
+		print "compile_meteor called for site {}.".format(frappe.local.site)

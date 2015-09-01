@@ -11,6 +11,7 @@ from fluorine.commands_helpers import config as ch
 from fluorine.commands_helpers import mongo as mgh
 
 
+
 def _reset_packages(app, file_add=None, file_remove=None):
 	from fluorine.utils.install import meteor_reset_package
 
@@ -302,7 +303,7 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 
 def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench=".."):
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile, make_mongodb_default, check_meteor_apps_created
-	from fluorine.utils.meteor.utils import PORT, update_common_config
+	from fluorine.utils.meteor.utils import PORT#, update_common_config
 	from fluorine.utils.reactivity import meteor_config
 	from fluorine.commands_helpers.meteor import meteor_init
 	import platform
@@ -312,15 +313,15 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 		click.echo("Please install meteor app first. From command line issue 'bench fluorine create-meteor-apps.'")
 		return
 
-	if not devmode or state != "on":
-		doc.fluor_dev_mode = 1
-		doc.fluorine_state = "on"
+	#if not devmode or state != "on":
+	doc.fluor_dev_mode = 1
+	doc.fluorine_state = "on"
 
 	meteor_config["developer_mode"] = 1
 	meteor_config["production_mode"] = 0
 	meteor_config["stop"] = 0
 
-	meteor_init(doc, devmode, state, site=None, mongo_custom=mongo_custom, bench="..")
+	meteor_init(doc, mongo_custom=mongo_custom)
 	#use mongo from meteor by default
 	if not mongo_custom:
 		meteor_config.pop("meteor_mongo", None)
@@ -333,8 +334,9 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 			return
 		mongo_default = 1
 
-	update_common_config(meteor_config)
+	#update_common_config(meteor_config)
 	doc.check_mongodb = mongo_default
+	#also save meteor_config to file
 	doc.save()
 
 	mh.make_public_link()
@@ -362,15 +364,18 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 
 def stop_meteor(doc, devmode, state, force=False, site=None, production=False, bench=".."):
 	from fluorine.utils import meteor_config
-	from fluorine.utils.meteor.utils import update_common_config
+	#from fluorine.utils.meteor.utils import update_common_config
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile
+
 
 	doc.fluorine_state = "off"
 	doc.fluor_dev_mode = 1
 	meteor_config["stop"] = 1
 	meteor_config["developer_mode"] = 1
 	meteor_config["production_mode"] = 0
-	update_common_config(meteor_config)
+	#update_common_config(meteor_config)
+
+	#also save meteor_config to file
 	doc.save()
 
 	remove_from_procfile()
@@ -382,71 +387,84 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_po
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile, make_final_app_client, save_to_procfile, check_meteor_apps_created, prepare_make_meteor_file
 	from fluorine.utils.meteor.utils import build_meteor_context, make_meteor_props, make_meteor_files, prepare_client_files
 	from fluorine.commands_helpers.meteor import meteor_init
+	from fluorine.utils import patch_frappe_get_context
+	from fluorine.utils import meteor_config#get_meteor_configuration_file
 
-	prodmode = check_prod_mode()
-	if state == "off" and devmode == 0 and prodmode:# or prodmode:# and force==True:
+	#meteor_config = get_meteor_configuration_file()
+	#prodmode = check_prod_mode()
+	#if state == "off" and devmode == 0 and prodmode:
+	doc.fluorine_state = "off"
+	doc.fluor_dev_mode = 0
+	meteor_config["stop"] = 1
+	#meteor_config["developer_mode"] = 0
+	meteor_config["production_mode"] = 1
+	#update_common_config(meteor_config)
 
-		click.echo("Checking for meteor apps folder. Please wait.")
-		if not check_meteor_apps_created(doc):
-			click.echo("Please install meteor app first. From command line issue 'bench fluorine create-meteor-apps.'")
-			return
+	#also save meteor_config to file
+	doc.save()
 
-		if _check_updates(bench=bench):
-			click.echo("There are updates in your apps. To update production you must press button 'run_updates' in fluorine app.")
-			return
+	click.echo("Checking for meteor apps folder. Please wait.")
+	if not check_meteor_apps_created(doc):
+		click.echo("Please install meteor app first. From command line issue 'bench fluorine create-meteor-apps.'")
+		return
 
-		mgh._check_custom_mongodb(doc)
-		remove_from_procfile()
+	if _check_updates(bench=bench):
+		click.echo("There are updates in your apps. To update production you must press button 'run_updates' in fluorine app.")
+		return
 
-		meteor_init(doc, devmode, state, site=None, mongo_custom=True, bench="..")
+	mgh._check_custom_mongodb(doc)
+	remove_from_procfile()
 
+	#get context to work with desk
+	patch_frappe_get_context()
+	meteor_init(doc, mongo_custom=True)
 
-		#only save the meteor packages installed in fluorine if fluorine app is in development.
-		if current_dev_app != "fluorine" or current_dev_app == "fluorine" and force:
-			prepare_client_files(current_dev_app)
-		#If debug then do not run frappe setup production and test only meteor in production mode.
-		click.echo("Make meteor bundle for Desk APP")
-		make_meteor_files(doc.fluor_meteor_host, doc.fluor_meteor_port, doc.ddpurl, doc.meteor_target_arch, doc.fluorine_reactivity)
-		#Patch: run twice for fix nemo64:bootstrap less problem
-		print "Run twice to patch nemo64:bootstrap less problem"
-		click.echo("Make meteor bundle for WEB")
-		make_meteor_files(doc.fluor_meteor_host, doc.fluor_meteor_port, doc.ddpurl, doc.meteor_target_arch, doc.fluorine_reactivity)
+	#only save the meteor packages installed in fluorine if fluorine app is in development.
+	if current_dev_app != "fluorine" or current_dev_app == "fluorine" and force:
+		prepare_client_files(current_dev_app)
+	#If debug then do not run frappe setup production and test only meteor in production mode.
+	click.echo("Make meteor bundle for Desk APP")
+	make_meteor_files(doc.fluor_meteor_host, doc.fluor_meteor_port, doc.ddpurl, doc.meteor_target_arch)
+	#Patch: run twice for fix nemo64:bootstrap less problem
+	print "Run twice to patch nemo64:bootstrap less problem"
+	click.echo("Make meteor bundle for WEB")
+	make_meteor_files(doc.fluor_meteor_host, doc.fluor_meteor_port, doc.ddpurl, doc.meteor_target_arch)
 
-		context = frappe._dict()
-		build_meteor_context(context, 0, "meteor_app")
-		make_meteor_props(context, "meteor_app", production=1)
+	context = frappe._dict()
+	build_meteor_context(context, 0, "meteor_app")
+	make_meteor_props(context, "meteor_app", production=1)
 
-		mh.copy_meteor_runtime_config()
-		click.echo("Make build.json for meteor_app")
-		make_final_app_client()
-		click.echo("Run npm install for meteor server:")
-		mh.run_npm()
-		click.echo("Make production links.")
-		mh.make_production_link()
-		click.echo("Make js and css hooks.")
+	mh.copy_meteor_runtime_config()
+	click.echo("Make build.json for meteor_app")
+	make_final_app_client()
+	click.echo("Run npm install for meteor server:")
+	mh.run_npm()
+	click.echo("Make production links.")
+	mh.make_production_link()
+	click.echo("Make js and css hooks.")
 
-		#common_site_config.json must have meteor_dns for production mode or use default
-		ch.generate_nginx_supervisor_conf(doc, user=user, debug=debug, update=update, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path)
+	#common_site_config.json must have meteor_dns for production mode or use default
+	ch.generate_nginx_supervisor_conf(doc, user=user, debug=debug, update=update, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path)
 
-		hosts_web, hosts_app = get_hosts(doc, production=True)
-		ch._generate_fluorine_nginx_conf(hosts_web=hosts_web, hosts_app=hosts_app, production=True, server_port=server_port)
-		mh.remove_public_link()
+	hosts_web, hosts_app = get_hosts(doc, production=True)
+	ch._generate_fluorine_nginx_conf(hosts_web=hosts_web, hosts_app=hosts_app, production=True, server_port=server_port)
+	mh.remove_public_link()
 
-		if debug:
-			mh.make_start_meteor_script(doc)
-			save_to_procfile(doc, production_debug=True)
+	if debug:
+		mh.make_start_meteor_script(doc)
+		save_to_procfile(doc, production_debug=True)
 
-		sh.build_assets(bench_path=bench)
+	sh.build_assets(bench_path=bench)
 
-		sh.start_nginx_supervisor_services(debug=debug)
+	sh.start_nginx_supervisor_services(debug=debug)
 
-		click.echo("Please go to http://localhost or http://127.0.0.1.")
+	click.echo("Please go to http://localhost or http://127.0.0.1.")
 
-		return True
+	return True
 
-	else:
-		click.echo("You must set state to off in fluorine doctype and remove developer mode.")
-		return False
+	#else:
+	#	click.echo("You must set state to off in fluorine doctype and remove developer mode.")
+	#	return False
 
 def _check_updates(bench="."):
 	from fluorine.commands_helpers.meteor import check_updates

@@ -181,7 +181,7 @@ def prepare_common_page_context(context, whatfor):
 	#Meteor
 	build_meteor_context(context, devmode, whatfor)
 	context.meteor_web = True
-	context.custom_template = doc.fluorine_base_template
+	#context.custom_template = doc.fluorine_base_template
 
 	if devmode:
 		set_config({

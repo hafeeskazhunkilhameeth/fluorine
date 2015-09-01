@@ -8,17 +8,18 @@ from frappe import _
 
 
 class FluorineReactivity(Document):
+
 	def on_update(self, method=None):
-		from fluorine.utils.file import save_custom_template
+		#from fluorine.utils.file import save_custom_template
 		from fluorine.utils.reactivity import meteor_config
 
-		meteor_config["developer_mode"] = self.fluor_dev_mode #if self.fluorine_state == "on" else 0
+		meteor_config["developer_mode"] = self.fluor_dev_mode
 
-		if self.fluorine_state == "off" and self.fluor_dev_mode == 0: #and not production_mode:
-			meteor_config["production_mode"] = 1
+		#if self.fluorine_state == "off" and self.fluor_dev_mode == 0:
+		#	meteor_config["production_mode"] = 1
 
-		if self.fluorine_base_template and self.fluorine_base_template.lower() != "default":
-			save_custom_template(self.fluorine_base_template)
+		#if self.fluorine_base_template and self.fluorine_base_template.lower() != "default":
+		#	save_custom_template(self.fluorine_base_template)
 
 		if self.current_dev_app and self.current_dev_app.strip() != "":
 			meteor_config["current_dev_app"] = self.current_dev_app
@@ -76,12 +77,12 @@ def save_to_procfile(doc, production_debug=False):
 	from fluorine.utils.file import writelines
 
 	procfile, procfile_path = get_procfile()
-	tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
-	meteor_apps = tostart.get(doc.fluorine_reactivity)
+	#tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
+	#meteor_apps = tostart.get(doc.fluorine_reactivity)
 
 	from fluorine.commands_helpers.meteor import get_meteor_settings
 
-	for app in meteor_apps:
+	for app in ("meteor_app", "meteor_web"):
 		export_mongo, mongo_default = get_mongo_exports(doc)
 		mthost, mtport, forwarded_count = get_root_exports(doc, app)
 
@@ -167,6 +168,7 @@ def save_to_common_site_config(doc, meteor_config=None):
 		mongo["port"] = doc.fluor_mongo_port or 0
 		mongo["db"] = doc.fluor_mongo_database.strip()
 		mongo.pop("type", None)
+
 	update_common_config(f)
 
 
@@ -197,34 +199,38 @@ def prepare_to_update():
 
 def prepare_make_meteor_file(mtport, whatfor):
 	from frappe.website.context import get_context
+	from fluorine.templates.pages.fluorine_home import get_context as fluorine_get_context
+
 
 	_whatfor = {"Both": ("meteor_web", "meteor_app"), "Reactive Web": ("meteor_web",), "Reactive App": ("meteor_app",)}
 
-	#TODO only call if in production mode
+
 	prepare_compile_environment()
 
 	for w in _whatfor.get(whatfor):
 		if whatfor == "Both" and w == "meteor_app":
-			mtport = int(mtport) + 10
-			frappe.local.path = "mdesk"
-			get_context("mdesk")
+			#mtport = int(mtport) + 10
+			frappe.local.path = "desk"
+			get_context("desk")
 		else:
-			frappe.local.path = "fluorine_home"
-			get_context("fluorine_home")
+			#frappe.local.path = "fluorine_home"
+			#get_context("fluorine_home")
+			fluorine_get_context(frappe._dict())
 
 
 def prepare_compile_environment():
-	from fluorine.utils.reactivity import list_ignores#, make_meteor_ignor_files
+	from fluorine.utils.reactivity import meteor_config
+	from fluorine.utils.reactivity import list_ignores
 
-	list_ignores["files_folders"] = {
-		"all":{
-			"remove": [{"pattern": "highlight/?.*"}]
+	if meteor_config and meteor_config.get("production_mode"):
+		list_ignores["files_folders"] = {
+			"all":{
+				"remove": [{"pattern": "highlight/?.*"}]
+			}
 		}
-	}
 
 
 def make_final_app_client(jquery=0):
-
 	import json
 	from fluorine.utils.file import get_path_reactivity, read, save_js_file
 
@@ -322,7 +328,6 @@ def check_meteor_apps_created(doc, with_error=True):
 	from frappe import _
 
 	path_reactivity = get_path_reactivity()
-	whatfor = doc.fluorine_reactivity
 	meteor_web = os.path.join(path_reactivity, "meteor_web", ".meteor")
 	meteor_app = os.path.join(path_reactivity, "meteor_app", ".meteor")
 	msg = "Please install meteor app first. From command line issue 'bench fluorine create-meteor-apps.'"
@@ -331,11 +336,7 @@ def check_meteor_apps_created(doc, with_error=True):
 	web_folder_exist = os.path.exists(meteor_web)
 	app_folder_exist = os.path.exists(meteor_app)
 
-	if whatfor == "Both" and not (web_folder_exist and app_folder_exist):
-		error = True
-	elif whatfor == "Reactive Web" and not web_folder_exist:
-		error = True
-	elif whatfor == "Reactive App" and not app_folder_exist:
+	if not (web_folder_exist and app_folder_exist):
 		error = True
 
 	if with_error and error:

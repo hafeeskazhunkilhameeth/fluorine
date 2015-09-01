@@ -80,14 +80,14 @@ def make_start_meteor_script(doc):
 	from distutils.spawn import find_executable
 	import stat
 
-	tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
-	meteor_apps = tostart.get(doc.fluorine_reactivity)
+	#tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
+	#meteor_apps = tostart.get(doc.fluorine_reactivity)
 
 	react_path = get_path_reactivity()
 
 	node = find_executable("node") or find_executable("nodejs")
 
-	for app in meteor_apps:
+	for app in ("meteor_app", "meteor_web"):
 		meteor_final_path = os.path.join(react_path, app.replace("meteor", "final"), "bundle/exec_meteor")
 		exp_mongo, mongo_default = get_mongo_exports(doc)
 		mthost, mtport, forwarded_count = get_root_exports(doc, app)
@@ -249,7 +249,7 @@ def update_versions(bench=".."):
 	update_common_config(meteor_config)
 
 
-def meteor_run(app, app_path, port=3070, mongo_custom=False):
+def meteor_run(app, app_path, mongo_custom=False):
 	from fluorine.utils.meteor.utils import PORT
 	from fluorine.utils.reactivity import meteor_config
 	import subprocess, shlex
@@ -262,9 +262,9 @@ def meteor_run(app, app_path, port=3070, mongo_custom=False):
 		if mongo_conf and mongo_conf.get("type", None) != "default":
 			db = mongo_conf.get("db").strip(' \t\n\r')
 			host = mongo_conf.get("host").replace("http://","").replace("mongodb://","").strip(' \t\n\r')
-			port = mongo_conf.get("port")
+			mgport = mongo_conf.get("port")
 			env = os.environ.copy()
-			env["MONGO_URL"] = "mongodb://%s:%s/%s" % (host, port, db)
+			env["MONGO_URL"] = "mongodb://%s:%s/%s" % (host, mgport, db)
 
 	args = shlex.split("meteor --port %s" % PORT.get(app))
 	meteor = subprocess.Popen(args, cwd=app_path, shell=False, stdout=subprocess.PIPE, env=env)
@@ -276,16 +276,15 @@ def meteor_run(app, app_path, port=3070, mongo_custom=False):
 		click.echo(line)
 
 
-def meteor_init(doc, devmode, state, site=None, mongo_custom=False, bench=".."):
+def meteor_init(doc, mongo_custom=False):
 	from fluorine.utils.file import get_path_reactivity
-	from fluorine.utils.meteor.utils import PORT
 
 	for app in ("meteor_app", "meteor_web"):
 		app_path = os.path.join(get_path_reactivity(), app)
 		program_json_path = os.path.join(app_path, ".meteor", "local", "build", "programs", "web.browser", "program.json")
 		if not os.path.exists(program_json_path):
 			try:
-				meteor_run(app, app_path, port=PORT.get(app), mongo_custom=mongo_custom)
+				meteor_run(app, app_path, mongo_custom=mongo_custom)
 			except Exception as e:
 				click.echo("You have to start meteor at hand before start meteor. Issue `meteor` in %s. Error: %s" % (app_path, e))
 				return
@@ -296,4 +295,4 @@ def meteor_init(doc, devmode, state, site=None, mongo_custom=False, bench=".."):
 	make_public_folders()
 	start_meteor()
 	frappe.local.request = frappe._dict()
-	prepare_make_meteor_file(doc.fluor_meteor_port, doc.fluorine_reactivity)
+	prepare_make_meteor_file(doc.fluor_meteor_port, "Both")
