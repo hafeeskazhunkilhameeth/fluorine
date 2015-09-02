@@ -9,7 +9,6 @@ from fluorine.commands_helpers import *
 from fluorine.commands_helpers import services as sh
 from fluorine.commands_helpers import meteor as mh
 from fluorine.commands_helpers import config as ch
-from fluorine.commands_helpers import mongo as mgh
 
 
 
@@ -306,7 +305,8 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 
 
 def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench=".."):
-	#import fluorine
+	from fluorine.commands_helpers.meteor import MeteorDevelop
+	"""
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile, make_mongodb_default, check_meteor_apps_created
 	from fluorine.utils.meteor.utils import PORT
 	from fluorine.utils.reactivity import meteor_config
@@ -368,6 +368,9 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 	except:
 		click.echo("nginx link not set. You must make a symlink to frappe-bench/config/nginx.conf from nginx conf folder.")
 		return
+	"""
+	md = MeteorDevelop(doc, site=site, mongo_custom=mongo_custom, bench=bench)
+	md.start()
 
 
 def stop_meteor(doc, devmode, state, force=False, site=None, production=False, bench=".."):
@@ -392,11 +395,13 @@ def stop_meteor(doc, devmode, state, force=False, site=None, production=False, b
 
 
 def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_port=None, site=None, debug=False, update=False, force=False, user=None, bench="..", mac_sup_prefix_path="/usr/local"):
-	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile, make_final_app_client, save_to_procfile, check_meteor_apps_created, prepare_make_meteor_file
-	from fluorine.utils.meteor.utils import build_meteor_context, make_meteor_props, make_meteor_files, cmd_packages_from, prepare_client_files
+	from fluorine.commands_helpers.meteor import MeteorProduction
+	"""
+	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile, make_final_app_client, save_to_procfile, check_meteor_apps_created
+	from fluorine.utils.meteor.utils import make_meteor_files, cmd_packages_from
 	from fluorine.commands_helpers.meteor import MeteorContext
-	from fluorine.utils import patch_frappe_get_context
 	from fluorine.utils import meteor_config
+
 
 	#meteor_config = get_meteor_configuration_file()
 	#prodmode = check_prod_mode()
@@ -469,6 +474,10 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_po
 	mh.remove_public_link()
 
 	sh.start_nginx_supervisor_services(debug=debug)
+	"""
+	mp = MeteorProduction(doc, current_dev_app, site=site, debug=debug, update=update, force=force, user=user, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path)
+
+	mp.start()
 
 	if debug:
 		click.echo("Please issue `bench start` and go to http://localhost or http://127.0.0.1.")

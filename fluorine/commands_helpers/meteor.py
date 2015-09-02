@@ -288,13 +288,12 @@ class MeteorContext(object):
 		for app in whatfor_all:
 			app_path = os.path.join(get_path_reactivity(), app)
 			program_json_path = os.path.join(app_path, ".meteor", "local", "build", "programs", "web.browser", "program.json")
-			if not os.path.exists(program_json_path):
+			if not os.path.exists(program_json_path) and os.path.exists(os.path.join(app_path, ".meteor")):
 				try:
 					meteor_run(app, app_path, mongo_custom=mongo_custom)
 				except Exception as e:
 					click.echo("You have to start meteor at hand before start meteor. Issue `meteor` in %s. Error: %s" % (app_path, e))
 					return
-
 
 	def make_context(self):
 		from fluorine.utils import prepare_environment
@@ -319,3 +318,247 @@ class MeteorContext(object):
 		make_meteor_props(context, meteor_desk_app, production=True)
 		make_includes(context)
 
+
+class MeteorDevelop(object):
+
+	def __init__(self, doc, site=None, mongo_custom=False, bench=".."):
+		self.doc = doc
+		self.site = site
+		self.bench = bench
+		self.mongo_custom = mongo_custom
+
+
+	def start(self):
+
+		if not self.check_meteor_apps():
+			raise click.ClickException("Please install meteor app first. From command line issue 'bench fluorine create-meteor-apps.'")
+
+		self.update_doctype()
+		self.update_meteor_conf_file()
+		self.make_mongo()
+		self.doc.save()
+		self.make_apps_context()
+		self.remove_from_assets()
+		self.save_procfile()
+		self.generate_configs()
+		self.start_services()
+
+	def update_doctype(self):
+		self.doc.fluor_dev_mode = 1
+		self.doc.fluorine_state = "on"
+
+	def update_meteor_conf_file(self):
+		from fluorine.utils import meteor_config
+
+		meteor_config["developer_mode"] = 1
+		meteor_config["production_mode"] = 0
+		meteor_config["stop"] = 0
+
+	def check_meteor_apps(self):
+		from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import check_meteor_apps_created
+
+		click.echo("Checking for meteor apps folder. Please wait.")
+		return check_meteor_apps_created(self.doc)
+
+	def make_apps_context(self):
+		self.m_ctx = m_ctx = MeteorContext()
+		m_ctx.meteor_init(mongo_custom=True)
+		#get context to work with desk
+		m_ctx.make_context()
+
+	def make_mongo(self):
+		from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import make_mongodb_default
+		from fluorine.utils import meteor_config
+		from fluorine.utils.meteor.utils import PORT
+
+		if not self.mongo_custom:
+			meteor_config.pop("meteor_mongo", None)
+			make_mongodb_default(meteor_config, self.doc.fluor_meteor_port or PORT.meteor_web)
+			mongo_default = 0
+		else:
+			mongo_conf = meteor_config.get("meteor_mongo", None)
+			if not mongo_conf or mongo_conf.get("type", None) == "default":
+				raise click.ClickException("You must set mongo custom in reactivity/common_site_config.json or remove --custom-mongo option to use the mongo default.")
+
+			mongo_default = 1
+
+		self.doc.check_mongodb = mongo_default
+
+	def remove_from_assets(self):
+		remove_from_assets()
+
+	def save_procfile(self):
+		from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile
+
+		save_to_procfile(self.doc)
+
+	def generate_configs(self):
+		from fluorine.commands_helpers import config
+		from fluorine.commands_helpers import bench_generate_nginx_config
+		import platform
+
+		bench_generate_nginx_config(bench=self.bench)
+		config._generate_fluorine_nginx_conf(production=False, site=self.site)
+		try:
+			src = os.path.abspath(os.path.join("..", 'config', 'nginx.conf'))
+			if platform.system() == 'Darwin':
+				frappe.create_folder('/usr/local/etc/nginx/sites-enabled/')
+				if not os.path.exists('/usr/local/etc/nginx/sites-enabled/frappe.conf'):
+					os.symlink(src, '/usr/local/etc/nginx/sites-enabled/frappe.conf')
+			else:
+				if not os.path.exists('/etc/nginx/conf.d/frappe.conf'):
+					os.symlink(src, '/etc/nginx/conf.d/frappe.conf')
+		except:
+			raise click.ClickException("nginx link not set. You must make a symlink to frappe-bench/config/nginx.conf from nginx conf folder.")
+
+	def start_services(self):
+		from fluorine.commands_helpers import services
+
+		services.start_nginx_supervisor_services(debug=True)
+
+
+
+class MeteorProduction(object):
+
+	def __init__(self, doc, current_dev_app, site=None, debug=False, update=False, force=False, user=None, bench="..", mac_sup_prefix_path="/usr/local"):
+		self.doc = doc
+		self.current_dev_app = current_dev_app
+		self.site = site
+		self.debug = debug
+		self.update = update
+		self.force = force
+		self.user = user
+		self.bench = bench
+		self.mac_sup_prefix_path = mac_sup_prefix_path
+
+	def start(self):
+
+		if not self.check_meteor_apps():
+			raise click.ClickException("Please install meteor app first. From command line issue 'bench fluorine create-meteor-apps.'")
+
+		if self.check_updates():
+			raise click.ClickException("There are updates in your apps. To update production you must press button 'run_updates' in fluorine app.")
+
+		self.update_meteor_conf_file()
+		self.update_doctype()
+		self.doc.save()
+
+		self.check_custom_mongo()
+		self.remove_from_procfile()
+
+		self.make_apps_context()
+		self.make_packages_list()
+
+		self.make_meteor_bundle()
+
+		self.make_meteor_properties()
+		self.build_json()
+		self.npm_install()
+		self.generate_configs()
+		self.make_script_startup()
+
+		self.build_assets()
+		self.remove_public_link()
+		self.start_services()
+
+
+	def update_doctype(self):
+		self.doc.fluorine_state = "off"
+		self.doc.fluor_dev_mode = 0
+
+	def update_meteor_conf_file(self):
+		from fluorine.utils import meteor_config
+
+		meteor_config["stop"] = 1
+		meteor_config["production_mode"] = 1
+
+
+	def check_meteor_apps(self):
+		from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import check_meteor_apps_created
+
+		click.echo("Checking for meteor apps folder. Please wait.")
+		return check_meteor_apps_created(self.doc)
+
+
+	def check_updates(self):
+
+		click.echo("Checking for fluorine apps updates. Please wait.")
+		return check_updates(bench=self.bench)
+
+	def check_custom_mongo(self):
+		from fluorine.commands_helpers import mongo
+		mongo._check_custom_mongodb(self.doc)
+
+	def make_apps_context(self):
+		self.m_ctx = m_ctx = MeteorContext()
+		m_ctx.meteor_init(mongo_custom=True)
+		#get context to work with desk
+		m_ctx.make_context()
+
+	def make_packages_list(self):
+		from fluorine.utils.meteor.utils import cmd_packages_from
+		#only save the meteor packages installed in fluorine if fluorine app is in development.
+		if self.current_dev_app != "fluorine" or self.force:
+			#prepare_client_files(current_dev_app)
+			cmd_packages_from(self.current_dev_app)
+
+	def make_meteor_bundle(self):
+		from fluorine.utils.meteor.utils import make_meteor_files
+		#If debug then do not run frappe setup production and test only meteor in production mode.
+		click.echo("Make meteor bundle for Desk APP")
+		make_meteor_files(self.doc.fluor_meteor_host, self.doc.fluor_meteor_port, self.doc.ddpurl, self.doc.meteor_target_arch)
+		#Patch: run twice for fix nemo64:bootstrap less problem
+		click.echo("Run twice to patch nemo64:bootstrap less problem")
+		click.echo("Make meteor bundle for WEB")
+		make_meteor_files(self.doc.fluor_meteor_host, self.doc.fluor_meteor_port, self.doc.ddpurl, self.doc.meteor_target_arch)
+
+	def make_meteor_properties(self):
+		click.echo("Make meteor properties.")
+		self.m_ctx.make_meteor_properties()
+
+	def build_json(self):
+		from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import make_final_app_client
+
+		click.echo("Make build.json for meteor_app.")
+		make_final_app_client()
+
+	def npm_install(self):
+		click.echo("Run npm install for meteor server:")
+		run_npm()
+
+	def make_production_link(self):
+		click.echo("Make production links.")
+		make_production_link()
+
+	def remove_from_procfile(self):
+		from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile
+
+		remove_from_procfile()
+
+	def generate_configs(self):
+		from fluorine.commands_helpers import config
+		#common_site_config.json must have meteor_dns for production mode or use default
+		config.generate_nginx_supervisor_conf(self.doc, user=self.user, debug=self.debug, update=self.update, bench=self.bench, mac_sup_prefix_path=self.mac_sup_prefix_path)
+
+		#hosts_web, hosts_app = get_hosts(doc, production=True)
+		config._generate_fluorine_nginx_conf(production=True, site=self.site)
+
+	def make_script_startup(self):
+		if self.debug:
+			from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile
+
+			make_start_meteor_script(self.doc)
+			save_to_procfile(self.doc, production_debug=True)
+
+	def build_assets(self):
+		from fluorine.commands_helpers import services
+
+		services.build_assets(bench_path=self.bench)
+
+	def remove_public_link(self):
+		remove_public_link()
+
+	def start_services(self):
+		from fluorine.commands_helpers import services
+
+		services.start_nginx_supervisor_services(debug=self.debug)
