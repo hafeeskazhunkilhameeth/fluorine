@@ -305,7 +305,7 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 
 
 def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench=".."):
-	import fluorine
+	#import fluorine
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile, make_mongodb_default, check_meteor_apps_created
 	from fluorine.utils.meteor.utils import PORT
 	from fluorine.utils.reactivity import meteor_config
@@ -345,7 +345,7 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 	doc.save()
 	make_context(doc)
 
-	mh.make_public_link()
+	mh.make_public_folders()
 	mh.remove_from_assets()
 	save_to_procfile(doc)
 	bench_generate_nginx_config(bench=bench)
@@ -360,12 +360,12 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 			if not os.path.exists('/etc/nginx/conf.d/frappe.conf'):
 				os.symlink(src, '/etc/nginx/conf.d/frappe.conf')
 
+		sh.start_nginx_supervisor_services(debug=True)
 		click.echo("Please issue `bench start` and go to http://localhost or http://127.0.0.1.")
+
 	except:
 		click.echo("nginx link not set. You must make a symlink to frappe-bench/config/nginx.conf from nginx conf folder.")
 		return
-
-	sh.start_nginx_supervisor_services(debug=True)
 
 
 def stop_meteor(doc, devmode, state, force=False, site=None, production=False, bench=".."):
@@ -422,7 +422,7 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_po
 	remove_from_procfile()
 
 	meteor_init(mongo_custom=True)
-
+	frappe.local.making_production = True
 	#get context to work with desk
 	make_context(doc)
 
@@ -438,10 +438,10 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_po
 	make_meteor_files(doc.fluor_meteor_host, doc.fluor_meteor_port, doc.ddpurl, doc.meteor_target_arch)
 
 	context = frappe._dict()
-	build_meteor_context(context, 0, "meteor_app")
-	make_meteor_props(context, "meteor_app", production=1)
+	build_meteor_context(context, meteor_desk_app)
+	make_meteor_props(context, meteor_desk_app)
 
-	mh.copy_meteor_runtime_config()
+	#mh.copy_meteor_runtime_config()
 	click.echo("Make build.json for meteor_app")
 	make_final_app_client()
 	click.echo("Run npm install for meteor server:")
@@ -455,13 +455,14 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_po
 
 	#hosts_web, hosts_app = get_hosts(doc, production=True)
 	ch._generate_fluorine_nginx_conf(production=True, site=site)
-	mh.remove_public_link()
 
 	if debug:
 		mh.make_start_meteor_script(doc)
 		save_to_procfile(doc, production_debug=True)
 
 	sh.build_assets(bench_path=bench)
+
+	mh.remove_public_link()
 
 	sh.start_nginx_supervisor_services(debug=debug)
 

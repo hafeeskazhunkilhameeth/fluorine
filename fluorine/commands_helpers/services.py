@@ -43,11 +43,13 @@ def start_nginx_supervisor_services(debug=False):
 			click.echo("nginx started.")
 			#os.popen("sudo -S %s"%("sudo -S nginx"), 'w').write(password)
 
-	else:
+	elif not os.environ.get('NO_SERVICE_RESTART'):
 		click.echo("restarting nginx...")
 		cmd = "sudo -S " + linux_system_service('nginx')
 		echo = exec_cmd(cmd, service="nginx", with_password=True, echo=echo)
 		click.echo("nginx restarted.")
+	else:
+		click.echo("No service to restart!")
 
 	if not debug:
 		supervisorctl = find_executable("supervisorctl")

@@ -168,35 +168,36 @@ def check_refs(tname, refs):
 
 
 def prepare_common_page_context(context, whatfor):
-	from fluorine.utils import check_dev_mode, jquery_include, meteor_config
+	from fluorine.utils import check_dev_mode, jquery_include#, meteor_config
 	from fluorine.utils.meteor.utils import build_meteor_context
-	from fluorine.utils.file import set_config
+	#from fluorine.utils.file import set_config
 
 	devmode = check_dev_mode()
 	context.developer_mode = devmode
 	context.jquery_include = jquery_include()
 
-	doc = frappe.get_doc("Fluorine Reactivity")
+	#doc = frappe.get_doc("Fluorine Reactivity")
 
 	#Meteor
-	build_meteor_context(context, devmode, whatfor)
+	build_meteor_context(context, whatfor)
 	context.meteor_web = True
 	#context.custom_template = doc.fluorine_base_template
 
-	if devmode:
-		set_config({
-			"production_mode": 0
-		})
+	#if devmode:
+	#	set_config({
+	#		"production_mode": 0
+	#	})
 
-		meteor_config["production_mode"] = 0
+		#meteor_config["production_mode"] = 0
 
 	return fluorine_build_context(context, whatfor), devmode
 
 
 def get_app_pages(context):
-	from fluorine.utils.module import get_app_context
+	#from fluorine.utils.module import get_app_context
 	from fluorine.utils import meteor_desk_app
 
+	"""
 	def get_frappe_context(context):
 
 		app = "frappe"
@@ -204,24 +205,24 @@ def get_app_pages(context):
 		path = os.path.join(app_path, "templates", "pages")
 		ret = get_app_context(context, path, app, app_path, "desk.py")
 		return ret
+	"""
 
 	context, devmode = prepare_common_page_context(context, meteor_desk_app)
 
-	fcontext = get_frappe_context(context)
+	#fcontext = get_frappe_context(context)
 
 	if devmode:
-		include_js = fcontext.get("include_js",[])
-		include_css = fcontext.get("include_css", [])
-		#TODO ver se é preciso remove tb o css gerado
-		try:
-			include_js.remove("/assets/js/meteor_app.min.js")
-		except:
-			pass
-		finally:
-			fcontext["include_js"] = include_js + context.meteor_package_js
-			fcontext["include_css"] = include_css + context.meteor_package_css
+		include_js = context.get("include_js",[])
+		include_css = context.get("include_css", [])
+	#	try:
+	#		include_js.remove("/assets/js/meteor_app.min.js")
+	#	except:
+	#		pass
+	#	finally:
+		context["include_js"] = include_js + context.meteor_package_js
+		context["include_css"] = include_css + context.meteor_package_css
 
-	context.update(fcontext)
+	context.update(context)
 
 	return context
 
@@ -234,12 +235,12 @@ def get_web_pages(context):
 	context.meteor_web_include_css = frappe.get_hooks("meteor_web_include_css")
 	context.meteor_web_include_js = frappe.get_hooks("meteor_web_include_js")
 
-	if devmode:
+	#if devmode:
 		#TODO ver se é preciso remove tb o css gerado
-		try:
-			context.meteor_web_include_js.remove("/assets/fluorine/js/meteor_web.js")
-		except:
-			pass
+	#	try:
+	#		context.meteor_web_include_js.remove("/assets/fluorine/js/meteor_web.js")
+	#	except:
+	#		pass
 
 	return context
 
@@ -286,7 +287,12 @@ def fluorine_build_context(context, whatfor):
 
 	copy_project_translation(apps, whatfor, custom_pattern)
 
-	if devmode and whatfor==meteor_desk_app:
+	try:
+		making_production = frappe.local.making_production
+	except:
+		making_production = False
+
+	if (devmode or making_production) and whatfor==meteor_desk_app:
 		make_meteor_props(context, whatfor)
 
 	return context

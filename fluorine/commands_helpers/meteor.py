@@ -9,7 +9,7 @@ def make_production_link():
 	from fluorine.utils.file import get_path_reactivity
 
 	path_reactivity = get_path_reactivity()
-	final_web_path = os.path.join(path_reactivity, "final_web", "bundle", "programs", "web.browser")
+	final_web_path = os.path.join(path_reactivity, meteor_web_app.replace("meteor", "final"), "bundle", "programs", "web.browser")
 	meteor_web_path = os.path.join("assets", "js", meteor_web_app)
 	if os.path.exists(final_web_path):
 		try:
@@ -20,8 +20,8 @@ def make_production_link():
 
 def make_public_folders():
 
-	for whatfor in whatfor_all:#("meteor_app", "meteor_web"):
-		app_path = frappe.get_app_path("fluorine")
+	app_path = frappe.get_app_path("fluorine")
+	for whatfor in (meteor_desk_app, ):#("meteor_app", "meteor_web"):
 		public_app_folder = os.path.join(app_path, "public", whatfor)
 		frappe.create_folder(public_app_folder)
 
@@ -30,7 +30,7 @@ def copy_meteor_runtime_config():
 
 	app_path = frappe.get_app_path("fluorine")
 	public_folder = os.path.join(app_path, "public")
-	meteor_runtime_file = os.path.join(public_folder, "meteor_app", "meteor_runtime_config.js")
+	meteor_runtime_file = os.path.join(public_folder, meteor_desk_app, "meteor_runtime_config.js")
 	copyfile(meteor_runtime_file, os.path.join(public_folder, "js", "meteor_runtime_config.js"))
 
 
@@ -162,20 +162,20 @@ def remove_public_link():
 	app_path = frappe.get_app_path("fluorine")
 	public_folder = os.path.join(app_path, "public")
 
-	for app in whatfor_all:#("meteor_app", "meteor_web"):
+	for app in (meteor_desk_app, ):
 		folder = os.path.join(public_folder, app)
 		remove_directory(folder)
 
-
+"""
 def make_public_link():
 
 	app_path = frappe.get_app_path("fluorine")
 	public_folder = os.path.join(app_path, "public")
 
-	for app in whatfor_all:#("meteor_app", "meteor_web"):
+	for app in (meteor_desk_app, ):
 		folder = os.path.join(public_folder, app)
-		if not os.path.exists(folder):
-			frappe.create_folder(folder)
+		frappe.create_folder(folder)
+"""
 
 def remove_from_assets():
 	try:

@@ -23,7 +23,7 @@ def meteor_url_path_prefix(whatfor):
 	return url_prefix
 
 
-def build_meteor_context(context, devmode, whatfor):
+def build_meteor_context(context, whatfor):
 	from fluorine.utils.reactivity import meteor_config
 
 	conf = meteor_config
@@ -34,9 +34,9 @@ def build_meteor_context(context, devmode, whatfor):
 
 	prefix = meteor_conf.get("ROOT_URL_PATH_PREFIX")
 	if whatfor == meteor_web_app:
-		host = meteor.get("host", default_host) + (prefix if prefix else "")
+		host = meteor_conf.get("host") or meteor.get("host", default_host) + (prefix if prefix else "")
 	else:
-		host = meteor.get("host", default_host) + (prefix if prefix else default_path_prefix)
+		host = meteor_conf.get("host") or meteor.get("host", default_host) + (prefix if prefix else default_path_prefix)
 
 	ddpurl = meteor_conf.get("ddpurl")
 
@@ -47,12 +47,15 @@ def build_meteor_context(context, devmode, whatfor):
 	elif whatfor == meteor_desk_app:
 		if not ddpurl:
 			ddpurl = default_host
-
 		ddpurl_port = ddpurl + (prefix if prefix else default_path_prefix)
 
+	#host
 	context.meteor_root_url = host
+	#host:port
 	context.meteor_root_url_port = meteor_host
+	#hpst/prefix
 	context.meteor_url_path_prefix = meteor_url_path_prefix(whatfor)
+	#ddpurl:port
 	context.meteor_ddp_default_connection_url = ddpurl_port
 
 
@@ -64,7 +67,7 @@ def get_meteor_release(cpath):
 
 	return ""
 
-def get_meteor_config(mthost, mtddpurlport, meteor_url_path_prefix, version, version_fresh, mrelease, whatfor, appId=None):
+def get_meteor_config_old(mthost, mtddpurlport, meteor_url_path_prefix, version, version_fresh, mrelease, whatfor, appId=None):
 
 	from fluorine.utils import check_dev_mode
 
@@ -90,7 +93,7 @@ Package.jquery = {
 
 	return meteor_config
 
-
+"""
 def make_auto_update_version(path, meteorRelease, root_url, root_prefix, whatfor, appId=None):
 	from fluorine.utils import file
 
@@ -110,8 +113,85 @@ def make_auto_update_version(path, meteorRelease, root_url, root_prefix, whatfor
 	autoupdateVersion, autoupdateVersionRefresh, frappe_manifest_js, frappe_manifest_css = meteor_hash_version(manifest, runtimeCfg, whatfor)
 	print "sha1 digest {} {}".format(autoupdateVersion, autoupdateVersionRefresh)
 	return autoupdateVersion, autoupdateVersionRefresh, frappe_manifest_js, frappe_manifest_css
+"""
+
+def get_meteor_config(mthost, mtddpurlport, meteor_url_path_prefix, version, version_fresh, mrelease, appId=None):
+
+	from fluorine.utils import check_dev_mode
+
+	devmod = check_dev_mode()
+
+	meteor_config = """__meteor_runtime_config__ = {
+		%(appId)s"meteorRelease": "%(meteorRelease)s",
+		"ROOT_URL": "%(meteor_root_url)s",
+		"ROOT_URL_PATH_PREFIX": "%(meteor_url_path_prefix)s",
+		"autoupdateVersion": "%(meteor_autoupdate_version)s",
+		"autoupdateVersionRefreshable": "%(meteor_autoupdate_version_freshable)s"%(meteor_ddp_default_connection_url)s
+	};
+	%(jquery)s
+	""" % {"appId": "'appId':'" + appId + "',\n\t\t" if devmod else "", "meteorRelease": mrelease, "meteor_root_url": mthost, "meteor_url_path_prefix": meteor_url_path_prefix,
+				"meteor_autoupdate_version": version, "meteor_autoupdate_version_freshable": version_fresh,
+				"meteor_ddp_default_connection_url": ",\n\t\t'DDP_DEFAULT_CONNECTION_URL': '" + mtddpurlport + "'", "jquery": """
+if (typeof Package === 'undefined')
+	Package = {};
+Package.jquery = {
+	$: $,
+	jQuery: jQuery
+};"""}
+
+	return meteor_config
 
 
+def make_auto_update_version(path, meteorRelease, root_url, appId=None):
+	from fluorine.utils import file
+
+	runtimeCfg = OrderedDict()
+	runtimeCfg["meteorRelease"] = meteorRelease
+	runtimeCfg["ROOT_URL"] = root_url
+	runtimeCfg["ROOT_URL_PATH_PREFIX"] = default_path_prefix
+
+	if appId:
+		runtimeCfg["appId"] = appId
+
+	manifest = file.read(path)
+	manifest = json.loads(manifest).get("manifest")
+	autoupdateVersion, autoupdateVersionRefresh, frappe_manifest_js, frappe_manifest_css = meteor_hash_version(manifest, runtimeCfg)
+	print "sha1 digest {} {}".format(autoupdateVersion, autoupdateVersionRefresh)
+	return autoupdateVersion, autoupdateVersionRefresh, frappe_manifest_js, frappe_manifest_css
+
+def meteor_hash_version(manifest, runtimeCfg):
+	sh1 = hashlib.sha1()
+	sh2 = hashlib.sha1()
+	frappe_manifest_js = []
+	frappe_manifest_css = []
+
+	rt = json.dumps(runtimeCfg).replace(" ", "").encode('utf8')
+	print "json.dumps ", rt
+	sh1.update(rt)
+	sh2.update(rt)
+
+	prefix = default_path_prefix
+
+	for m in manifest:
+		if m.get("where") == "client" or m.get("where") == "internal":
+			path = m.get("path")
+			mhash = m.get("hash")
+			if m.get("where") == "client":
+				nurl = prefix + m.get("url")
+				if m.get("type") == "css":
+					frappe_manifest_css.append(nurl)
+					sh2.update(path)
+					sh2.update(mhash)
+					continue
+				elif m.get("type") == "js":
+					if "jquery" not in path:
+						frappe_manifest_js.append(nurl)
+			sh1.update(path)
+			sh1.update(mhash)
+
+	return sh1.hexdigest(), sh2.hexdigest(), frappe_manifest_js, frappe_manifest_css
+
+"""
 def meteor_hash_version(manifest, runtimeCfg, whatfor):
 	sh1 = hashlib.sha1()
 	sh2 = hashlib.sha1()
@@ -152,11 +232,23 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 			sh1.update(mhash)
 
 	return sh1.hexdigest(), sh2.hexdigest(), frappe_manifest_js, frappe_manifest_css
+"""
 
-def make_meteor_props(context, whatfor, production=0):
+def make_meteor_props(context, whatfor):
+	from fluorine.utils import get_meteor_runtime_config_path
 	from fluorine.utils.file import get_path_reactivity
 
 	path_reactivity = get_path_reactivity()
+
+	"""
+		This is only called in developer mode or when making production mode
+		Used when issued from command line
+		From web force production = False
+	"""
+	try:
+		production = frappe.local.making_production
+	except:
+		production = False
 
 	appId = ""
 	if not production:
@@ -171,10 +263,11 @@ def make_meteor_props(context, whatfor, production=0):
 	context.appId = appId.replace(" ","").replace("\n","")
 
 	context.meteor_autoupdate_version, context.meteor_autoupdate_version_freshable, manifest_js, manifest_css =\
-				make_auto_update_version(progarm_path, context.meteorRelease, context.meteor_root_url, "", whatfor, appId=context.appId)
+				make_auto_update_version(progarm_path, context.meteorRelease, context.meteor_root_url, appId=context.appId)
 
-	app_path = frappe.get_app_path("fluorine")
-	context.meteor_package_js = [os.path.join("assets", "fluorine", whatfor, "meteor_runtime_config.js")] + manifest_js
+
+	meteor_runtime_path = get_meteor_runtime_config_path(whatfor)
+	context.meteor_package_js = [meteor_runtime_path] + manifest_js
 	context.meteor_package_css = manifest_css
 	context.meteor_runtime_config = True
 
@@ -182,17 +275,16 @@ def make_meteor_props(context, whatfor, production=0):
 
 
 	props = get_meteor_config(context.meteor_root_url, context.meteor_ddp_default_connection_url, url_prefix, context.meteor_autoupdate_version,
-							context.meteor_autoupdate_version_freshable, context.meteorRelease, whatfor, context.appId)
+							context.meteor_autoupdate_version_freshable, context.meteorRelease, context.appId)
 
-	public_app_folder = os.path.join(app_path, "public", whatfor)
-	meteor_runtime_path = os.path.join(public_app_folder, "meteor_runtime_config.js")
-	if not production or whatfor==meteor_desk_app:
-		save_meteor_props(props, meteor_runtime_path)
-	else:
-		try:
-			os.unlink(meteor_runtime_path)
-		except:
-			pass
+	meteor_runtime_real_path = get_meteor_runtime_config_path(whatfor, real=True)
+	#if not production:
+	save_meteor_props(props, meteor_runtime_real_path)
+	#else:
+	#	try:
+	#		os.unlink(meteor_runtime_real_path)
+	#	except:
+	#		pass
 
 
 def update_common_config(config):

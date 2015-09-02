@@ -6,13 +6,27 @@ import frappe
 
 meteor_config = None
 
-assets_public_path = "/assets/fluorine/js/react"
+frappe.local("making_production")
+frappe.local.making_production = False
+#assets_public_path = "/assets/fluorine/js/react"
+meteor_runtime_config_path = ""
 
 APPS = None
 
 meteor_web_app = "meteor_web"
 meteor_desk_app = "meteor_app"
 whatfor_all = (meteor_web_app, meteor_desk_app)
+
+def get_meteor_runtime_config_path(whatfor, real=False):
+	import os
+
+	if real:
+		app_path = frappe.get_app_path("fluorine")
+		public_app_folder = os.path.join(app_path, "public", whatfor)
+		return os.path.join(public_app_folder, "meteor_runtime_config.js")
+	else:
+		return os.path.join("assets", "fluorine", whatfor, "meteor_runtime_config.js")
+
 
 def get_attr_from_json(attrs, _json_):
 	"""
@@ -168,7 +182,7 @@ def prepare_environment():
 	else:
 		print "error hooks"
 
-	if not meteor_config.get("stop"):
+	if not meteor_config.get("stop") or frappe.local.making_production:
 		#PATCH get_context
 		if frappe_get_context == None:
 			patch_frappe_get_context()

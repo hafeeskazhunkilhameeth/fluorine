@@ -233,6 +233,7 @@ def prepare_compile_environment():
 def make_final_app_client(jquery=0):
 	import json
 	from fluorine.utils.file import get_path_reactivity, read, save_js_file
+	from fluorine.utils import meteor_desk_app
 
 	react_path = get_path_reactivity()
 
@@ -250,7 +251,7 @@ def make_final_app_client(jquery=0):
 		else:
 			build_json = frappe._dict()
 
-		build_json["js/meteor_app.min.js"] = ["public/js/meteor_runtime_config.js"]
+		build_json["js/meteor_app.min.js"] = ["public/%s/meteor_runtime_config.js" % meteor_desk_app]
 		build_json["css/meteor_app.css"] = []
 
 		manifest = read(progarm_path)
@@ -274,9 +275,10 @@ def build_frappe_json_files(manifest, build_json, jquery=0):
 				continue
 
 			pack_path = os.path.join(react_path, "final_app/bundle/programs/web.browser", path)
-			if m.get("type") == "js":
+			type = m.get("type") == "js"
+			if type:
 				build_json["js/meteor_app.min.js"].append(pack_path)
-			else:
+			elif type == "css":
 				build_json["css/meteor_app.css"].append(pack_path)
 
 

@@ -5,7 +5,7 @@ import frappe, os
 
 from fluorine.utils import whatfor_all, meteor_desk_app, meteor_web_app
 from fluorine.utils import file
-from fluorine.utils import assets_public_path
+#from fluorine.utils import assets_public_path
 from fluorine.utils.fjinja2.utils import c
 
 
@@ -29,11 +29,11 @@ def copy_file(src, dst):
 	import shutil
 	shutil.copyfile(src, dst)
 
-def remove_directory(path):
+def remove_directory(path, ignore_errors=True):
 	import shutil
-	shutil.rmtree(path)
+	shutil.rmtree(path, ignore_errors=ignore_errors)
 
-
+"""
 def move_to_public(files, whatfor):
 	hooks_js = {"client_hooks_js":[]}
 	fpath = assets_public_path
@@ -44,7 +44,7 @@ def move_to_public(files, whatfor):
 		hooks_js["client_hooks_js"].extend(prepare_files_and_copy(f, fpath))
 
 	return hooks_js
-
+"""
 
 def prepare_files_and_copy(files, fpath):
 	hooks = []
