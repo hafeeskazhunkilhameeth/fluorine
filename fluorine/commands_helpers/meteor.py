@@ -277,28 +277,45 @@ def meteor_run(app, app_path, mongo_custom=False):
 		click.echo(line)
 
 
-def meteor_init(mongo_custom=False):
-	from fluorine.utils.file import get_path_reactivity
+class MeteorContext(object):
+	def __init__(self, production=True):
+		self.context = frappe._dict({meteor_desk_app:None})
+		frappe.local.making_production = production
 
-	for app in whatfor_all:#("meteor_app", "meteor_web"):
-		app_path = os.path.join(get_path_reactivity(), app)
-		program_json_path = os.path.join(app_path, ".meteor", "local", "build", "programs", "web.browser", "program.json")
-		if not os.path.exists(program_json_path):
-			try:
-				meteor_run(app, app_path, mongo_custom=mongo_custom)
-			except Exception as e:
-				click.echo("You have to start meteor at hand before start meteor. Issue `meteor` in %s. Error: %s" % (app_path, e))
-				return
+	def meteor_init(self, mongo_custom=False):
+		from fluorine.utils.file import get_path_reactivity
+
+		for app in whatfor_all:
+			app_path = os.path.join(get_path_reactivity(), app)
+			program_json_path = os.path.join(app_path, ".meteor", "local", "build", "programs", "web.browser", "program.json")
+			if not os.path.exists(program_json_path):
+				try:
+					meteor_run(app, app_path, mongo_custom=mongo_custom)
+				except Exception as e:
+					click.echo("You have to start meteor at hand before start meteor. Issue `meteor` in %s. Error: %s" % (app_path, e))
+					return
 
 
-def make_context(doc):
-	from fluorine.utils import prepare_environment
-	from fluorine.utils.reactivity import start_meteor
-	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import prepare_make_meteor_file
+	def make_context(self):
+		from fluorine.utils import prepare_environment
+		from fluorine.utils.reactivity import start_meteor
+		from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import prepare_make_meteor_file, prepare_compile_environment
 
-	make_public_folders()
-	prepare_environment()
-	start_meteor()
-	frappe.local.request = frappe._dict()
-	prepare_make_meteor_file(doc.fluor_meteor_port, "Both")
+		make_public_folders()
+		prepare_environment()
+		start_meteor()
+		frappe.local.request = frappe._dict()
+		prepare_compile_environment()
+		for w in whatfor_all:
+			ctx = prepare_make_meteor_file( w)
+			if w == meteor_desk_app:
+				self.context[meteor_desk_app] = ctx
+
+	def make_meteor_properties(self):
+		from fluorine.utils.meteor.utils import make_meteor_props
+		from fluorine.utils.spacebars_template import make_includes
+
+		context = self.context.get(meteor_desk_app)
+		make_meteor_props(context, meteor_desk_app, production=True)
+		make_includes(context)
 

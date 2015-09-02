@@ -10,4 +10,6 @@ base_template_path = "templates/pages/mdesk.html"
 
 def get_context(context):
 	from fluorine.utils.spacebars_template import get_app_pages
-	return get_app_pages(context)
+
+	context = get_app_pages(context)
+	return context

@@ -259,14 +259,15 @@ def setState(state, site=None, custom_mongo=None, user=None, server_port=None, m
 
 def _setState(site=None, state=None, debug=False, update=False, force=False, mongo_custom=False, user=None, bench="..", server_port=None, mac_sup_prefix_path="/usr/local"):
 	from fluorine.utils.fcache import clear_frappe_caches
-	from fluorine.commands_helpers.meteor import meteor_init
+	from fluorine.commands_helpers.meteor import MeteorContext
 	doc = get_doctype("Fluorine Reactivity", site)
 
 	devmode = doc.fluor_dev_mode
 	fluor_state = doc.fluorine_state
 	what = state.lower()
 	if what == "init":
-		meteor_init(doc, mongo_custom=mongo_custom)
+		mctx = MeteorContext()
+		mctx.meteor_init(mongo_custom=mongo_custom)
 	elif what == "develop":
 		start_meteor(doc, devmode, fluor_state, site=site, mongo_custom=mongo_custom, bench=bench)
 	elif what == "stop":
@@ -309,7 +310,7 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile, make_mongodb_default, check_meteor_apps_created
 	from fluorine.utils.meteor.utils import PORT
 	from fluorine.utils.reactivity import meteor_config
-	from fluorine.commands_helpers.meteor import meteor_init, make_context
+	from fluorine.commands_helpers.meteor import MeteorContext
 	import platform
 
 
@@ -326,7 +327,8 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 	meteor_config["production_mode"] = 0
 	meteor_config["stop"] = 0
 
-	meteor_init(mongo_custom=mongo_custom)
+	mctx = MeteorContext(production=False)
+	mctx.meteor_init(mongo_custom=mongo_custom)
 	#use mongo from meteor by default
 	if not mongo_custom:
 		meteor_config.pop("meteor_mongo", None)
@@ -343,9 +345,9 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 	doc.check_mongodb = mongo_default
 	#also save meteor_config to file
 	doc.save()
-	make_context(doc)
+	mctx.make_context()
 
-	mh.make_public_folders()
+	#mh.make_public_folders()
 	mh.remove_from_assets()
 	save_to_procfile(doc)
 	bench_generate_nginx_config(bench=bench)
@@ -391,8 +393,8 @@ def stop_meteor(doc, devmode, state, force=False, site=None, production=False, b
 
 def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_port=None, site=None, debug=False, update=False, force=False, user=None, bench="..", mac_sup_prefix_path="/usr/local"):
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile, make_final_app_client, save_to_procfile, check_meteor_apps_created, prepare_make_meteor_file
-	from fluorine.utils.meteor.utils import build_meteor_context, make_meteor_props, make_meteor_files, prepare_client_files
-	from fluorine.commands_helpers.meteor import meteor_init, make_context
+	from fluorine.utils.meteor.utils import build_meteor_context, make_meteor_props, make_meteor_files, cmd_packages_from, prepare_client_files
+	from fluorine.commands_helpers.meteor import MeteorContext
 	from fluorine.utils import patch_frappe_get_context
 	from fluorine.utils import meteor_config
 
@@ -421,25 +423,27 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_po
 	mgh._check_custom_mongodb(doc)
 	remove_from_procfile()
 
-	meteor_init(mongo_custom=True)
-	frappe.local.making_production = True
+	m_ctx = MeteorContext()
+	m_ctx.meteor_init(mongo_custom=True)
 	#get context to work with desk
-	make_context(doc)
+	m_ctx.make_context()
 
 	#only save the meteor packages installed in fluorine if fluorine app is in development.
-	if current_dev_app != "fluorine" or current_dev_app == "fluorine" and force:
-		prepare_client_files(current_dev_app)
+	if current_dev_app != "fluorine" or force:
+		#prepare_client_files(current_dev_app)
+		cmd_packages_from(current_dev_app)
 	#If debug then do not run frappe setup production and test only meteor in production mode.
 	click.echo("Make meteor bundle for Desk APP")
 	make_meteor_files(doc.fluor_meteor_host, doc.fluor_meteor_port, doc.ddpurl, doc.meteor_target_arch)
 	#Patch: run twice for fix nemo64:bootstrap less problem
-	print "Run twice to patch nemo64:bootstrap less problem"
+	click.echo("Run twice to patch nemo64:bootstrap less problem")
 	click.echo("Make meteor bundle for WEB")
 	make_meteor_files(doc.fluor_meteor_host, doc.fluor_meteor_port, doc.ddpurl, doc.meteor_target_arch)
 
-	context = frappe._dict()
-	build_meteor_context(context, meteor_desk_app)
-	make_meteor_props(context, meteor_desk_app)
+	#context = frappe._dict()
+	#build_meteor_context(context, meteor_desk_app)
+	#make_meteor_props(context, meteor_desk_app)
+	m_ctx.make_meteor_properties()
 
 	#mh.copy_meteor_runtime_config()
 	click.echo("Make build.json for meteor_app")

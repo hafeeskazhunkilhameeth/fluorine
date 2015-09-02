@@ -192,10 +192,22 @@ def prepare_common_page_context(context, whatfor):
 
 	return fluorine_build_context(context, whatfor), devmode
 
+def make_includes(context):
+
+	include_js = context.get("include_js",[])
+	include_css = context.get("include_css", [])
+#	try:
+#		include_js.remove("/assets/js/meteor_app.min.js")
+#	except:
+#		pass
+#	finally:
+	context["include_js"] = include_js + context.meteor_package_js
+	context["include_css"] = include_css + context.meteor_package_css
 
 def get_app_pages(context):
 	#from fluorine.utils.module import get_app_context
 	from fluorine.utils import meteor_desk_app
+	from fluorine.utils.meteor.utils import make_meteor_props
 
 	"""
 	def get_frappe_context(context):
@@ -209,20 +221,15 @@ def get_app_pages(context):
 
 	context, devmode = prepare_common_page_context(context, meteor_desk_app)
 
-	#fcontext = get_frappe_context(context)
+	try:
+		making_production = frappe.local.making_production
+	except:
+		making_production = False
 
-	if devmode:
-		include_js = context.get("include_js",[])
-		include_css = context.get("include_css", [])
-	#	try:
-	#		include_js.remove("/assets/js/meteor_app.min.js")
-	#	except:
-	#		pass
-	#	finally:
-		context["include_js"] = include_js + context.meteor_package_js
-		context["include_css"] = include_css + context.meteor_package_css
+	if devmode and not making_production:
+		make_meteor_props(context, meteor_desk_app)
+		make_includes(context)
 
-	context.update(context)
 
 	return context
 
@@ -236,7 +243,7 @@ def get_web_pages(context):
 	context.meteor_web_include_js = frappe.get_hooks("meteor_web_include_js")
 
 	#if devmode:
-		#TODO ver se é preciso remove tb o css gerado
+	#TODO ver se é preciso remove tb o css gerado
 	#	try:
 	#		context.meteor_web_include_js.remove("/assets/fluorine/js/meteor_web.js")
 	#	except:
@@ -249,7 +256,6 @@ def fluorine_build_context(context, whatfor):
 	from fluorine.utils import APPS as apps, meteor_desk_app
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation
 	from reactivity import list_ignores
-	from fluorine.utils.meteor.utils import make_meteor_props
 	from react_file_loader import get_custom_pattern
 
 	frappe.local.context = context
@@ -286,14 +292,6 @@ def fluorine_build_context(context, whatfor):
 	make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, custom_pattern=["*.xhtml"])
 
 	copy_project_translation(apps, whatfor, custom_pattern)
-
-	try:
-		making_production = frappe.local.making_production
-	except:
-		making_production = False
-
-	if (devmode or making_production) and whatfor==meteor_desk_app:
-		make_meteor_props(context, whatfor)
 
 	return context
 

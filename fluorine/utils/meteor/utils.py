@@ -234,7 +234,7 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 	return sh1.hexdigest(), sh2.hexdigest(), frappe_manifest_js, frappe_manifest_css
 """
 
-def make_meteor_props(context, whatfor):
+def make_meteor_props(context, whatfor, production=False):
 	from fluorine.utils import get_meteor_runtime_config_path
 	from fluorine.utils.file import get_path_reactivity
 
@@ -245,10 +245,10 @@ def make_meteor_props(context, whatfor):
 		Used when issued from command line
 		From web force production = False
 	"""
-	try:
-		production = frappe.local.making_production
-	except:
-		production = False
+	#try:
+	#	production = frappe.local.making_production
+	#except:
+	#	production = False
 
 	appId = ""
 	if not production:
@@ -318,7 +318,7 @@ def prepare_client_files(curr_app):
 	from fluorine.commands_helpers.meteor import get_active_apps
 
 	react_path = get_path_reactivity()
-	app_path = frappe.get_app_path(curr_app)
+	curr_app_path = frappe.get_app_path(curr_app)
 
 	for whatfor in whatfor_all:#("meteor_web", "meteor_app"):
 		meteor_final_path = os.path.join(react_path, whatfor.replace("meteor", "final"))
@@ -331,7 +331,7 @@ def prepare_client_files(curr_app):
 		apps = get_active_apps()
 		apps.remove(curr_app)
 		src = os.path.join(react_path, whatfor, ".meteor", "packages")
-		dst = os.path.join(app_path, "templates", "packages_add_" + whatfor)
+		dst = os.path.join(curr_app_path, "templates", "packages_add_" + whatfor)
 		installed_packages = frappe.get_file_items(src)
 
 		for app in apps:
@@ -343,6 +343,48 @@ def prepare_client_files(curr_app):
 					installed_packages.remove(pckg)
 
 		save_file(dst, "\n".join(installed_packages))
+
+
+def cmd_packages_from(curr_app):
+	from fluorine.utils.install import get_packages_version
+	from fluorine.utils.react_file_loader import remove_directory
+	from fluorine.utils.file import get_path_reactivity, save_file
+	from fluorine.commands_helpers.meteor import get_active_apps
+	import re
+
+	react_path = get_path_reactivity()
+	curr_app_path = frappe.get_app_path(curr_app)
+
+	for whatfor in whatfor_all:#("meteor_web", "meteor_app"):
+		meteor_final_path = os.path.join(react_path, whatfor.replace("meteor", "final"))
+		if os.path.exists(meteor_final_path):
+			try:
+				remove_directory(os.path.join(meteor_final_path, "bundle"))
+			except:
+				pass
+
+		apps = get_active_apps()
+		apps.remove(curr_app)
+		dst = os.path.join(curr_app_path, "templates", "packages_add_" + whatfor)
+		installed_packages = get_packages_version(whatfor, path_reactivity=react_path)
+		packages_to_remove = set([])
+
+		for app in apps:
+			tmp_app_path = frappe.get_app_path(app)
+			tmp_dst = os.path.join(tmp_app_path, "templates", "packages_add_" + whatfor)
+			tmp_app_pckg = frappe.get_file_items(tmp_dst)
+			#Not permited upgrade packages installed by other modules
+			for i_pckg in installed_packages:
+				for pckg in tmp_app_pckg:
+					pckg_name = pckg.split("@=")[0]
+					if re.match(pckg_name, i_pckg):
+						packages_to_remove.add(pckg)
+
+		packages_to_add = set(installed_packages).difference(packages_to_remove)
+
+		save_file(dst, "\n".join(packages_to_add))
+
+
 
 
 def make_meteor_files(mthost, mtport, mtddpurl, architecture):

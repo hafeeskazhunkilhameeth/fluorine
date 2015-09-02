@@ -197,25 +197,23 @@ def prepare_to_update():
 		frappe.throw(_("Please set state off and/or developer mode off first."))
 
 
-def prepare_make_meteor_file(mtport, whatfor):
+def prepare_make_meteor_file(whatfor):
 	#from frappe.website.context import get_context
 	from fluorine.templates.pages.fluorine_home import get_context as fluorine_get_context
-	from fluorine.utils import whatfor_all, meteor_desk_app, meteor_web_app, fluor_get_context as get_context
+	from fluorine.utils import meteor_desk_app, fluor_get_context as get_context
 
-	_whatfor = {"Both": whatfor_all, "Reactive Web": (meteor_web_app,), "Reactive App": (meteor_desk_app,)}
+	#_whatfor = {"Both": whatfor_all, "Reactive Web": (meteor_web_app,), "Reactive App": (meteor_desk_app,)}
 
-
-	prepare_compile_environment()
-
-	for w in _whatfor.get(whatfor):
-		if whatfor == "Both" and w == meteor_desk_app:
-			#mtport = int(mtport) + 10
-			frappe.local.path = "desk"
-			get_context("desk")
-		else:
-			#frappe.local.path = "fluorine_home"
-			#get_context("fluorine_home")
-			fluorine_get_context(frappe._dict())
+	#for w in _whatfor.get(whatfor):
+	#if whatfor == "Both" and w == meteor_desk_app:
+	if whatfor == meteor_desk_app:
+		#mtport = int(mtport) + 10
+		frappe.local.path = "desk"
+		return get_context("desk")
+	else:
+		#frappe.local.path = "fluorine_home"
+		#get_context("fluorine_home")
+		return fluorine_get_context(frappe._dict())
 
 
 def prepare_compile_environment():
