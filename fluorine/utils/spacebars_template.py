@@ -226,6 +226,8 @@ def get_app_pages(context):
 	except:
 		making_production = False
 
+	print "online devemod 2 {} prodc {}".format(devmode, making_production)
+
 	if devmode and not making_production:
 		make_meteor_props(context, meteor_desk_app)
 		make_includes(context)

@@ -305,7 +305,6 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 
 
 def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench=".."):
-	from fluorine.commands_helpers.meteor import MeteorDevelop
 	"""
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile, make_mongodb_default, check_meteor_apps_created
 	from fluorine.utils.meteor.utils import PORT
@@ -369,6 +368,7 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, bench="..")
 		click.echo("nginx link not set. You must make a symlink to frappe-bench/config/nginx.conf from nginx conf folder.")
 		return
 	"""
+	from fluorine.commands_helpers.meteor import MeteorDevelop
 	md = MeteorDevelop(doc, site=site, mongo_custom=mongo_custom, bench=bench)
 	md.start()
 
@@ -475,6 +475,8 @@ def start_meteor_production_mode(doc, devmode, state, current_dev_app, server_po
 
 	sh.start_nginx_supervisor_services(debug=debug)
 	"""
+
+
 	mp = MeteorProduction(doc, current_dev_app, site=site, debug=debug, update=update, force=force, user=user, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path)
 
 	mp.start()

@@ -327,7 +327,6 @@ class MeteorDevelop(object):
 		self.bench = bench
 		self.mongo_custom = mongo_custom
 
-
 	def start(self):
 
 		if not self.check_meteor_apps():
@@ -361,7 +360,7 @@ class MeteorDevelop(object):
 		return check_meteor_apps_created(self.doc)
 
 	def make_apps_context(self):
-		self.m_ctx = m_ctx = MeteorContext()
+		self.m_ctx = m_ctx = MeteorContext(production=False)
 		m_ctx.meteor_init(mongo_custom=True)
 		#get context to work with desk
 		m_ctx.make_context()
