@@ -431,6 +431,9 @@ class MeteorProduction(object):
 		self.mac_sup_prefix_path = mac_sup_prefix_path
 
 	def start(self):
+		from fluorine.utils import meteor_config
+
+		self.meteor_config = meteor_config
 
 		if not self.check_meteor_apps():
 			raise click.ClickException("Please install meteor app first. From command line issue 'bench fluorine create-meteor-apps.'")
@@ -466,10 +469,9 @@ class MeteorProduction(object):
 		self.doc.fluor_dev_mode = 0
 
 	def update_meteor_conf_file(self):
-		from fluorine.utils import meteor_config
 
-		meteor_config["stop"] = 1
-		meteor_config["production_mode"] = 1
+		self.meteor_config["stop"] = 1
+		self.meteor_config["production_mode"] = 1
 
 
 	def check_meteor_apps(self):
