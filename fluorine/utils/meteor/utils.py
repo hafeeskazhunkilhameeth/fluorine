@@ -383,6 +383,7 @@ def cmd_packages_from(curr_app):
 					pckg_name = pckg.split("@=")[0]
 					if re.match(pckg_name, i_pckg):
 						packages_to_remove.add(pckg)
+						break
 
 		packages_to_add = set(installed_packages).difference(packages_to_remove)
 

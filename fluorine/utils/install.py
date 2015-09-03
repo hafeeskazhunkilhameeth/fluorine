@@ -112,13 +112,19 @@ def meteor_package(whatfor, packages, path_reactivity=None, action="add"):
 	if packages:
 		meteor_packages = frappe.get_file_items(os.path.join(cwd, ".meteor", "packages"))
 
+		packages_to_use = []
 		#NOTE: Only add packages that do not exist or remove packages that exist
+
 		for pckg in packages[:]:
-			if re.match(pckg, meteor_packages):
-				if action == "add":
-					packages.remove(pckg)
-					print "{}: {} already exist - no action was taken. Try to update.".format(whatfor, pckg)
-			elif action == "remove":
+			found = False
+			for i_pckg in meteor_packages:
+				if re.match(pckg, i_pckg):
+					if action == "add":
+						packages.remove(pckg)
+						print "{}: {} already exist - no action was taken. Try to update.".format(whatfor, pckg)
+					found = True
+					break
+			if not found and action == "remove":
 				packages.remove(pckg)
 				print "{}: {} does not exist - no action was taken.".format(whatfor, pckg)
 
