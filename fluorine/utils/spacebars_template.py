@@ -243,8 +243,9 @@ def get_web_pages(context):
 
 	context = prepare_common_page_context(context, meteor_web_app)
 
-	context.meteor_web_include_css = frappe.get_hooks("meteor_web_include_css")
-	context.meteor_web_include_js = frappe.get_hooks("meteor_web_include_js")
+	#TODO TO REMOVE
+	#context.meteor_web_include_css = frappe.get_hooks("meteor_web_include_css")
+	#context.meteor_web_include_js = frappe.get_hooks("meteor_web_include_js")
 
 	#if devmode:
 	#TODO ver se é preciso remove tb o css gerado
