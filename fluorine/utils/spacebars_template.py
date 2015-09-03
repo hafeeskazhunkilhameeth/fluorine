@@ -292,9 +292,11 @@ def fluorine_build_context(context, whatfor):
 	custom_pattern = get_custom_pattern(whatfor, custom_pattern=None)
 
 	curr_app = meteor_config.get("current_dev_app", "").strip()
-	known_apps.remove(curr_app)
 	#set current app as the first app
-	known_apps.insert(0, curr_app)
+	if curr_app != known_apps[0]:
+		known_apps.remove(curr_app)
+		known_apps.insert(0, curr_app)
+	
 	process_react_templates(context, known_apps, whatfor, custom_pattern)
 
 	fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
