@@ -1,7 +1,5 @@
 insecure@=1.0.3
 meteor-platform@=1.2.2
-accounts-password@=1.1.1
-nemo64:bootstrap@=3.3.5_2
 tap:i18n-ui@=0.7.0
 less@=1.0.14
 iron:router@=1.0.9

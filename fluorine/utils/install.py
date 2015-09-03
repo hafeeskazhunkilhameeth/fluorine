@@ -20,6 +20,7 @@ def before_install():
 		frappe.create_folder(path_reactivity)
 
 	copy_common_config(path_reactivity)
+	update_meteor_config_file()
 
 	from fluorine.utils import get_meteor_configuration_file
 	get_meteor_configuration_file()
@@ -66,12 +67,10 @@ def copy_common_config(path_reactivity):
 
 	copyfile(src, dst)
 
-	try:
-		src = os.path.join(app_path, "templates", "permission_files.json")
+	src = os.path.join(app_path, "templates", "permission_files.json")
+	if os.path.exists(src):
 		dst = os.path.join(path_reactivity, "permission_files.json")
 		copyfile(src, dst)
-	except:
-		pass
 
 def create_meteor_apps(path_reactivity=None):
 	import subprocess
@@ -211,6 +210,17 @@ def meteor_remove_package(app, whatfor, file_remove=None, path_reactivity=None):
 
 	packages_remove = get_packages_file(app, file_remove)
 	meteor_package_list(whatfor, packages=packages_remove, path_reactivity=path_reactivity, action="remove")
+
+
+def update_meteor_config_file():
+	from fluorine.utils import meteor_config
+	from fluorine.commands_helpers import get_default_site
+	from fluorine.utils.meteor.utils import update_common_config
+
+	meteor_config["site"] = get_default_site()
+
+	update_common_config(meteor_config)
+
 
 
 def init_singles():

@@ -12,8 +12,9 @@ def check_mongodb(conf):
 		return False
 
 def start_meteor():
-	conf = meteor_config
-	frappesite = conf.get("site")
+	from fluorine.commands_helpers import get_default_site
+
+	frappesite = get_default_site()
 
 	extras_context_methods.update(get_extras_context_method(frappesite))
 
