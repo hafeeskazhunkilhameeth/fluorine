@@ -1,7 +1,7 @@
 insecure@=1.0.3
+kadira:flow-router@=2.2.0
 meteor-platform@=1.2.2
 accounts-password@=1.1.1
 tap:i18n-ui@=0.7.0
 tap:i18n-db@=0.4.0
 tap:i18n@=1.5.1
-kadira:flow-router@=2.2.0*

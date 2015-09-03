@@ -11,6 +11,25 @@ from fluorine.commands_helpers import meteor as mh
 from fluorine.commands_helpers import config as ch
 
 
+COLORS = ("green", "blue", "yellow", "red", "black", "white", "magenta", "cyan")
+
+
+def click_format(msg, color=None, new_line=True, end_line=True):
+	from random import randint
+
+	if not color:
+		color = COLORS[randint(0,7)]
+
+	if new_line:
+		click.echo("\n" * 1)
+
+	click.echo(click.style(msg, fg=color))
+
+	if end_line:
+		click.echo("\n" * 1)
+
+	return color
+
 
 def _reset_packages(app, file_add=None, file_remove=None):
 	from fluorine.utils.install import meteor_reset_package
@@ -187,6 +206,29 @@ def cmd_create_meteor_apps(site=None):
 	_cmd_create_meteor_apps(doc)
 
 
+@click.command('get-current-state')
+def cmd_get_state():
+	"""Set the current app."""
+	from fluorine.utils.reactivity import meteor_config
+
+	production_mode = meteor_config.get("production_mode")
+	developer_mode = meteor_config.get("developer_mode")
+	stop = meteor_config.get("stop")
+
+	color = click_format("*" * 35)
+	if production_mode:
+		click.echo("Current State: %s" % "Production mode.")
+
+	elif developer_mode:
+		click.echo("Current State: %s" % "Developer mode.")
+	elif stop:
+		click.echo("Current State: %s" % "Stop. Default frappe mode.")
+	else:
+		click.echo("Current State: %s" % "Undefined mode. Check reactivity/common_site_config.json.")
+
+	click_format("*" * 35, color=color)
+
+
 @click.command('current-dev-app')
 @click.argument('app')
 def set_current_app(app):
@@ -198,7 +240,9 @@ def set_current_app(app):
 		meteor_config["current_dev_app"] = app
 		update_common_config(meteor_config)
 	else:
+		color = click_format("*" * 40)
 		click.echo("You must be in developer mode to change current dev app.")
+		click_format("*" * 40, color)
 
 
 @click.command('restore-common-config')
@@ -223,7 +267,9 @@ def cmd_restore_common_config(site=None):
 	meteor_config["developer_mode"] = doc.fluor_dev_mode
 	save_to_common_site_config(doc, meteor_config)
 
+	color = click_format("*" * 30)
 	click.echo("Common config restored.")
+	click_format("*" * 30, color)
 
 
 @click.command('set-state')
@@ -253,7 +299,9 @@ def setState(state, site=None, custom_mongo=None, user=None, server_port=None, m
 
 	bench = "../../bench-repo/"
 
+	color = click_format("*" * 80)
 	_setState(site=site, state=state, debug=debug, update= update, force=force, mongo_custom=custom_mongo, user=user, bench=bench, server_port=server_port, mac_sup_prefix_path=mac_sup_prefix_path)
+	click_format("*" * 80, color)
 
 
 def _setState(site=None, state=None, debug=False, update=False, force=False, mongo_custom=False, user=None, bench="..", server_port=None, mac_sup_prefix_path="/usr/local"):
@@ -539,6 +587,7 @@ commands = [
 	cmd_add_meteor_packages,
 	cmd_remove_meteor_packages,
 	cmd_restore_common_config,
+	cmd_get_state,
 	#setup_production,
 	cmd_update_version,
 	cmd_check_updates,

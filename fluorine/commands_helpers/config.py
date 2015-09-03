@@ -168,9 +168,9 @@ def generate_nginx_supervisor_conf(doc, user=None, debug=None, update=False, ben
 			try:
 				sup_conf_dir = get_supervisor_confdir(bench=bench)
 				final_path = os.path.join(sup_conf_dir, get_supervisor_conf_filename(bench=bench))
-				if os.path.exists(final_path) or os.path.exists('/etc/nginx/conf.d/frappe.conf'):
-					frappe.throw("Can continue: the symlink to supervisor config file %s exist and must be remove it.\nCheck also nginx conf file /etc/nginx/conf.d/frappe.conf" % final_path)
-				bench_setup_production(user=user, bench=bench)
+				if not (os.path.exists(final_path) and os.path.exists('/etc/nginx/conf.d/frappe.conf')):
+					#frappe.throw("Can't continue: the symlink to supervisor config file %s exist and must be remove it.\nCheck also nginx conf file /etc/nginx/conf.d/frappe.conf" % final_path)
+					bench_setup_production(user=user, bench=bench)
 			except OSError as e:
 				if e.errno != errno.EEXIST:
 					raise
