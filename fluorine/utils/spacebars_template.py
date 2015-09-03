@@ -190,7 +190,7 @@ def prepare_common_page_context(context, whatfor):
 
 		#meteor_config["production_mode"] = 0
 
-	return fluorine_build_context(context, whatfor), devmode
+	return fluorine_build_context(context, whatfor)
 
 def make_includes(context):
 
@@ -219,7 +219,9 @@ def get_app_pages(context):
 		return ret
 	"""
 
-	context, devmode = prepare_common_page_context(context, meteor_desk_app)
+	context = prepare_common_page_context(context, meteor_desk_app)
+
+	devmode = context.developer_mode
 
 	try:
 		making_production = frappe.local.making_production
@@ -239,7 +241,7 @@ def get_app_pages(context):
 def get_web_pages(context):
 	from fluorine.utils import meteor_web_app
 
-	context, devmode = prepare_common_page_context(context, meteor_web_app)
+	context = prepare_common_page_context(context, meteor_web_app)
 
 	context.meteor_web_include_css = frappe.get_hooks("meteor_web_include_css")
 	context.meteor_web_include_js = frappe.get_hooks("meteor_web_include_js")
@@ -282,7 +284,8 @@ def fluorine_build_context(context, whatfor):
 	frappe.local.module_registe = frappe._dict()
 
 	path_reactivity = get_path_reactivity()
-	devmode = context.developer_mode
+
+	#devmode = context.developer_mode
 
 	frappe.local.meteor_ignores = list_ignores
 
@@ -294,6 +297,7 @@ def fluorine_build_context(context, whatfor):
 	make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, custom_pattern=["*.xhtml"])
 
 	copy_project_translation(apps, whatfor, custom_pattern)
+
 	if whatfor == meteor_web_app:
 		copy_mobile_config_file(apps, whatfor)
 
