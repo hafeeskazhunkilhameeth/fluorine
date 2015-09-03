@@ -296,7 +296,7 @@ def fluorine_build_context(context, whatfor):
 	if curr_app != known_apps[0]:
 		known_apps.remove(curr_app)
 		known_apps.insert(0, curr_app)
-	
+
 	process_react_templates(context, known_apps, whatfor, custom_pattern)
 
 	fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)

@@ -286,6 +286,7 @@ def copy_mobile_config_file(apps, whatfor):
 	path_reactivity = get_path_reactivity()
 	destpath = os.path.join(path_reactivity, whatfor, mobile_file)
 
+	"""
 	curr_app = apps[0]
 	app_path = frappe.get_app_path(curr_app)
 	srcpath = os.path.join(app_path, "templates", "react", whatfor, mobile_file)
@@ -295,7 +296,7 @@ def copy_mobile_config_file(apps, whatfor):
 		return
 
 	apps.remove(curr_app)
-
+	"""
 	#from more recent to last.
 	for app in apps:
 		app_path = frappe.get_app_path(app)
