@@ -286,13 +286,12 @@ def fluorine_build_context(context, whatfor):
 
 	path_reactivity = get_path_reactivity()
 
-	#devmode = context.developer_mode
-
 	frappe.local.meteor_ignores = list_ignores
 
 	known_apps = apps[::-1]
 	custom_pattern = get_custom_pattern(whatfor, custom_pattern=None)
-	curr_app = meteor_config.get("current_dev_app", None).strip()
+
+	curr_app = meteor_config.get("current_dev_app", "").strip()
 	known_apps.remove(curr_app)
 	#set current app as the first app
 	known_apps.insert(0, curr_app)
