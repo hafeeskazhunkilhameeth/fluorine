@@ -295,7 +295,6 @@ def copy_mobile_config_file(apps, whatfor):
 			return
 
 
-
 #from profilehooks import profile, timecall, coverage
 import re
 c = lambda t:re.compile(t, re.S|re.M)
