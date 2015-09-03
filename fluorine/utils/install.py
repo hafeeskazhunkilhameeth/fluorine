@@ -141,7 +141,7 @@ def get_packages_version(whatfor, path_reactivity=None):
 	pkg_list = []
 	args = ["meteor", "list"]
 	cwd = os.path.join(path_reactivity, whatfor)
-	click.echo("Getting meteor installed packages. Please wait.")
+	click.echo("%s: Getting meteor installed packages. Please wait." % whatfor)
 	package_list_version = subprocess.check_output(args, cwd=cwd, shell=False, close_fds=True)
 
 	for package in [p.strip() for p in package_list_version.splitlines() if p.strip() and not (p.startswith("#") or p.startswith("*"))]:
