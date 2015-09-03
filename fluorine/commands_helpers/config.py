@@ -164,7 +164,7 @@ def generate_nginx_supervisor_conf(doc, user=None, debug=None, update=False, ben
 	elif platform.system() != "Darwin" and not debug:
 
 		if not update:
-			import frappe
+			#import frappe
 			try:
 				sup_conf_dir = get_supervisor_confdir(bench=bench)
 				final_path = os.path.join(sup_conf_dir, get_supervisor_conf_filename(bench=bench))
