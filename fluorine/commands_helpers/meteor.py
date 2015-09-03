@@ -473,13 +473,18 @@ class MeteorProduction(object):
 		self.meteor_config["stop"] = 1
 		self.meteor_config["production_mode"] = 1
 
+	def check_hosts(self):
+		from fluorine.commands_helpers import get_hosts
+
+		hosts_web, hosts_app = get_hosts(self.doc, production=True)
+		if not hosts_web and not hosts_web:
+
 
 	def check_meteor_apps(self):
 		from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import check_meteor_apps_created
 
 		click.echo("Checking for meteor apps folder. Please wait.")
 		return check_meteor_apps_created(self.doc)
-
 
 	def check_updates(self):
 
@@ -541,8 +546,7 @@ class MeteorProduction(object):
 		#common_site_config.json must have meteor_dns for production mode or use default
 		config.generate_nginx_supervisor_conf(self.doc, user=self.user, debug=self.debug, update=self.update, bench=self.bench, mac_sup_prefix_path=self.mac_sup_prefix_path)
 
-		#hosts_web, hosts_app = get_hosts(doc, production=True)
-		config._generate_fluorine_nginx_conf(production=True, site=self.site)
+		config._generate_fluorine_nginx_conf(hosts_app=self.hosts_app, hosts_web=self.hosts_web, production=True, site=self.site)
 
 	def make_script_startup(self):
 		if self.debug:

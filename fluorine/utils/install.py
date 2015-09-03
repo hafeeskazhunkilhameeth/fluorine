@@ -147,7 +147,7 @@ def get_packages_version(whatfor, path_reactivity=None):
 		p = package.split()
 		print "p={}".format(p)
 		if len(p) > 1 and re.match(r"(?:\d.?)", p[1]):
-			pkg_list.append("%s@=%s" %(p[0], re.sub(r"[^\d.]+", "", p[1]))
+			pkg_list.append("%s@=%s" %(p[0], re.sub(r"[^\d.]+", "", p[1])))
 
 	return pkg_list
 
