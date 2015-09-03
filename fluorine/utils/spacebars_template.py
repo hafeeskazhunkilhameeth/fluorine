@@ -298,6 +298,7 @@ def fluorine_build_context(context, whatfor):
 
 	copy_project_translation(apps, whatfor, custom_pattern)
 
+	#Only support for mibile in web app
 	if whatfor == meteor_web_app:
 		copy_mobile_config_file(apps, whatfor)
 
