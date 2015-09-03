@@ -255,8 +255,8 @@ def get_web_pages(context):
 
 
 def fluorine_build_context(context, whatfor):
-	from fluorine.utils import APPS as apps, meteor_desk_app
-	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation
+	from fluorine.utils import APPS as apps, meteor_web_app
+	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation, copy_mobile_config_file
 	from reactivity import list_ignores
 	from react_file_loader import get_custom_pattern
 
@@ -294,6 +294,8 @@ def fluorine_build_context(context, whatfor):
 	make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, custom_pattern=["*.xhtml"])
 
 	copy_project_translation(apps, whatfor, custom_pattern)
+	if whatfor == meteor_web_app:
+		copy_mobile_config_file(apps, whatfor)
 
 	return context
 

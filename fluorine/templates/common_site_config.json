@@ -23,6 +23,7 @@
         "folder_refresh": 1
     },
 	"stop":1,
+	"current_dev_app": "fluorine",
 	"production_mode":0,
 	"meteor_settings":{},
 	"meteor_http_forwarded_count": "1", 

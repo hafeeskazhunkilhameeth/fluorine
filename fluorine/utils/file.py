@@ -277,6 +277,32 @@ def copy_project_translation(apps, whatfor, custom_pattern=None):
 		copy_meteor_languages([os.path.join(path, i18n_files_route), os.path.join(path, whatfor, i18n_files_route)], os.path.join(path_reactivity, whatfor, i18n_files_route), app, custom_pattern=custom_pattern)
 
 
+def copy_mobile_config_file(apps, whatfor):
+	from fluorine.utils import meteor_config
+
+	mobile_file = "mobile-config.js"
+	path_reactivity = get_path_reactivity()
+	destpath = os.path.join(path_reactivity, whatfor, mobile_file)
+
+	curr_app = meteor_config.get("current_dev_app", None)
+	app_path = frappe.get_app_path(curr_app)
+	srcpath = os.path.join(app_path, "templates", "react", whatfor, mobile_file)
+
+	if os.path.exists(srcpath):
+		os.symlink(srcpath, destpath)
+		return
+
+	apps.remove(curr_app)
+
+	#from more recent to last.
+	for app in apps[::-1]:
+		app_path = frappe.get_app_path(app)
+		srcpath = os.path.join(app_path, "templates", "react", whatfor, mobile_file)
+		if os.path.exists(srcpath):
+			os.symlink(srcpath, destpath)
+			return
+
+
 #from profilehooks import profile, timecall, coverage
 import re
 c = lambda t:re.compile(t, re.S|re.M)
@@ -306,6 +332,7 @@ def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 	pattern = ignore_patterns(*custom_pattern)
 	dst_public_assets_path = os.path.join(get_path_reactivity(), whatfor[0], "public", "assets")
 	dst_private_path = os.path.join(get_path_reactivity(), whatfor[0], "private")
+	dst_tests_path = os.path.join(get_path_reactivity(), whatfor[0], "tests")
 
 	for app, paths in frappe.local.files_to_add.iteritems():
 		pathname = frappe.get_app_path(app)
@@ -318,6 +345,7 @@ def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 			destpath = os.path.join(dst, app_folders)
 			make_public(pathname, dst_public_assets_path, app, whatfor, custom_pattern=custom_pattern)
 			make_private(meteorpath, dst_private_path, app, whatfor, custom_pattern=custom_pattern)
+			make_tests(meteorpath, dst_tests_path, app, whatfor, custom_pattern=custom_pattern)
 
 			for obj in paths:
 				tpath = obj.get("tname")
@@ -353,6 +381,11 @@ def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 							except:
 								pass
 
+
+def make_tests(app_path, dst_tests_path, app, whatfor, custom_pattern=None):
+
+	folder_path = os.path.join(app_path, "tests")
+	_make_public_private(folder_path, dst_tests_path, app, whatfor, "tests", custom_pattern=custom_pattern)
 
 
 def make_public(app_path, dst_public_assets_path, app, whatfor, custom_pattern=None):
