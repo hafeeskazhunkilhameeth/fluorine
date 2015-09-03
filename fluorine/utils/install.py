@@ -28,7 +28,7 @@ def before_install():
 
 	for whatfor in whatfor_all:#("meteor_app", "meteor_web"):
 		meteor_add_package("fluorine", whatfor, path_reactivity=path_reactivity)
-		
+
 	for whatfor in whatfor_all:
 		meteor_remove_package("fluorine", whatfor, path_reactivity=path_reactivity)
 
@@ -102,7 +102,7 @@ def create_meteor_apps(path_reactivity=None):
 
 
 def meteor_package(whatfor, packages, path_reactivity=None, action="add"):
-	import subprocess
+	import subprocess, re
 
 	if not path_reactivity:
 		from file import get_path_reactivity
@@ -114,10 +114,10 @@ def meteor_package(whatfor, packages, path_reactivity=None, action="add"):
 
 		#NOTE: Only add packages that do not exist or remove packages that exist
 		for pckg in packages[:]:
-			if pckg in meteor_packages:
+			if re.match(pckg, meteor_packages):
 				if action == "add":
 					packages.remove(pckg)
-					print "{}: {} already exist - no action was taken.".format(whatfor, pckg)
+					print "{}: {} already exist - no action was taken. Try to update.".format(whatfor, pckg)
 			elif action == "remove":
 				packages.remove(pckg)
 				print "{}: {} does not exist - no action was taken.".format(whatfor, pckg)
