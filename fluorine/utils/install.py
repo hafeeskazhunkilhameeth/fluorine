@@ -28,8 +28,6 @@ def before_install():
 
 	for whatfor in whatfor_all:#("meteor_app", "meteor_web"):
 		meteor_add_package("fluorine", whatfor, path_reactivity=path_reactivity)
-
-	for whatfor in whatfor_all:
 		meteor_remove_package("fluorine", whatfor, path_reactivity=path_reactivity)
 
 	from fluorine.commands_helpers.meteor import update_versions
