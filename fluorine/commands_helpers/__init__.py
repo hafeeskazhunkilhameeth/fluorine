@@ -33,25 +33,17 @@ def get_hosts(doc, production=False):
 	hosts_web = []
 	hosts_app = []
 
-	#meteor_dev = meteor_config.get("meteor_dev") or {}
-	#meteor_web = meteor_dev.get(meteor_web_app) or {}
-	#meteor_web = get_attr_from_json(["meteor_dev", meteor_web_app], meteor_config)
-	use_web_in_production = get_attr_from_json(["meteor_dev", meteor_web_app, "production"], meteor_config)#meteor_web.get("production")
+	use_web_in_production = get_attr_from_json(["meteor_dev", meteor_web_app, "production"], meteor_config)
 
-	#meteor_desk = meteor_dev.get(meteor_desk_app) or {}
-	#meteor_desk = get_attr_from_json(["meteor_dev", meteor_desk_app], meteor_config)
-	use_desk_in_production = get_attr_from_json(["meteor_dev", meteor_desk_app, "production"], meteor_config)#meteor_desk.get("production")
+	use_desk_in_production = get_attr_from_json(["meteor_dev", meteor_desk_app, "production"], meteor_config)
 	#remove :port only have meanning in ROOT_URL environment variable
-	meteor_root_url = doc.fluor_meteor_host.strip()
-	if len(re.findall(":", meteor_root_url)) > 1:
-		meteor_root_url = meteor_root_url.rsplit(":",1)[0]
-	mthost = meteor_root_url.replace("http://", "") or "127.0.0.1"
-	port = doc.fluor_meteor_port or PORT.meteor_web
+	mthost = get_host_address(doc)
+	port = doc.fluor_meteor_port or PORT.get(meteor_web_app)
 
 	if use_web_in_production or not production:
 		hosts_web.append("%s:%s" % (mthost, port))
 	if use_desk_in_production or not production:
-		hosts_app.append("%s:%s" % (mthost, PORT.meteor_app))
+		hosts_app.append("%s:%s" % (mthost, PORT.get(meteor_desk_app)))
 
 	#add others meteors
 	if meteor_dns and production:
@@ -65,6 +57,16 @@ def get_hosts(doc, production=False):
 
 	return hosts_web, hosts_app
 
+
+def get_host_address(doc):
+	import re
+
+	meteor_root_url = doc.fluor_meteor_host.strip()
+	if len(re.findall(":", meteor_root_url)) > 1:
+		meteor_root_url = meteor_root_url.rsplit(":",1)[0]
+	mthost = meteor_root_url.replace("http://", "") or "127.0.0.1"
+
+	return mthost
 
 def start_frappe_db(site):
 	if not frappe.db:

@@ -8,11 +8,15 @@ from collections import OrderedDict
 import hashlib, json, os
 from fluorine.utils import whatfor_all, meteor_desk_app, meteor_web_app
 
-default_port = 3070
+
+port_inc = 10
+default_port_web = 3070
+default_port_desk = default_port_web + port_inc
 default_host = "http://127.0.0.1"
 default_path_prefix = "/meteordesk"
 
-PORT = frappe._dict({meteor_web_app: default_port, meteor_desk_app: default_port + 10})
+
+PORT = frappe._dict({meteor_web_app: default_port_web, meteor_desk_app: default_port_desk, "port_inc": port_inc})
 
 def meteor_url_path_prefix(whatfor):
 	if whatfor == meteor_desk_app:

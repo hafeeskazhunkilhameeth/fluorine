@@ -129,10 +129,14 @@ def make_supervisor(doc):
 
 	meteor_dev = meteor_config.get("meteor_dev") or {}
 
-	for final in ("final_app", "final_web"):
+	final_desk = meteor_desk_app.replace("meteor", "final")
+	final_web = meteor_web_app.replace("meteor", "final")
+
+	for final in (final_desk, final_web):
 		app_name = final.replace("final", "meteor")
 		meteor = meteor_dev.get(app_name) or {}
-		if meteor.get("production"):
+		#force meteor desk. Meteor desk must be local where frappe is installed
+		if meteor.get("production") or final == final_desk:
 			conf.meteorenv = get_meteor_environment(doc, app_name)
 			conf.progname = "meteor_" + final
 			conf.final_server_path = os.path.join(path_reactivity, final, "bundle")

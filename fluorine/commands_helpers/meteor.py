@@ -441,6 +441,8 @@ class MeteorProduction(object):
 		if self.check_updates():
 			raise click.ClickException("There are updates in your apps. To update production you must press button 'run_updates' in fluorine app.")
 
+		self.check_hosts()
+
 		self.update_meteor_conf_file()
 		self.update_doctype()
 		self.doc.save()
@@ -474,11 +476,20 @@ class MeteorProduction(object):
 		self.meteor_config["production_mode"] = 1
 
 	def check_hosts(self):
-		from fluorine.commands_helpers import get_hosts
+		from fluorine.commands_helpers import get_hosts, get_host_address
+		from fluorine.utils.meteor.utils import PORT
 
-		hosts_web, hosts_app = get_hosts(self.doc, production=True)
-		if not hosts_web and not hosts_web:
-			raise click.ClickException("You need provide at least one desk host.")
+		self.hosts_web, self.hosts_app = get_hosts(self.doc, production=True)
+
+		if not self.hosts_web:
+			raise click.ClickException("You need to provide at least one web host.")
+
+		if not self.hosts_app:
+			#must have at least one host app (desk)
+			mthost = get_host_address(self.doc)
+			port = (self.doc.fluor_meteor_port + PORT.port_inc) if self.doc.fluor_meteor_port else PORT.get(meteor_desk_app)
+			click.echo("One host desk at least must be provided. There are none, so force one: %s:%s" % (mthost, port))
+			self.hosts_app.append("%s:%s" % (mthost, port))
 
 
 	def check_meteor_apps(self):
