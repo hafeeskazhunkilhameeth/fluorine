@@ -281,13 +281,12 @@ def copy_project_translation(apps, whatfor, custom_pattern=None):
 Get the mobile-config.js from current-app. If not exists then copy from the most recent app to the last.
 """
 def copy_mobile_config_file(apps, whatfor):
-	from fluorine.utils import meteor_config
 
 	mobile_file = "mobile-config.js"
 	path_reactivity = get_path_reactivity()
 	destpath = os.path.join(path_reactivity, whatfor, mobile_file)
 
-	curr_app = meteor_config.get("current_dev_app", None).strip()
+	curr_app = apps[0]
 	app_path = frappe.get_app_path(curr_app)
 	srcpath = os.path.join(app_path, "templates", "react", whatfor, mobile_file)
 
@@ -295,11 +294,10 @@ def copy_mobile_config_file(apps, whatfor):
 		os.symlink(srcpath, destpath)
 		return
 
-	iapps = apps[::-1]
-	iapps.remove(curr_app)
+	apps.remove(curr_app)
 
 	#from more recent to last.
-	for app in iapps:
+	for app in apps:
 		app_path = frappe.get_app_path(app)
 		srcpath = os.path.join(app_path, "templates", "react", whatfor, mobile_file)
 		if os.path.exists(srcpath):

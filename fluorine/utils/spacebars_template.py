@@ -257,10 +257,11 @@ def get_web_pages(context):
 
 
 def fluorine_build_context(context, whatfor):
-	from fluorine.utils import APPS as apps, meteor_web_app
+	from fluorine.utils import APPS as apps, meteor_web_app, meteor_config
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation, copy_mobile_config_file
 	from reactivity import list_ignores
 	from react_file_loader import get_custom_pattern
+
 
 	frappe.local.context = context
 	frappe.local.fenv = None
@@ -289,8 +290,13 @@ def fluorine_build_context(context, whatfor):
 
 	frappe.local.meteor_ignores = list_ignores
 
+	known_apps = apps[::-1]
 	custom_pattern = get_custom_pattern(whatfor, custom_pattern=None)
-	process_react_templates(context, apps[::-1], whatfor, custom_pattern)
+	curr_app = meteor_config.get("current_dev_app", None).strip()
+	known_apps.remove(curr_app)
+	#set current app as the first app
+	known_apps.insert(0, curr_app)
+	process_react_templates(context, known_apps, whatfor, custom_pattern)
 
 	fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
 	empty_directory(fluorine_publicjs_dst_path, ignore=(".meteor",))
@@ -300,7 +306,7 @@ def fluorine_build_context(context, whatfor):
 
 	#Only support for mibile in web app
 	if whatfor == meteor_web_app:
-		copy_mobile_config_file(apps, whatfor)
+		copy_mobile_config_file(known_apps, whatfor)
 
 	return context
 
