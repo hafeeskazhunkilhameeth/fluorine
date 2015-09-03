@@ -478,6 +478,7 @@ class MeteorProduction(object):
 
 		hosts_web, hosts_app = get_hosts(self.doc, production=True)
 		if not hosts_web and not hosts_web:
+			raise click.ClickException("You need provide at least one desk host.")
 
 
 	def check_meteor_apps(self):
