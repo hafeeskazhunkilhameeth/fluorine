@@ -564,7 +564,12 @@ class MeteorProduction(object):
 	def check_updates(self):
 
 		click.echo("Checking for fluorine apps updates. Please wait.")
-		return check_updates(bench=self.bench)
+		for whatfor in whatfor_all:
+			if check_updates(whatfor, bench=self.bench):
+				click.echo("%s: fluorine apps needs to update." % whatfor)
+			else:
+				click.echo("%s: fluorine apps are updated." % whatfor)
+		return
 
 	def check_custom_mongo(self):
 		from fluorine.commands_helpers import mongo
