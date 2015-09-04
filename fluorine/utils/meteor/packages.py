@@ -199,7 +199,7 @@ def get_list_packages_to_install_by_apps(curr_app, whatfor, file_add=None, file_
 		file_remove = get_default_packages_file_name("remove", whatfor)
 
 	#apps from first installed to the last
-	apps = get_active_apps()
+	apps = get_active_apps(whatfor)
 	apps.remove(curr_app)
 
 	apps.append(curr_app)
