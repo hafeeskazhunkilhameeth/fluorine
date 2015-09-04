@@ -195,12 +195,13 @@ def is_valid_fluorine_app(app):
 
 
 def get_active_apps():
-	from fluorine.utils import APPS as apps
+	from fluorine.utils import APPS as apps, get_attr_from_json
 	from fluorine.utils.reactivity import make_meteor_ignor_files
 
 	ign_files = make_meteor_ignor_files()
 
-	ign_apps = ign_files.remove.get("apps")
+	#ign_apps = ign_files.remove.get("apps")
+	ign_apps = get_attr_from_json([meteor_web_app, "remove", "apps"], ign_files)
 
 	active_apps = []
 	for app in apps:
@@ -304,8 +305,9 @@ class MeteorContext(object):
 		prepare_environment()
 		start_meteor()
 		frappe.local.request = frappe._dict()
-		prepare_compile_environment()
+
 		for w in whatfor_all:
+			prepare_compile_environment(w)
 			ctx = prepare_make_meteor_file( w)
 			if w == meteor_desk_app:
 				self.context[meteor_desk_app] = ctx
@@ -337,6 +339,7 @@ class MeteorDevelop(object):
 	def start(self):
 		from fluorine.utils import meteor_config
 
+		self.m_ctx = MeteorContext(production=False)
 		self.meteor_config = meteor_config
 
 		if not self.check_meteor_apps():
@@ -378,10 +381,9 @@ class MeteorDevelop(object):
 			update_packages_list(self.current_dev_app, file_add=self.file_add, file_remove=self.file_remove)
 
 	def make_apps_context(self):
-		self.m_ctx = m_ctx = MeteorContext(production=False)
-		m_ctx.meteor_init(mongo_custom=True)
+		self.m_ctx.meteor_init(mongo_custom=True)
 		#get context to work with desk
-		m_ctx.make_context()
+		self.m_ctx.make_context()
 
 	def make_mongo(self):
 		from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import make_mongodb_default
@@ -456,6 +458,7 @@ class MeteorProduction(object):
 	def start(self):
 		from fluorine.utils import meteor_config
 
+		self.m_ctx = MeteorContext()
 		self.meteor_config = meteor_config
 
 		if not self.check_meteor_apps():
@@ -533,10 +536,9 @@ class MeteorProduction(object):
 		mongo._check_custom_mongodb(self.doc)
 
 	def make_apps_context(self):
-		self.m_ctx = m_ctx = MeteorContext()
-		m_ctx.meteor_init(mongo_custom=True)
+		self.m_ctx.meteor_init(mongo_custom=True)
 		#get context to work with desk
-		m_ctx.make_context()
+		self.m_ctx.make_context()
 
 	def make_packages_list(self):
 		from fluorine.utils.meteor.packages import cmd_packages_update
@@ -554,11 +556,11 @@ class MeteorProduction(object):
 		from fluorine.utils.meteor.utils import make_meteor_files
 		#If debug then do not run frappe setup production and test only meteor in production mode.
 		click.echo("Make meteor bundle for Desk APP")
-		make_meteor_files(self.doc.fluor_meteor_host, self.doc.fluor_meteor_port, self.doc.ddpurl, self.doc.meteor_target_arch)
+		make_meteor_files(self.doc.fluor_meteor_host, self.doc.fluor_meteor_port, self.doc.meteor_target_arch)
 		#Patch: run twice for fix nemo64:bootstrap less problem
 		click.echo("Run twice to patch nemo64:bootstrap less problem")
 		click.echo("Make meteor bundle for WEB")
-		make_meteor_files(self.doc.fluor_meteor_host, self.doc.fluor_meteor_port, self.doc.ddpurl, self.doc.meteor_target_arch)
+		make_meteor_files(self.doc.fluor_meteor_host, self.doc.fluor_meteor_port, self.doc.meteor_target_arch)
 
 	def make_meteor_properties(self):
 		click.echo("Make meteor properties.")

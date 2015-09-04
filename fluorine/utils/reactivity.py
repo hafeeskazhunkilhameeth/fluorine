@@ -16,6 +16,7 @@ def start_meteor():
 
 	frappesite = get_default_site()
 
+	make_meteor_ignor_files()
 	extras_context_methods.update(get_extras_context_method(frappesite))
 
 	global start_db
@@ -39,7 +40,6 @@ def get_extras_context_method(site):
 		global start_db
 		start_db = True
 
-	make_meteor_ignor_files()
 	hooks = get_extras_context()
 
 	return hooks
@@ -137,5 +137,5 @@ def get_permission_files_json(whatfor):
 import logging
 logger = logging.getLogger("frappe")
 if not meteor_config.get("production_mode") and not meteor_config.get("stop"):
-	logger.error('starting reactivity... 6' )
+	logger.error('starting reactivity...')
 	start_meteor()

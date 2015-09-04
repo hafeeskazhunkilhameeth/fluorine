@@ -30,28 +30,28 @@ def meteor_url_path_prefix(whatfor):
 def build_meteor_context(context, whatfor):
 	from fluorine.utils.reactivity import meteor_config
 
-	conf = meteor_config
-	meteor = conf.get("meteor_dev") or {}
 
-	meteor_conf = meteor.get(whatfor) or {}
-	context.mport = meteor_conf.get("port") or PORT.get(whatfor)
+	meteor = meteor_config.get("meteor_dev") or {}
 
-	prefix = meteor_conf.get("ROOT_URL_PATH_PREFIX")
+	meteor_app = meteor.get(whatfor) or {}
+	context.mport = meteor_app.get("port") or PORT.get(whatfor)
+
+	prefix = meteor_app.get("ROOT_URL_PATH_PREFIX")
 	if whatfor == meteor_web_app:
-		host = meteor_conf.get("host") or meteor.get("host", default_host) + (prefix if prefix else "")
+		host = (meteor_app.get("host") or meteor.get("host", default_host)).strip() + (prefix if prefix else "")
 	else:
-		host = meteor_conf.get("host") or meteor.get("host", default_host) + (prefix if prefix else default_path_prefix)
+		host = (meteor_app.get("host") or meteor.get("host", default_host)).strip() + (prefix if prefix else default_path_prefix)
 
-	ddpurl = meteor_conf.get("ddpurl")
+	ddpurl = meteor_app.get("ddpurl")
 
-	meteor_host =  host + ":" + str(context.mport)
+	meteor_host =  "%s:%s" % (host, context.mport)
 	ddpurl_port = None
 	if whatfor == meteor_web_app and ddpurl:
-		ddpurl_port = ddpurl + (prefix if prefix else "")
+		ddpurl_port = "%s%s" % (ddpurl.strip(), prefix if prefix else "")
 	elif whatfor == meteor_desk_app:
 		if not ddpurl:
 			ddpurl = default_host
-		ddpurl_port = ddpurl + (prefix if prefix else default_path_prefix)
+		ddpurl_port = "%s%s" % (ddpurl.strip(), prefix if prefix else default_path_prefix)
 
 	#host
 	context.meteor_root_url = host
@@ -181,7 +181,7 @@ def meteor_hash_version(manifest, runtimeCfg):
 			path = m.get("path")
 			mhash = m.get("hash")
 			if m.get("where") == "client":
-				nurl = prefix + m.get("url")
+				nurl = "%s%s" % (prefix, m.get("url"))
 				if m.get("type") == "css":
 					frappe_manifest_css.append(nurl)
 					sh2.update(path)
@@ -364,10 +364,10 @@ def remove_old_final_folders():
 				pass
 
 
-def make_meteor_files(mthost, mtport, mtddpurl, architecture):
+def make_meteor_files(mthost, mtport, architecture):
 	from fluorine.utils.file import make_meteor_file
 
-	for w in whatfor_all:#("meteor_web", "meteor_app"):
+	for w in whatfor_all:
 		make_meteor_file(whatfor=w, mtport=mtport, mthost=mthost, architecture=architecture)
 
 

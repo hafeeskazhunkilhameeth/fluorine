@@ -216,12 +216,14 @@ def prepare_make_meteor_file(whatfor):
 		return fluorine_get_context(frappe._dict())
 
 
-def prepare_compile_environment():
+def prepare_compile_environment(whatfor):
+	from fluorine.utils import get_attr_from_json
 	from fluorine.utils.reactivity import meteor_config
 	from fluorine.utils.reactivity import list_ignores
 
 	if meteor_config and meteor_config.get("production_mode"):
-		list_ignores.get("files_folders").update({
+		l = get_attr_from_json([whatfor, "remove", "files_folders"], list_ignores)
+		l.update({
 			"all":{
 				"remove": [{"pattern": "highlight/?.*"}]
 			}
