@@ -82,7 +82,7 @@ def create_meteor_apps(path_reactivity=None):
 		path_reactivity = get_path_reactivity()
 
 	try:
-		for app in whatfor_all:#("meteor_app", "meteor_web"):
+		for app in whatfor_all:
 			if not os.path.exists(os.path.join(path_reactivity, app)):
 				p = subprocess.Popen(["meteor", "create", app], cwd=path_reactivity, shell=False, close_fds=True)
 				p.wait()
