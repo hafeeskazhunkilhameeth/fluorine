@@ -3,7 +3,7 @@
 *.egg-info
 *.swp
 .meteor/
-meteor/
+#meteor/
 meteor_web_temp/
 tags
 reactivity/
