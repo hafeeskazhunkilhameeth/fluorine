@@ -339,6 +339,7 @@ class MeteorDevelop(object):
 
 		self.update_doctype()
 		self.update_meteor_conf_file()
+		update_url_port(self.doc, self.meteor_config, self.server_port, self.ddp_port)
 		self.make_mongo()
 		self.doc.save()
 		self.make_apps_context()
@@ -350,18 +351,6 @@ class MeteorDevelop(object):
 	def update_doctype(self):
 		self.doc.fluor_dev_mode = 1
 		self.doc.fluorine_state = "on"
-
-		if self.server_port:
-			from fluorine.commands_helpers import get_host_address
-			host_address = get_host_address(self.doc)
-			self.doc.fluor_meteor_host = host_address + ":" + self.server_port
-			self.meteor_config["meteor_dev"]["host"] = self.doc.fluor_meteor_host
-
-		if self.ddp_port:
-			from fluorine.commands_helpers import get_ddp_address
-			ddp_address = get_ddp_address(self.doc)
-			self.doc.ddpurl = ddp_address + ":" + self.ddp_port
-			self.meteor_config["meteor_dev"]["meteor_app"]["ddpurl"] = self.doc.ddpurl
 
 	def update_meteor_conf_file(self):
 		from fluorine.utils import meteor_config
@@ -462,6 +451,7 @@ class MeteorProduction(object):
 
 		self.update_meteor_conf_file()
 		self.update_doctype()
+		update_url_port(self.doc, self.meteor_config, self.server_port, self.ddp_port)
 		self.doc.save()
 
 		self.check_hosts()
@@ -488,17 +478,6 @@ class MeteorProduction(object):
 	def update_doctype(self):
 		self.doc.fluorine_state = "off"
 		self.doc.fluor_dev_mode = 0
-		if self.server_port:
-			from fluorine.commands_helpers import get_host_address
-			host_address = get_host_address(self.doc)
-			self.doc.fluor_meteor_host = host_address + ":" + self.server_port
-			self.meteor_config["meteor_dev"]["host"] = self.doc.fluor_meteor_host
-
-		if self.ddp_port:
-			from fluorine.commands_helpers import get_ddp_address
-			ddp_address = get_ddp_address(self.doc)
-			self.doc.ddpurl = ddp_address + ":" + self.ddp_port
-			self.meteor_config["meteor_dev"]["meteor_app"]["ddpurl"] = self.doc.ddpurl
 
 	def update_meteor_conf_file(self):
 
@@ -609,3 +588,18 @@ class MeteorProduction(object):
 		from fluorine.commands_helpers import services
 
 		services.start_nginx_supervisor_services(debug=self.debug)
+
+
+def update_url_port(doc, meteor_config, server_port, ddp_port):
+
+	if server_port:
+		from fluorine.commands_helpers import get_host_address
+		host_address = get_host_address(doc)
+		doc.fluor_meteor_host = host_address + ":" + server_port
+		meteor_config["meteor_dev"]["host"] = doc.fluor_meteor_host
+
+	if ddp_port:
+		from fluorine.commands_helpers import get_ddp_address
+		ddp_address = get_ddp_address(doc)
+		doc.ddpurl = ddp_address + ":" + ddp_port
+		meteor_config["meteor_dev"]["meteor_app"]["ddpurl"] = doc.ddpurl

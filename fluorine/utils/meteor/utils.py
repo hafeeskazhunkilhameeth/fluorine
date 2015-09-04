@@ -359,7 +359,7 @@ def cmd_packages_from(curr_app):
 	react_path = get_path_reactivity()
 	curr_app_path = frappe.get_app_path(curr_app)
 
-	for whatfor in whatfor_all:#("meteor_web", "meteor_app"):
+	for whatfor in whatfor_all:
 		meteor_final_path = os.path.join(react_path, whatfor.replace("meteor", "final"))
 		if os.path.exists(meteor_final_path):
 			try:
