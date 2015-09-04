@@ -226,10 +226,12 @@ def check_remove_files_folders(file,  files_folder_remove):
 # copy the translations files from apps from the first installed to the last installed so we can replace with new ones
 # project-tap.i18n can be replaced with new data from last installed apps
 def copy_meteor_languages(start_folders, dest_folder, appname, whatfor=None, custom_pattern=None):
+	from fluorine.utils import get_attr_from_json
 	import fnmatch
 
 	pattern, ignored_names_any, ignored_names_top  = custom_pattern
-	list_meteor_files_folders_remove = frappe.local.meteor_ignores.get("remove").get("files_folders")
+	#list_meteor_files_folders_remove = frappe.local.meteor_ignores.get("remove").get("files_folders")
+	list_meteor_files_folders_remove = get_attr_from_json([whatfor, "remove", "files_folders"], frappe.local.meteor_ignores)
 	all_files_folder_remove = list_meteor_files_folders_remove.get("all")
 	appname_files_folder_remove = list_meteor_files_folders_remove.get(appname)
 

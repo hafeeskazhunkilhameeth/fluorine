@@ -111,7 +111,8 @@ def get_custom_pattern(whatfor, custom_pattern=None):
 
 def read_client_xhtml_files(start_folder, whatfor, appname, meteor_ignore=None, custom_pattern=None):
 	import fnmatch
-	from file import check_remove_files_folders
+	from fluorine.utils.file import check_remove_files_folders
+	from fluorine.utils import get_attr_from_json
 
 	files_to_read = []
 	files_in_lib = []
@@ -123,7 +124,8 @@ def read_client_xhtml_files(start_folder, whatfor, appname, meteor_ignore=None, 
 
 	topfolder = True
 
-	list_meteor_files_folders_remove = frappe.local.meteor_ignores.get("remove").get("files_folders")
+	#list_meteor_files_folders_remove = meteor_ignore.get("remove").get("files_folders")
+	list_meteor_files_folders_remove = get_attr_from_json([whatfor, "remove", "files_folders"], meteor_ignore)
 	all_files_folder_remove = list_meteor_files_folders_remove.get("all")
 	appname_files_folder_remove = list_meteor_files_folders_remove.get(appname)
 

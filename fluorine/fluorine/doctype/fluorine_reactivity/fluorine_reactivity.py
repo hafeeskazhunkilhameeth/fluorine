@@ -189,7 +189,7 @@ def prepare_to_update():
 
 	if doc.fluorine_state == "off" and doc.fluor_dev_mode == 0:
 		update_versions(bench=bench)
-		prepare_make_meteor_file(doc.fluor_meteor_port, doc.fluorine_reactivity)
+		prepare_make_meteor_file(doc.fluor_meteor_port)
 		meteor_config["on_update"] = 1
 		add_meteor_packages()
 		update_common_config(meteor_config)
@@ -221,11 +221,11 @@ def prepare_compile_environment():
 	from fluorine.utils.reactivity import list_ignores
 
 	if meteor_config and meteor_config.get("production_mode"):
-		list_ignores["files_folders"] = {
+		list_ignores.get("files_folders").update({
 			"all":{
 				"remove": [{"pattern": "highlight/?.*"}]
 			}
-		}
+		})
 
 
 def make_final_app_client(jquery=0):

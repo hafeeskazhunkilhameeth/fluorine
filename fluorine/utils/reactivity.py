@@ -85,32 +85,53 @@ def process_permission_files_folders(ff):
 	return list_ff_add, list_ff_remove
 
 def make_meteor_ignor_files():
-	import file
-	path_reactivity = file.get_path_reactivity()
-	perm_path = os.path.join(path_reactivity, "permission_files.json")
-
-	if not os.path.exists(perm_path):
-		file.save_js_file(perm_path, {"apps":{}, "files_folders":{}})
-
-	conf = frappe.get_file_json(perm_path)
-
-	list_apps_remove = process_permission_apps(conf.get("apps") or {})
-	list_meteor_files_folders_add, list_meteor_files_folders_remove = process_permission_files_folders(conf.get("files_folders") or {})
+	from fluorine.utils import whatfor_all, meteor_desk_app, meteor_web_app
 
 	global list_ignores
 
-	list_ignores = frappe._dict({
-		"remove":{
-			"apps": list_apps_remove,
-			"files_folders": list_meteor_files_folders_remove
-		},
-		"add":{
-			"apps": [],
-			"files_folders": list_meteor_files_folders_add
-		}
-	})
+	list_ignores = frappe._dict({meteor_web_app:{}, meteor_desk_app:{}})
 
+	for whatfor in whatfor_all:
+		conf = get_permission_files_json(whatfor)
+		list_apps_remove = process_permission_apps(conf.get("apps") or {})
+		list_meteor_files_folders_add, list_meteor_files_folders_remove = process_permission_files_folders(conf.get("files_folders") or {})
+
+		list_ignores.get(whatfor).update({
+			"remove":{
+				"apps": list_apps_remove,
+				"files_folders": list_meteor_files_folders_remove
+			},
+			"add":{
+				"apps": [],
+				"files_folders": list_meteor_files_folders_add
+			}
+		})
+
+	logger = logging.getLogger("frappe")
+	logger.error("list_ignores {}".format(list_ignores))
+	# "list_ignores {}".format(list_ignores)
 	return list_ignores
+
+
+def get_permission_files_json(whatfor):
+	from fluorine.utils import APPS as apps
+
+
+	conf_perm = frappe._dict()
+
+	for app in apps:
+		app_path = frappe.get_app_path(app)
+		perm_path = os.path.join(app_path, "templates", "react", whatfor, "permission_files.json")
+		if os.path.exists(perm_path):
+			conf_file = frappe.get_file_json(perm_path)
+			for k,v in conf_file.iteritems():
+				key = conf_perm.get(k)
+				if key:
+					key.update(v)
+				else:
+					conf_perm[key] = v
+
+	return conf_perm
 
 
 import logging

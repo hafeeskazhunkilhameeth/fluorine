@@ -313,6 +313,7 @@ def fluorine_build_context(context, whatfor):
 
 def process_react_templates(context, apps, whatfor, custom_pattern):
 
+	from fluorine.utils import get_attr_from_json
 	from fluorine.utils.fhooks import get_xhtml_context
 	from react_file_loader import read_client_xhtml_files
 	from fluorine.utils.fhooks import get_extra_context_func, get_general_context
@@ -321,7 +322,8 @@ def process_react_templates(context, apps, whatfor, custom_pattern):
 
 	#spacebars_templates = {}
 
-	list_apps_remove = frappe.local.meteor_ignores.get("remove", {}).get("apps")
+	#list_apps_remove = frappe.local.meteor_ignores.get("remove", {}).get("apps")
+	list_apps_remove = get_attr_from_json([whatfor, "remove", "apps"], frappe.local.meteor_ignores)
 
 	for app in apps:
 		if app in list_apps_remove:
