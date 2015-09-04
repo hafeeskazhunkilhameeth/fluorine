@@ -180,9 +180,10 @@ def get_list_packages_to_install_by_apps(curr_app, whatfor, file_add=None, file_
 	return packages_to_add, packages_to_remove
 
 
-def get_package_list_updates(curr_app, whatfor, file_add=None, file_remove=None, is_print=True):
+def get_package_list_updates(curr_app, whatfor, file_add=None, file_remove=None):
 	from fluorine.utils.file import get_path_reactivity
 	from fluorine.commands_helpers.meteor import get_active_apps
+	from fluorine.commands import meteor_echo
 	import re
 
 	packages_to_add = set([])
@@ -191,6 +192,8 @@ def get_package_list_updates(curr_app, whatfor, file_add=None, file_remove=None,
 
 	react_path = get_path_reactivity()
 	installed_packages = get_packages_list_version(whatfor, path_reactivity=react_path)
+
+	meteor_echo("%s: installed_packages %s\n" % (whatfor, installed_packages), 80)
 
 	apps = get_active_apps()
 	apps.remove(curr_app)
