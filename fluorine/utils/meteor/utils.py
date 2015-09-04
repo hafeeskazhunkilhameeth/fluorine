@@ -332,7 +332,7 @@ def prepare_client_files(curr_app):
 			except:
 				pass
 
-		apps = get_active_apps()
+		apps = get_active_apps(whatfor)
 		apps.remove(curr_app)
 		src = os.path.join(react_path, whatfor, ".meteor", "packages")
 		dst = os.path.join(curr_app_path, "templates", "packages_add_" + whatfor)

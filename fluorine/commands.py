@@ -5,9 +5,6 @@ __author__ = 'luissaguas'
 import click
 from fluorine.utils import whatfor_all
 from fluorine.commands_helpers import *
-
-from fluorine.commands_helpers import services as sh
-from fluorine.commands_helpers import meteor as mh
 from fluorine.commands_helpers import config as ch
 
 
@@ -37,49 +34,41 @@ def meteor_echo(msg, count=30, color=None, new_line=True, end_line=True):
 	click_format("*" * count, color=color, new_line=new_line, end_line=end_line)
 
 
-def _reset_packages(app, file_add=None, file_remove=None):
+def _reset_packages(app, whatfor, file_add=None, file_remove=None):
 	from fluorine.utils.meteor.packages import meteor_reset_package
 
-	for whatfor in whatfor_all:#("meteor_app", "meteor_web"):
-		meteor_reset_package(app, whatfor, file_add=file_add, file_remove=file_remove)
+	meteor_reset_package(app, whatfor, file_add=file_add, file_remove=file_remove)
 
 
 def _reset_packages_all(file_add=None, file_remove=None):
 	from fluorine.commands_helpers.meteor import get_active_apps
 
-	apps = get_active_apps()
-	for app in apps:
-		_reset_packages(app, file_add=file_add, file_remove=file_remove)
+	for whatfor in whatfor_all:
+		apps = get_active_apps(whatfor)
+		for app in apps:
+			_reset_packages(app, whatfor, file_add=file_add, file_remove=file_remove)
 
 
-def _remove_meteor_packages(app, file_remove=None):
+def remove_meteor_packages(apps=None, file_remove=None):
 	from fluorine.utils.meteor.packages import meteor_remove_package
-
-	for whatfor in whatfor_all:#("meteor_app", "meteor_web"):
-		meteor_remove_package(app, whatfor, file_remove=file_remove)
-
-
-def remove_meteor_packages(file_remove=None):
 	from fluorine.commands_helpers.meteor import get_active_apps
 
-	apps = get_active_apps()
-	for app in apps:
-		_remove_meteor_packages(app, file_remove=file_remove)
+	for whatfor in whatfor_all:
+		if not apps:
+			apps = get_active_apps(whatfor)
+		for app in apps:
+			meteor_remove_package(app, whatfor, file_remove=file_remove)
 
-def _add_meteor_packages(app, file_add=None):
+
+def add_meteor_packages(apps=None, file_add=None):
 	from fluorine.utils.meteor.packages import meteor_add_package
-
-	for whatfor in whatfor_all:#("meteor_app", "meteor_web"):
-		meteor_add_package(app, whatfor, file_add=file_add)
-
-
-def add_meteor_packages(file_add=None):
 	from fluorine.commands_helpers.meteor import get_active_apps
 
-	apps = get_active_apps()
-	for app in apps:
-		_add_meteor_packages(app, file_add=file_add)
-
+	for whatfor in whatfor_all:
+		if not apps:
+			apps = get_active_apps(whatfor)
+		for app in apps:
+			meteor_add_package(app, whatfor, file_add=file_add)
 
 def _cmd_create_meteor_apps(doc):
 	from fluorine.utils.install import create_meteor_apps
@@ -102,10 +91,11 @@ def cmd_check_updates(site=None):
 	bench = "../../bench-repo/"
 	start_frappe_db(site)
 
-	if check_updates(bench=bench):
-		click.echo("fluorine apps are not updated.")
-	else:
-		click.echo("fluorine apps are updated.")
+	for whatfor in whatfor_all:
+		if check_updates(whatfor, bench=bench):
+			click.echo("%s: fluorine apps needs to update." % whatfor)
+		else:
+			click.echo("%s: fluorine apps are updated." % whatfor)
 
 
 @click.command('update-version')
@@ -121,6 +111,7 @@ def cmd_update_version(site=None):
 	start_frappe_db(site)
 
 	update_versions(bench=bench)
+
 	click.echo("fluorine apps were updated.")
 
 
@@ -144,9 +135,10 @@ def cmd_remove_meteor_packages(app, site=None):
 	file_add, file_remove = get_custom_packages_files()
 
 	if app:
-		_remove_meteor_packages(app, file_remove=file_remove)
-	else:
-		remove_meteor_packages(file_remove=file_remove)
+		app = [app]
+
+	remove_meteor_packages(apps=app, file_remove=file_remove)
+
 
 
 @click.command('add-meteor-packages')
@@ -169,9 +161,9 @@ def cmd_add_meteor_packages(app=None, site=None):
 	file_add, file_remove = get_custom_packages_files()
 
 	if app:
-		_add_meteor_packages(app, file_add=file_add)
-	else:
-		add_meteor_packages(file_add=file_add)
+		app = [app]
+
+	add_meteor_packages(apps=app, file_add=file_add)
 
 
 @click.command('reset-meteor-packages')

@@ -185,16 +185,44 @@ def remove_from_assets():
 		pass
 
 
-def is_valid_fluorine_app(app):
+def is_valid_fluorine_app(app, whatfor=None):
 
-	apps = get_active_apps()
-	if app not in apps:
-		return False
+	if not whatfor:
+		whatfor = whatfor_all
+	elif isinstance(whatfor, basestring):
+		whatfor = [whatfor]
 
-	return True
+	for w in whatfor:
+		apps = get_active_apps(w)
+		if app in apps:
+			return True
+
+	return False
 
 
-def get_active_apps():
+def get_active_apps(whatfor):
+	from fluorine.utils import APPS as apps, get_attr_from_json
+	from fluorine.utils.reactivity import make_meteor_ignor_files, list_ignores
+
+	if not list_ignores:
+		list_ignores = make_meteor_ignor_files()
+
+	#ign_apps = ign_files.remove.get("apps")
+	ign_apps = get_attr_from_json([whatfor, "remove", "apps"], list_ignores)
+
+	active_apps = []
+	for app in apps:
+		app_path = frappe.get_app_path(app)
+		meteor_app = os.path.join(app_path, "templates", "react", whatfor)
+		#meteor_web = os.path.join(app_path, "templates", "react", meteor_web_app)
+		#if (os.path.exists(meteor_app) or os.path.exists(meteor_web)) and app not in ign_apps:
+		if os.path.exists(meteor_app) and app not in ign_apps:
+			active_apps.append(app)
+
+	return active_apps
+
+
+def _get_active_apps():
 	from fluorine.utils import APPS as apps, get_attr_from_json
 	from fluorine.utils.reactivity import make_meteor_ignor_files
 
@@ -214,20 +242,22 @@ def get_active_apps():
 	return active_apps
 
 
-def check_updates(bench=".."):
+def check_updates(whatfor, bench=".."):
 	from fluorine.utils.reactivity import meteor_config
 	from bench_helpers import get_current_version
 	import semantic_version
 
-	apps = get_active_apps()
+	apps = get_active_apps(whatfor)
 	versions = meteor_config.get("versions")
 
 	if not versions:
 		return False
 
+	app_version = versions.get(whatfor)
+
 	for app in apps:
 		curr_version = get_current_version(app, bench=bench)
-		old_version = versions.get(app, None)
+		old_version = app_version.get(app, None)
 		if not old_version or curr_version > semantic_version.Version(old_version):
 			return True
 
@@ -239,14 +269,19 @@ def update_versions(bench=".."):
 	from fluorine.utils.reactivity import meteor_config
 	from fluorine.utils.meteor.utils import update_common_config
 
-	apps = get_active_apps()
-
 	meteor_config.pop("versions", None)
-	versions = meteor_config["versions"] = frappe._dict()
+	versions = meteor_config["versions"] = frappe._dict({meteor_desk_app:{}, meteor_web_app:{}})
 
-	for app in apps:
-		version = get_current_version(app, bench=bench)
-		versions[app] = str(version)
+	for whatfor in whatfor_all:
+
+		apps = get_active_apps(whatfor)
+
+
+		app_version = versions.get(whatfor)
+
+		for app in apps:
+			version = get_current_version(app, bench=bench)
+			app_version[app] = str(version)
 
 	update_common_config(meteor_config)
 
