@@ -418,7 +418,7 @@ def start_meteor(doc, devmode, state, site=None, mongo_custom=False, server_port
 		return
 	"""
 	from fluorine.commands_helpers.meteor import MeteorDevelop
-	md = MeteorDevelop(doc, site=site, mongo_custom=mongo_custom, bench=bench)
+	md = MeteorDevelop(doc, site=site, mongo_custom=mongo_custom, server_port=server_port, ddp_port=ddp_port, bench=bench)
 	md.start()
 
 
