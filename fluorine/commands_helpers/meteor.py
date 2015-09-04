@@ -330,6 +330,9 @@ class MeteorDevelop(object):
 		self.ddp_port = ddp_port
 
 	def start(self):
+		from fluorine.utils import meteor_config
+
+		self.meteor_config = meteor_config
 
 		if not self.check_meteor_apps():
 			raise click.ClickException("Please install meteor app first. From command line issue 'bench fluorine create-meteor-apps.'")
@@ -347,6 +350,18 @@ class MeteorDevelop(object):
 	def update_doctype(self):
 		self.doc.fluor_dev_mode = 1
 		self.doc.fluorine_state = "on"
+
+		if self.server_port:
+			from fluorine.commands_helpers import get_host_address
+			host_address = get_host_address(self.doc)
+			self.doc.fluor_meteor_host = host_address + ":" + self.server_port
+			self.meteor_config["meteor_dev"]["host"] = self.doc.fluor_meteor_host
+
+		if self.ddp_port:
+			from fluorine.commands_helpers import get_ddp_address
+			ddp_address = get_ddp_address(self.doc)
+			self.doc.ddpurl = ddp_address + ":" + self.ddp_port
+			self.meteor_config["meteor_dev"]["meteor_app"]["ddpurl"] = self.doc.ddpurl
 
 	def update_meteor_conf_file(self):
 		from fluorine.utils import meteor_config
