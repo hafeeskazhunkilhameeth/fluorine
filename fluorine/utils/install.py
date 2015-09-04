@@ -20,10 +20,11 @@ def before_install():
 		frappe.create_folder(path_reactivity)
 
 	copy_common_config(path_reactivity)
-	update_meteor_config_file()
 
 	from fluorine.utils import get_meteor_configuration_file
 	get_meteor_configuration_file()
+
+	update_meteor_config_file()
 
 	create_meteor_apps(path_reactivity=path_reactivity)
 
