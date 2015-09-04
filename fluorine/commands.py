@@ -206,6 +206,19 @@ def cmd_create_meteor_apps(site=None):
 	_cmd_create_meteor_apps(doc)
 
 
+@click.command('get-apps-packages-list')
+@click.option('--custom-file-to-add', default=None, help='Name of the custom file with packages to add.')
+@click.option('--custom-file-to-remove', default=None, help='Name of the custom file with packages to remove.')
+def cmd_get_apps_packages_list(custom_file_to_add=None, custom_file_to_remove=None):
+	from fluorine.utils.meteor.packages import get_package_list_updates
+
+	curr_app = get_current_dev_app()
+	for whatfor in whatfor_all:
+		pckg_add, pckg_remove, i_pkgs = get_package_list_updates(curr_app, whatfor, file_add=custom_file_to_add, file_remove=custom_file_to_remove)
+		color = click_format("*" * 35)
+		click.echo("%s:\n packages to add = %s\n packages to remove = %s\n\n installed_packages %s\n" % (whatfor, list(pckg_add), list(pckg_remove), i_pkgs))
+		click_format("*" * 35, color)
+
 @click.command('get-current-state')
 def cmd_get_state():
 	"""Set the current app."""
@@ -283,7 +296,11 @@ def cmd_restore_common_config(site=None):
 @click.option('--debug', is_flag=True)
 @click.option('--update', is_flag=True)
 @click.option('--force', is_flag=True)
-def setState(state, site=None, custom_mongo=None, user=None, server_port=None, ddp_port=None, mac_sup_prefix_path=None, debug=None, update=None, force=None):
+@click.option('--skip-package-check-updates', is_flag=False)
+@click.option('--custom-file-to-add', default=None, help='Name of the custom file with packages to add.')
+@click.option('--custom-file-to-remove', default=None, help='Name of the custom file with packages to remove.')
+def setState(state, site=None, custom_mongo=None, user=None, server_port=None, ddp_port=None, mac_sup_prefix_path=None, debug=None,
+			update=None, force=None, custom_file_to_add=None, custom_file_to_remove=None, skip_package_check_updates=False):
 	"""Prepare Frappe for meteor.\n
 		STATE: \n
 		`develop` to enter in developer mode;\n
@@ -301,11 +318,13 @@ def setState(state, site=None, custom_mongo=None, user=None, server_port=None, d
 	bench = "../../bench-repo/"
 
 	color = click_format("*" * 80)
-	_setState(site=site, state=state, debug=debug, update= update, force=force, mongo_custom=custom_mongo, user=user, bench=bench, server_port=server_port, ddp_port=ddp_port, mac_sup_prefix_path=mac_sup_prefix_path)
+	_setState(site=site, state=state, debug=debug, update= update, force=force, mongo_custom=custom_mongo, user=user, bench=bench,
+		server_port=server_port, ddp_port=ddp_port, mac_sup_prefix_path=mac_sup_prefix_path, file_to_add=custom_file_to_add, file_to_remove=custom_file_to_remove, skip_package_check_updates=skip_package_check_updates)
 	click_format("*" * 80, color)
 
 
-def _setState(site=None, state=None, debug=False, update=False, force=False, mongo_custom=False, user=None, bench="..", server_port=None, ddp_port=None, mac_sup_prefix_path="/usr/local"):
+def _setState(site=None, state=None, debug=False, update=False, force=False, mongo_custom=False, user=None, bench="..",
+			server_port=None, ddp_port=None, mac_sup_prefix_path="/usr/local", file_to_add=None, file_to_remove=None, skip_package_check_updates=False):
 	from fluorine.utils.fcache import clear_frappe_caches
 	from fluorine.commands_helpers.meteor import MeteorContext
 	doc = get_doctype("Fluorine Reactivity", site)
@@ -320,7 +339,8 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 		from fluorine.commands_helpers import get_current_dev_app
 
 		current_dev_app = get_current_dev_app()
-		start_meteor(doc, current_dev_app, site=site, mongo_custom=mongo_custom, bench=bench, server_port=server_port, ddp_port=ddp_port)
+		start_meteor(doc, current_dev_app, site=site, mongo_custom=mongo_custom, bench=bench, server_port=server_port, ddp_port=ddp_port,
+					file_to_add=file_to_add, file_to_remove=file_to_remove, skip_package_check_updates=skip_package_check_updates)
 	elif what == "stop":
 		stop_meteor(doc, devmode, fluor_state, force=force, site=site, bench=bench)
 	elif what == "production":
@@ -332,7 +352,8 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 		if not update and not debug:
 			if meteor_config.get("on_update", 0):
 				update = True
-		in_production = start_meteor_production_mode(doc, current_dev_app, server_port=server_port, ddp_port=ddp_port, site=site, debug=debug, update=update, force=force, user=user, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path)
+		in_production = start_meteor_production_mode(doc, current_dev_app, server_port=server_port, ddp_port=ddp_port, site=site, debug=debug,
+				update=update, force=force, user=user, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path, file_to_add=file_to_add, file_to_remove=file_to_remove)
 		if in_production and update:
 			from fluorine.utils.meteor.utils import update_common_config
 
@@ -349,7 +370,7 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 		frappe.destroy()
 
 
-def start_meteor(doc, current_dev_app, site=None, mongo_custom=False, server_port=None, ddp_port=None, bench=".."):
+def start_meteor(doc, current_dev_app, site=None, mongo_custom=False, server_port=None, ddp_port=None, bench="..", file_to_add=None, file_to_remove=None, skip_package_check_updates=False):
 	"""
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile, make_mongodb_default, check_meteor_apps_created
 	from fluorine.utils.meteor.utils import PORT
@@ -414,7 +435,8 @@ def start_meteor(doc, current_dev_app, site=None, mongo_custom=False, server_por
 		return
 	"""
 	from fluorine.commands_helpers.meteor import MeteorDevelop
-	md = MeteorDevelop(doc, current_dev_app, site=site, mongo_custom=mongo_custom, server_port=server_port, ddp_port=ddp_port, bench=bench)
+	md = MeteorDevelop(doc, current_dev_app, site=site, mongo_custom=mongo_custom, server_port=server_port, ddp_port=ddp_port,
+					bench=bench, file_to_add=file_to_add, file_to_remove=file_to_remove, skip_package_check_updates=False)
 	md.start()
 
 
@@ -439,7 +461,8 @@ def stop_meteor(doc, devmode, state, force=False, site=None, production=False, b
 
 
 
-def start_meteor_production_mode(doc, current_dev_app, server_port=None, ddp_port=None, site=None, debug=False, update=False, force=False, user=None, bench="..", mac_sup_prefix_path="/usr/local"):
+def start_meteor_production_mode(doc, current_dev_app, server_port=None, ddp_port=None, site=None, debug=False,
+			update=False, force=False, user=None, bench="..", mac_sup_prefix_path="/usr/local", file_to_add=None, file_to_remove=None):
 	from fluorine.commands_helpers.meteor import MeteorProduction
 	"""
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile, make_final_app_client, save_to_procfile, check_meteor_apps_created
@@ -522,7 +545,8 @@ def start_meteor_production_mode(doc, current_dev_app, server_port=None, ddp_por
 	"""
 
 
-	mp = MeteorProduction(doc, current_dev_app, site=site, debug=debug, update=update, force=force, user=user, server_port=server_port, ddp_port=ddp_port, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path)
+	mp = MeteorProduction(doc, current_dev_app, site=site, debug=debug, update=update, force=force, user=user, server_port=server_port,
+						ddp_port=ddp_port, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path, file_to_add=file_to_add, file_to_remove=file_to_remove)
 
 	mp.start()
 
@@ -585,6 +609,7 @@ commands = [
 	cmd_remove_meteor_packages,
 	cmd_restore_common_config,
 	cmd_get_state,
+	cmd_get_apps_packages_list,
 	#setup_production,
 	cmd_update_version,
 	cmd_check_updates,

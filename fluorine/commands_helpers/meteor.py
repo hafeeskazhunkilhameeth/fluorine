@@ -321,7 +321,8 @@ class MeteorContext(object):
 
 class MeteorDevelop(object):
 
-	def __init__(self, doc, current_dev_app, site=None, mongo_custom=False, server_port=None, ddp_port=None, bench=".."):
+	def __init__(self, doc, current_dev_app, site=None, mongo_custom=False, server_port=None, ddp_port=None, bench="..",
+				file_to_add=None, file_to_remove=None, skip_package_check_updates=False):
 		self.doc = doc
 		self.site = site
 		self.bench = bench
@@ -329,6 +330,9 @@ class MeteorDevelop(object):
 		self.server_port = server_port
 		self.ddp_port = ddp_port
 		self.current_dev_app = current_dev_app
+		self.file_add = file_to_add
+		self.file_remove = file_to_remove
+		self.skip_package_check_updates = skip_package_check_updates
 
 	def start(self):
 		from fluorine.utils import meteor_config
@@ -370,7 +374,7 @@ class MeteorDevelop(object):
 	def update_list_packages(self):
 		from fluorine.utils.meteor.packages import update_packages_list
 
-		update_packages_list(self.current_dev_app, file_add=None, file_remove=None)
+		update_packages_list(self.current_dev_app, file_add=self.file_add, file_remove=self.file_remove)
 
 	def make_apps_context(self):
 		self.m_ctx = m_ctx = MeteorContext(production=False)
@@ -432,7 +436,8 @@ class MeteorDevelop(object):
 
 class MeteorProduction(object):
 
-	def __init__(self, doc, current_dev_app, site=None, debug=False, update=False, force=False, user=None, server_port=None, ddp_port=None, bench="..", mac_sup_prefix_path="/usr/local"):
+	def __init__(self, doc, current_dev_app, site=None, debug=False, update=False, force=False, user=None, server_port=None, ddp_port=None, bench="..",
+				mac_sup_prefix_path="/usr/local", file_to_add=None, file_to_remove=None):
 		self.doc = doc
 		self.current_dev_app = current_dev_app
 		self.site = site
@@ -444,6 +449,8 @@ class MeteorProduction(object):
 		self.mac_sup_prefix_path = mac_sup_prefix_path
 		self.server_port = server_port
 		self.ddp_port = ddp_port
+		self.file_add = file_to_add
+		self.file_remove = file_to_remove
 
 	def start(self):
 		from fluorine.utils import meteor_config

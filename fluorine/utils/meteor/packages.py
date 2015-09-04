@@ -58,7 +58,7 @@ def get_packages_list_version(whatfor, path_reactivity=None):
 
 	for package in [p.strip() for p in package_list_version.splitlines() if p.strip() and not (p.startswith("#") or p.startswith("*"))]:
 		p = package.split()
-		print "p={}".format(p)
+		#print "p={}".format(p)
 		if len(p) > 1 and re.match(r"(?:\d.?)", p[1]):
 			pkg_list.append("%s@=%s" %(p[0], re.sub(r"[^\d.|^_]+", "", p[1])))
 
@@ -164,17 +164,18 @@ def get_list_packages_to_install_by_apps(curr_app, whatfor, file_add=None, file_
 
 	for app in apps:
 		app_path = frappe.get_app_path(app)
-		src_add = os.path.join(app_path, "templates", package_file_name_add)
-		file_src_add = _get_file(src_add)
-		src_remove = os.path.join(app_path, "templates", package_file_name_remove)
-		file_src_remove = _get_file(src_remove)
-		src_custom_add = os.path.join(app_path, "templates", file_add)
-		file_custom_add = _get_file(src_custom_add)
-		src_custom_remove = os.path.join(app_path, "templates", file_remove)
-		file_custom_remove = _get_file(src_custom_remove)
+		for file_par in [(package_file_name_add, package_file_name_remove), (file_add, file_remove)]:
+			src_add = os.path.join(app_path, "templates", file_par[0])
+			file_src_add = _get_file(src_add)
+			src_remove = os.path.join(app_path, "templates", file_par[1])
+			file_src_remove = _get_file(src_remove)
+			#src_custom_add = os.path.join(app_path, "templates", file_add)
+			#file_custom_add = _get_file(src_custom_add)
+			#src_custom_remove = os.path.join(app_path, "templates", file_remove)
+			#file_custom_remove = _get_file(src_custom_remove)
 
-		_package(app, file_src_add, file_src_remove)
-		_package(app, file_custom_add, file_custom_remove)
+			_package(app, file_src_add, file_src_remove)
+			#_package(app, file_custom_add, file_custom_remove)
 
 	return packages_to_add, packages_to_remove
 
@@ -200,28 +201,38 @@ def get_package_list_updates(curr_app, whatfor, file_add=None, file_remove=None)
 	for app in apps:
 		pckgs = package_remove.get(app) or []
 		for pckg in pckgs:
+			found = False
+			pckg_name = pckg.split("@=")[0]
 			for i_pckg in installed_packages:
-				pckg_name = pckg.split("@=")[0]
 				if re.match(pckg_name, i_pckg):
-					packages_to_remove.add(pckg)
+					found = True
+					break
+			if found:
+				packages_to_remove.add(pckg)
+
 			if pckg in packages_to_add:
 				packages_to_add.remove(pckg)
 
 		pckgs = package_add.get(app) or []
 		for pckg in pckgs:
+			found = False
+			pckg_name = pckg.split("@=")[0]
 			for i_pckg in installed_packages:
-				pckg_name = pckg.split("@=")[0]
-				if not re.match(pckg_name, i_pckg):
-					packages_to_add.add(pckg)
+				if re.match(pckg_name, i_pckg):
+					found = True
+					break
+			if not found:
+				packages_to_add.add(pckg)
+
 			if pckg in packages_to_remove:
 				packages_to_remove.remove(pckg)
 
-	return packages_to_add, [pckg.split("@=")[0] for pckg in packages_to_remove]
+	return packages_to_add, [pckg.split("@=")[0] for pckg in packages_to_remove], installed_packages
 
 
 def update_packages_list(curr_app, file_add=None, file_remove=None):
 
 	for whatfor in whatfor_all:
-		pckg_add, pckg_remove = get_package_list_updates(curr_app, whatfor, file_add=file_add, file_remove=file_remove)
+		pckg_add, pckg_remove, i_pckgs = get_package_list_updates(curr_app, whatfor, file_add=file_add, file_remove=file_remove)
 		meteor_package(whatfor, pckg_remove, path_reactivity=None, action="remove")
 		meteor_package(whatfor, pckg_add, path_reactivity=None, action="add")
