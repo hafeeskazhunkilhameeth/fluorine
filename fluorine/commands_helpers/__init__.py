@@ -110,3 +110,19 @@ def get_default_site():
 			frappe.throw("There is no default site. Check if reactivity/common_site_config.json for site option or if sites/currentsite.txt exist or provide the site with --site option.")
 
 	return site
+
+def get_current_dev_app():
+	from fluorine.utils.reactivity import meteor_config
+	import click
+
+	current_dev_app = meteor_config.get("current_dev_app", None)
+	if not current_dev_app:
+		from fluorine.commands_helpers.meteor import get_active_apps
+		apps = get_active_apps()
+		if len(apps) > 1:
+			click.echo("Please you must set the current_dev_app in reactivity/common_site_config.json to continue.")
+			return
+		else:
+			current_dev_app = apps[0]
+
+	return current_dev_app

@@ -321,13 +321,14 @@ class MeteorContext(object):
 
 class MeteorDevelop(object):
 
-	def __init__(self, doc, site=None, mongo_custom=False, server_port=None, ddp_port=None, bench=".."):
+	def __init__(self, doc, current_dev_app, site=None, mongo_custom=False, server_port=None, ddp_port=None, bench=".."):
 		self.doc = doc
 		self.site = site
 		self.bench = bench
 		self.mongo_custom = mongo_custom
 		self.server_port = server_port
 		self.ddp_port = ddp_port
+		self.current_dev_app = current_dev_app
 
 	def start(self):
 		from fluorine.utils import meteor_config
@@ -342,6 +343,7 @@ class MeteorDevelop(object):
 		update_url_port(self.doc, self.meteor_config, self.server_port, self.ddp_port)
 		self.make_mongo()
 		self.doc.save()
+		self.update_list_packages()
 		self.make_apps_context()
 		self.remove_from_assets()
 		self.save_procfile()
@@ -364,6 +366,11 @@ class MeteorDevelop(object):
 
 		click.echo("Checking for meteor apps folder. Please wait.")
 		return check_meteor_apps_created(self.doc)
+
+	def update_list_packages(self):
+		from fluorine.utils.meteor.packages import update_packages_list
+
+		update_packages_list(self.current_dev_app, file_add=None, file_remove=None)
 
 	def make_apps_context(self):
 		self.m_ctx = m_ctx = MeteorContext(production=False)
@@ -459,6 +466,7 @@ class MeteorProduction(object):
 		self.check_custom_mongo()
 		self.remove_from_procfile()
 
+		self.remove_old_final_folders()
 		self.make_apps_context()
 		self.make_packages_list()
 
@@ -523,11 +531,16 @@ class MeteorProduction(object):
 		m_ctx.make_context()
 
 	def make_packages_list(self):
-		from fluorine.utils.meteor.utils import cmd_packages_from
+		from fluorine.utils.meteor.utils import cmd_packages_update
 		#only save the meteor packages installed in fluorine if fluorine app is in development.
 		if self.current_dev_app != "fluorine" or self.force:
 			#prepare_client_files(current_dev_app)
-			cmd_packages_from(self.current_dev_app)
+			cmd_packages_update(self.current_dev_app)
+
+	def remove_old_final_folders(self):
+		from fluorine.utils.meteor.utils import remove_old_final_folders
+
+		remove_old_final_folders()
 
 	def make_meteor_bundle(self):
 		from fluorine.utils.meteor.utils import make_meteor_files
