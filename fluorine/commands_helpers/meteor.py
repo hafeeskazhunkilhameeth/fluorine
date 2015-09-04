@@ -539,7 +539,7 @@ class MeteorProduction(object):
 		m_ctx.make_context()
 
 	def make_packages_list(self):
-		from fluorine.utils.meteor.utils import cmd_packages_update
+		from fluorine.utils.meteor.packages import cmd_packages_update
 		#only save the meteor packages installed in fluorine if fluorine app is in development.
 		if self.current_dev_app != "fluorine" or self.force:
 			#prepare_client_files(current_dev_app)

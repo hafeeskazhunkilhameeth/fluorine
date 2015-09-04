@@ -363,47 +363,6 @@ def remove_old_final_folders():
 			except:
 				pass
 
-#get the list of apps installed by current app and save it. Ignore custom packages (packages installed after app installation)
-def cmd_packages_update(curr_app):
-	from fluorine.utils.file import save_file
-
-	curr_app_path = frappe.get_app_path(curr_app)
-
-	for whatfor in whatfor_all:
-		package_file_name = "packages_add_" + whatfor
-		dst = os.path.join(curr_app_path, "templates", package_file_name)
-		packages_to_add = cmd_packages_from(curr_app, whatfor, package_file_name)
-		save_file(dst, "\n".join(packages_to_add))
-
-#get the list of apps installed by current app. Ignore custom packages (packages installed after app installation)
-def cmd_packages_from(curr_app, whatfor, package_file_name):
-	from fluorine.utils.meteor.packages import get_packages_list_version
-	from fluorine.utils.file import get_path_reactivity
-	from fluorine.commands_helpers.meteor import get_active_apps
-	import re
-
-	react_path = get_path_reactivity()
-
-	apps = get_active_apps()
-	apps.remove(curr_app)
-	installed_packages = get_packages_list_version(whatfor, path_reactivity=react_path)
-	packages_to_remove = set([])
-
-	for app in apps:
-		tmp_app_path = frappe.get_app_path(app)
-		tmp_dst = os.path.join(tmp_app_path, "templates", package_file_name)
-		tmp_app_pckg = frappe.get_file_items(tmp_dst)
-		#Not permited upgrade packages installed by other modules
-		for i_pckg in installed_packages:
-			for pckg in tmp_app_pckg:
-				pckg_name = pckg.split("@=")[0]
-				if re.match(pckg_name, i_pckg):
-					packages_to_remove.add(pckg)
-					break
-
-	return set(installed_packages).difference(packages_to_remove)
-
-
 
 def make_meteor_files(mthost, mtport, mtddpurl, architecture):
 	from fluorine.utils.file import make_meteor_file
