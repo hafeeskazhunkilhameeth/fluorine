@@ -234,7 +234,7 @@ def get_package_list_updates(curr_app, whatfor, file_add=None, file_remove=None)
 	react_path = get_path_reactivity()
 	installed_packages = get_packages_list_version(whatfor, path_reactivity=react_path)
 
-	apps = get_active_apps()
+	apps = get_active_apps(whatfor)
 	apps.remove(curr_app)
 
 	apps.append(curr_app)
