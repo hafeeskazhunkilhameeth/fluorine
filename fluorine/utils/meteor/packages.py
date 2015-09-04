@@ -180,7 +180,7 @@ def get_list_packages_to_install_by_apps(curr_app, whatfor, file_add=None, file_
 	return packages_to_add, packages_to_remove
 
 
-def get_package_list_updates(curr_app, whatfor, file_add=None, file_remove=None):
+def get_package_list_updates(curr_app, whatfor, file_add=None, file_remove=None, is_print=True):
 	from fluorine.utils.file import get_path_reactivity
 	from fluorine.commands_helpers.meteor import get_active_apps
 	import re
@@ -227,12 +227,21 @@ def get_package_list_updates(curr_app, whatfor, file_add=None, file_remove=None)
 			if pckg in packages_to_remove:
 				packages_to_remove.remove(pckg)
 
-	return packages_to_add, [pckg.split("@=")[0] for pckg in packages_to_remove], installed_packages
+	pckg_remove = [pckg.split("@=")[0] for pckg in packages_to_remove]
+
+	return packages_to_add, pckg_remove, installed_packages
 
 
 def update_packages_list(curr_app, file_add=None, file_remove=None):
 
 	for whatfor in whatfor_all:
 		pckg_add, pckg_remove, i_pckgs = get_package_list_updates(curr_app, whatfor, file_add=file_add, file_remove=file_remove)
+		print_meteor_packages_list(whatfor, pckg_add, pckg_remove, i_pckgs)
 		meteor_package(whatfor, pckg_remove, path_reactivity=None, action="remove")
 		meteor_package(whatfor, pckg_add, path_reactivity=None, action="add")
+
+
+def print_meteor_packages_list(whatfor, pckg_add, pckg_remove, i_pckgs):
+	from fluorine.commands import meteor_echo
+
+	meteor_echo("%s:\n packages to add = %s\n packages to remove = %s\n\n installed_packages %s\n" % (whatfor, list(pckg_add), list(pckg_remove), i_pckgs), 80)

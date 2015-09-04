@@ -31,6 +31,12 @@ def click_format(msg, color=None, new_line=True, end_line=True):
 	return color
 
 
+def meteor_echo(msg, count=30, color=None, new_line=True, end_line=True):
+	color = click_format("*" * count, color=color, new_line=new_line, end_line=end_line)
+	click.echo(msg)
+	click_format("*" * count, color=color, new_line=new_line, end_line=end_line)
+
+
 def _reset_packages(app, file_add=None, file_remove=None):
 	from fluorine.utils.meteor.packages import meteor_reset_package
 
@@ -210,14 +216,12 @@ def cmd_create_meteor_apps(site=None):
 @click.option('--custom-file-to-add', default=None, help='Name of the custom file with packages to add.')
 @click.option('--custom-file-to-remove', default=None, help='Name of the custom file with packages to remove.')
 def cmd_get_apps_packages_list(custom_file_to_add=None, custom_file_to_remove=None):
-	from fluorine.utils.meteor.packages import get_package_list_updates
+	from fluorine.utils.meteor.packages import print_meteor_packages_list, get_package_list_updates
 
 	curr_app = get_current_dev_app()
 	for whatfor in whatfor_all:
-		pckg_add, pckg_remove, i_pkgs = get_package_list_updates(curr_app, whatfor, file_add=custom_file_to_add, file_remove=custom_file_to_remove)
-		color = click_format("*" * 35)
-		click.echo("%s:\n packages to add = %s\n packages to remove = %s\n\n installed_packages %s\n" % (whatfor, list(pckg_add), list(pckg_remove), i_pkgs))
-		click_format("*" * 35, color)
+		pckg_add, pckg_remove, i_pckgs = get_package_list_updates(curr_app, whatfor, file_add=custom_file_to_add, file_remove=custom_file_to_remove)
+		print_meteor_packages_list(whatfor, pckg_add, pckg_remove, i_pckgs)
 
 @click.command('get-current-state')
 def cmd_get_state():
