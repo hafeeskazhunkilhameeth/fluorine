@@ -300,7 +300,7 @@ def cmd_restore_common_config(site=None):
 @click.option('--debug', is_flag=True)
 @click.option('--update', is_flag=True)
 @click.option('--force', is_flag=True)
-@click.option('--skip-package-check-updates', is_flag=False)
+@click.option('--skip-package-check-updates', is_flag=True)
 @click.option('--custom-file-to-add', default=None, help='Name of the custom file with packages to add.')
 @click.option('--custom-file-to-remove', default=None, help='Name of the custom file with packages to remove.')
 def setState(state, site=None, custom_mongo=None, user=None, server_port=None, ddp_port=None, mac_sup_prefix_path=None, debug=None,
@@ -440,7 +440,7 @@ def start_meteor(doc, current_dev_app, site=None, mongo_custom=False, server_por
 	"""
 	from fluorine.commands_helpers.meteor import MeteorDevelop
 	md = MeteorDevelop(doc, current_dev_app, site=site, mongo_custom=mongo_custom, server_port=server_port, ddp_port=ddp_port,
-					bench=bench, file_to_add=file_to_add, file_to_remove=file_to_remove, skip_package_check_updates=False)
+					bench=bench, file_to_add=file_to_add, file_to_remove=file_to_remove, skip_package_check_updates=skip_package_check_updates)
 	md.start()
 
 

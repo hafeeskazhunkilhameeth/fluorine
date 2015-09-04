@@ -374,7 +374,8 @@ class MeteorDevelop(object):
 	def update_list_packages(self):
 		from fluorine.utils.meteor.packages import update_packages_list
 
-		update_packages_list(self.current_dev_app, file_add=self.file_add, file_remove=self.file_remove)
+		if not self.skip_package_check_updates:
+			update_packages_list(self.current_dev_app, file_add=self.file_add, file_remove=self.file_remove)
 
 	def make_apps_context(self):
 		self.m_ctx = m_ctx = MeteorContext(production=False)
