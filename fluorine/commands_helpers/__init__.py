@@ -37,7 +37,8 @@ def get_hosts(doc, production=False):
 
 	use_desk_in_production = get_attr_from_json(["meteor_dev", meteor_desk_app, "production"], meteor_config)
 	#remove :port only have meanning in ROOT_URL environment variable
-	mthost = get_host_address(doc)
+	mthost = get_host_address(doc).replace("http://", "").replace("https://", "")
+
 	port = doc.fluor_meteor_port or PORT.get(meteor_web_app)
 
 	if use_web_in_production or not production:
@@ -49,24 +50,39 @@ def get_hosts(doc, production=False):
 	if meteor_dns and production:
 		meteor_web = meteor_dns.get(meteor_web_app)
 		for obj in meteor_web:
-			hosts_web.append("%s:%s" % (obj.get("host").replace("http://", ""), obj.get("port")))
+			hosts_web.append("%s:%s" % (obj.get("host").replace("http://", "").replace("https://", ""), obj.get("port")))
 
 		meteor_app = meteor_dns.get(meteor_desk_app)
 		for obj in meteor_app:
-			hosts_app.append("%s:%s" % (obj.get("host").replace("http://", ""), obj.get("port")))
+			hosts_app.append("%s:%s" % (obj.get("host").replace("http://", "").replace("https://", ""), obj.get("port")))
 
 	return hosts_web, hosts_app
 
 
-def get_host_address(doc):
+def get_address(url, default="http://127.0.0.1"):
 	import re
 
+	if len(re.findall(":", url)) > 1:
+		url = url.rsplit(":",1)[0]
+	addr = url or default
+
+	return addr
+
+def get_host_address(doc):
+
 	meteor_root_url = doc.fluor_meteor_host.strip()
-	if len(re.findall(":", meteor_root_url)) > 1:
-		meteor_root_url = meteor_root_url.rsplit(":",1)[0]
-	mthost = meteor_root_url.replace("http://", "") or "127.0.0.1"
+
+	mthost = get_address(meteor_root_url)
 
 	return mthost
+
+def get_ddp_address(doc):
+
+	meteor_ddp_url = doc.ddpurl.strip()
+
+	mtddp = get_address(meteor_ddp_url)
+
+	return mtddp
 
 def start_frappe_db(site):
 	if not frappe.db:

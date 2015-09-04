@@ -321,11 +321,13 @@ class MeteorContext(object):
 
 class MeteorDevelop(object):
 
-	def __init__(self, doc, site=None, mongo_custom=False, bench=".."):
+	def __init__(self, doc, site=None, mongo_custom=False, server_port=None, ddp_port=None, bench=".."):
 		self.doc = doc
 		self.site = site
 		self.bench = bench
 		self.mongo_custom = mongo_custom
+		self.server_port = server_port
+		self.ddp_port = ddp_port
 
 	def start(self):
 
@@ -419,7 +421,7 @@ class MeteorDevelop(object):
 
 class MeteorProduction(object):
 
-	def __init__(self, doc, current_dev_app, site=None, debug=False, update=False, force=False, user=None, bench="..", mac_sup_prefix_path="/usr/local"):
+	def __init__(self, doc, current_dev_app, site=None, debug=False, update=False, force=False, user=None, server_port=None, ddp_port=None, bench="..", mac_sup_prefix_path="/usr/local"):
 		self.doc = doc
 		self.current_dev_app = current_dev_app
 		self.site = site
@@ -429,6 +431,8 @@ class MeteorProduction(object):
 		self.user = user
 		self.bench = bench
 		self.mac_sup_prefix_path = mac_sup_prefix_path
+		self.server_port = server_port
+		self.ddp_port = ddp_port
 
 	def start(self):
 		from fluorine.utils import meteor_config
@@ -441,11 +445,11 @@ class MeteorProduction(object):
 		if self.check_updates():
 			raise click.ClickException("There are updates in your apps. To update production you must press button 'run_updates' in fluorine app.")
 
-		self.check_hosts()
-
 		self.update_meteor_conf_file()
 		self.update_doctype()
 		self.doc.save()
+
+		self.check_hosts()
 
 		self.check_custom_mongo()
 		self.remove_from_procfile()
@@ -469,6 +473,17 @@ class MeteorProduction(object):
 	def update_doctype(self):
 		self.doc.fluorine_state = "off"
 		self.doc.fluor_dev_mode = 0
+		if self.server_port:
+			from fluorine.commands_helpers import get_host_address
+			host_address = get_host_address(self.doc)
+			self.doc.fluor_meteor_host = host_address + ":" + self.server_port
+			self.meteor_config["meteor_dev"]["host"] = self.doc.fluor_meteor_host
+
+		if self.ddp_port:
+			from fluorine.commands_helpers import get_ddp_address
+			ddp_address = get_ddp_address(self.doc)
+			self.doc.ddpurl = ddp_address + ":" + self.ddp_port
+			self.meteor_config["meteor_dev"]["meteor_app"]["ddpurl"] = self.doc.ddpurl
 
 	def update_meteor_conf_file(self):
 
@@ -486,7 +501,7 @@ class MeteorProduction(object):
 
 		if not self.hosts_app:
 			#must have at least one host app (desk)
-			mthost = get_host_address(self.doc)
+			mthost = get_host_address(self.doc).replace("http://", "").replace("https://", "")
 			port = (self.doc.fluor_meteor_port + PORT.port_inc) if self.doc.fluor_meteor_port else PORT.get(meteor_desk_app)
 			click.echo("One host desk at least must be provided. There are none, so force one: %s:%s" % (mthost, port))
 			self.hosts_app.append("%s:%s" % (mthost, port))
