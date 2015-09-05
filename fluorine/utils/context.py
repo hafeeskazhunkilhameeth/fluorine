@@ -37,7 +37,7 @@ class MeteorContext(object):
 
 		for w in whatfor_all:
 			#prepare_compile_environment(w)
-			ctx = prepare_make_meteor_file( w)
+			ctx = prepare_context_meteor_file( w)
 			if w == meteor_desk_app:
 				self.context[meteor_desk_app] = ctx
 
@@ -50,7 +50,7 @@ class MeteorContext(object):
 		make_includes(context)
 
 
-def prepare_make_meteor_file(whatfor):
+def prepare_context_meteor_file(whatfor):
 	from fluorine.templates.pages.fluorine_home import get_context as fluorine_get_context
 	from fluorine.utils import meteor_desk_app, fluor_get_context as get_context
 
