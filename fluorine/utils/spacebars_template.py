@@ -257,7 +257,8 @@ def get_web_pages(context):
 
 
 def fluorine_build_context(context, whatfor):
-	from fluorine.utils import APPS as apps, meteor_web_app, meteor_config
+	from fluorine.commands_helpers.meteor import get_active_apps
+	from fluorine.utils import meteor_web_app, meteor_config
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation, copy_mobile_config_file
 	from reactivity import list_ignores
 	from react_file_loader import get_custom_pattern
@@ -288,6 +289,7 @@ def fluorine_build_context(context, whatfor):
 
 	frappe.local.meteor_ignores = list_ignores
 
+	apps = get_active_apps(whatfor)
 	known_apps = apps[::-1]
 	custom_pattern = get_custom_pattern(whatfor, custom_pattern=None)
 
