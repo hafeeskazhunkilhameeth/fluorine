@@ -21,12 +21,12 @@ def cmd_packages_update(curr_app):
 #get the list of apps installed by current app. Ignore custom packages (packages installed after app installation)
 def cmd_packages_from(curr_app, whatfor, package_file_name):
 	from fluorine.utils.file import get_path_reactivity
-	from fluorine.commands_helpers.meteor import get_active_apps
+	from fluorine.utils.apps import get_active_apps
 	import re
 
 	react_path = get_path_reactivity()
 
-	apps = get_active_apps()
+	apps = get_active_apps(whatfor)
 	apps.remove(curr_app)
 	installed_packages = get_packages_list_version(whatfor, path_reactivity=react_path)
 	packages_to_remove = set([])
@@ -161,7 +161,7 @@ def meteor_remove_package(app, whatfor, file_remove=None, path_reactivity=None):
 
 
 def get_list_packages_to_install_by_apps(curr_app, whatfor, file_add=None, file_remove=None):
-	from fluorine.commands_helpers.meteor import get_active_apps
+	from fluorine.utils.apps import get_active_apps
 
 	packages_to_add = {}
 	packages_to_remove = {}
@@ -224,7 +224,7 @@ def get_list_packages_to_install_by_apps(curr_app, whatfor, file_add=None, file_
 
 def get_package_list_updates(curr_app, whatfor, file_add=None, file_remove=None):
 	from fluorine.utils.file import get_path_reactivity
-	from fluorine.commands_helpers.meteor import get_active_apps
+	from fluorine.utils.apps import get_active_apps
 	import re
 
 	packages_to_add = set([])
