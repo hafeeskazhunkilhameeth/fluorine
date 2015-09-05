@@ -381,12 +381,12 @@ class MeteorDevelop(object):
 		if not self.check_meteor_apps():
 			raise click.ClickException("Please install meteor app first. From command line issue 'bench fluorine create-meteor-apps.'")
 
-		self.check_updates()
 		self.update_doctype()
 		self.update_meteor_conf_file()
 		update_url_port(self.doc, self.meteor_config, self.server_port, self.ddp_port)
 		self.make_mongo()
 		self.doc.save()
+		self.check_apps_updates()
 		self.update_list_packages()
 		self.make_apps_context()
 		self.remove_from_assets()
@@ -411,7 +411,7 @@ class MeteorDevelop(object):
 		click.echo("Checking for meteor apps folder. Please wait.")
 		return check_meteor_apps_created(self.doc)
 
-	def check_updates(self):
+	def check_apps_updates(self):
 
 		click.echo("Checking for fluorine apps updates. Please wait.")
 		for whatfor in whatfor_all:
@@ -512,14 +512,11 @@ class MeteorProduction(object):
 		if not self.check_meteor_apps():
 			raise click.ClickException("Please install meteor app first. From command line issue 'bench fluorine create-meteor-apps.'")
 
-		self.check_updates()
-		#	raise click.ClickException("There are updates in your apps. To update production you must press button 'run_updates' in fluorine app.")
-
 		self.update_meteor_conf_file()
 		self.update_doctype()
 		update_url_port(self.doc, self.meteor_config, self.server_port, self.ddp_port)
 		self.doc.save()
-
+		self.check_apps_updates()
 		self.check_hosts()
 
 		self.check_custom_mongo()
@@ -574,7 +571,7 @@ class MeteorProduction(object):
 		click.echo("Checking for meteor apps folder. Please wait.")
 		return check_meteor_apps_created(self.doc)
 
-	def check_updates(self):
+	def check_apps_updates(self):
 
 		click.echo("Checking for fluorine apps updates. Please wait.")
 		for whatfor in whatfor_all:
