@@ -9,15 +9,11 @@ cur_frm.cscript.onload = function(doc){
 cur_frm.cscript.fluor_update_fluorine_apps_btn = function(doc){
 	var cs = cur_frm.cscript;
 
-	if(doc.fluorine_state == "off" && doc.fluor_dev_mode == 0){
-		frappe.call({
-			   freeze: true,
-			   freeze_message: "Updating fluorine apps...",
-			   method:  "fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity.prepare_to_update"
-		 });
-     }else{
-		msgprint(__("Fluorine State is on or developer mode is check."), __("Fluorine Reactivity"));
-     }
+	frappe.call({
+		   freeze: true,
+		   freeze_message: "Checking For Application Updates...",
+		   method:  "fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity.check_apps_updates"
+	});
 }
 
 cur_frm.cscript.refresh = function(doc){

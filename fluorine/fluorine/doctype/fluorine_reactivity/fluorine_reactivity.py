@@ -173,7 +173,7 @@ def save_to_common_site_config(doc, meteor_config=None):
 
 
 @frappe.whitelist()
-def prepare_to_update():
+def check_apps_updates():
 	from fluorine.utils import whatfor_all
 	#from fluorine.utils.reactivity import meteor_config
 	#from fluorine.utils.meteor.utils import update_common_config
