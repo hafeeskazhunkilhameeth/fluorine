@@ -350,7 +350,8 @@ def setState(state, site=None, custom_mongo=None, user=None, server_port=None, d
 def _setState(site=None, state=None, debug=False, update=False, force=False, mongo_custom=False, user=None, bench="..",
 			server_port=None, ddp_port=None, mac_sup_prefix_path="/usr/local", file_to_add=None, file_to_remove=None, skip_package_check_updates=False):
 	from fluorine.utils.fcache import clear_frappe_caches
-	from fluorine.commands_helpers.meteor import MeteorContext
+	from fluorine.utils.context import MeteorContext
+	
 	doc = get_doctype("Fluorine Reactivity", site)
 
 	devmode = doc.fluor_dev_mode
