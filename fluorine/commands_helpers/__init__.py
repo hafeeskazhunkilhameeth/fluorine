@@ -4,6 +4,7 @@ import frappe
 from bench_helpers import *
 from fluorine.utils import meteor_desk_app, meteor_web_app
 
+
 class FluorineError(Exception):
 	def __init__(self, message):
 		super(FluorineError, self).__init__(message)
@@ -110,6 +111,7 @@ def get_default_site():
 			frappe.throw("There is no default site. Check if reactivity/common_site_config.json for site option or if sites/currentsite.txt exist or provide the site with --site option.")
 
 	return site
+
 
 def get_current_dev_app():
 	from fluorine.utils.reactivity import meteor_config

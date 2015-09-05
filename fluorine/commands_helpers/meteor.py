@@ -464,7 +464,6 @@ class MeteorDevelop(object):
 		services.start_nginx_supervisor_services(debug=True)
 
 
-
 class MeteorProduction(object):
 
 	def __init__(self, doc, current_dev_app, site=None, debug=False, update=False, force=False, user=None, server_port=None, ddp_port=None, bench="..",
