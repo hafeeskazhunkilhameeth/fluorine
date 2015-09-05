@@ -342,7 +342,7 @@ class MeteorContext(object):
 		frappe.local.request = frappe._dict()
 
 		for w in whatfor_all:
-			prepare_compile_environment(w)
+			#prepare_compile_environment(w)
 			ctx = prepare_make_meteor_file( w)
 			if w == meteor_desk_app:
 				self.context[meteor_desk_app] = ctx

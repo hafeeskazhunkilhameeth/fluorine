@@ -174,6 +174,7 @@ def save_to_common_site_config(doc, meteor_config=None):
 
 @frappe.whitelist()
 def prepare_to_update():
+	from fluorine.utils import whatfor_all
 	from fluorine.utils.reactivity import meteor_config
 	from fluorine.utils.meteor.utils import update_common_config
 	from fluorine.commands import add_meteor_packages
@@ -181,38 +182,36 @@ def prepare_to_update():
 
 	doc = frappe.get_doc("Fluorine Reactivity")
 
-	check_meteor_apps_created(doc)
+	check_meteor_apps_created()
 	bench = "../../bench-repo/"
-
-	if not check_updates(bench=bench):
-		frappe.throw(_("Sorry, There is no updates."))
+	msg = []
 
 	if doc.fluorine_state == "off" and doc.fluor_dev_mode == 0:
 		update_versions(bench=bench)
-		prepare_make_meteor_file(doc.fluor_meteor_port)
+		for whatfor in whatfor_all:
+			if not check_updates(whatfor, bench=bench):
+				msg.append(_("%s: Sorry, There are no updates." % whatfor))
+				continue
+			else:
+				msg.append(_("%s: There are updates." % whatfor))
+			prepare_make_meteor_file(whatfor)
 		meteor_config["on_update"] = 1
 		add_meteor_packages()
 		update_common_config(meteor_config)
+		frappe.msgprint("\n".join(msg))
 	else:
 		frappe.throw(_("Please set state off and/or developer mode off first."))
 
 
 def prepare_make_meteor_file(whatfor):
-	#from frappe.website.context import get_context
 	from fluorine.templates.pages.fluorine_home import get_context as fluorine_get_context
 	from fluorine.utils import meteor_desk_app, fluor_get_context as get_context
 
-	#_whatfor = {"Both": whatfor_all, "Reactive Web": (meteor_web_app,), "Reactive App": (meteor_desk_app,)}
-
-	#for w in _whatfor.get(whatfor):
-	#if whatfor == "Both" and w == meteor_desk_app:
+	prepare_compile_environment(whatfor)
 	if whatfor == meteor_desk_app:
-		#mtport = int(mtport) + 10
 		frappe.local.path = "desk"
 		return get_context("desk")
 	else:
-		#frappe.local.path = "fluorine_home"
-		#get_context("fluorine_home")
 		return fluorine_get_context(frappe._dict())
 
 
@@ -327,7 +326,7 @@ def make_mongodb_default(conf, port=3070):
 				"type": "default"
 			}
 
-def check_meteor_apps_created(doc, with_error=True):
+def check_meteor_apps_created(with_error=True):
 	from fluorine.utils.file import get_path_reactivity
 	from frappe import _
 	from fluorine.utils import meteor_desk_app, meteor_web_app
