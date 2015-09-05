@@ -257,7 +257,7 @@ def get_web_pages(context):
 
 
 def fluorine_build_context(context, whatfor):
-	from fluorine.commands_helpers.meteor import get_active_apps
+	from fluorine.utils.apps import get_active_apps
 	from fluorine.utils import meteor_web_app, meteor_config
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation, copy_mobile_config_file
 	from reactivity import list_ignores
