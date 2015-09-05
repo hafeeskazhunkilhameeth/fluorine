@@ -84,7 +84,8 @@ def _cmd_create_meteor_apps():
 @click.option('--web', is_flag=True, help='Make only for web.')
 @click.option('--desk', is_flag=True, help='Make only for desk.')
 def cmd_make_fluorine_app(app, web=False, desk=False):
-	"""Turn any frappe module into a fluorine app. Default is to make a web and desk app."""
+	"""Turn any frappe module into a fluorine app.\n
+	Default is to make a web and a desk app."""
 	from shutil import copyfile
 
 	try:
@@ -114,7 +115,8 @@ def cmd_make_fluorine_app(app, web=False, desk=False):
 @click.command('check-updates')
 @click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
 def cmd_check_updates(site=None):
-	"""Check for update in versions of fluorine apps."""
+	"""Check for update in fluorine apps.\n
+	This check only if version is changed from last check."""
 	from fluorine.commands_helpers.meteor import check_updates
 
 	if site == None:
@@ -151,7 +153,7 @@ def cmd_update_version(site=None):
 @click.option('--app', default=None, help='The name of the fluorine app to reset packages.')
 @click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
 def cmd_remove_meteor_packages(app, site=None):
-	"""Add meteor packages from an app."""
+	"""Remove meteor packages from an app."""
 	from fluorine.commands_helpers.meteor import is_valid_fluorine_app
 	from fluorine.commands_helpers.config import get_custom_packages_files
 
@@ -224,15 +226,8 @@ def cmd_reset_meteor_packages(app=None, site=None):
 
 
 @click.command('create-meteor-apps')
-@click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
-def cmd_create_meteor_apps(site=None):
-	"""Create meteor apps."""
-
-	#if site == None:
-	#	site = get_default_site()
-
-	#doc = get_doctype("Fluorine Reactivity", site)
-
+def cmd_create_meteor_apps():
+	"""Create meteor apps. This create meteor web and meteor desk apps."""
 	_cmd_create_meteor_apps()
 
 
@@ -240,6 +235,7 @@ def cmd_create_meteor_apps(site=None):
 @click.option('--custom-file-to-add', default=None, help='Name of the custom file with packages to add.')
 @click.option('--custom-file-to-remove', default=None, help='Name of the custom file with packages to remove.')
 def cmd_get_apps_packages_list(custom_file_to_add=None, custom_file_to_remove=None):
+	"""Get a list of packages to install and to remove by meteor app. This also show the packages already installed."""
 	from fluorine.utils.meteor.packages import print_meteor_packages_list, get_package_list_updates
 
 	curr_app = get_current_dev_app()
@@ -249,7 +245,7 @@ def cmd_get_apps_packages_list(custom_file_to_add=None, custom_file_to_remove=No
 
 @click.command('get-current-state')
 def cmd_get_state():
-	"""Get the current state."""
+	"""Get the current state. The states are: developer mode, production mode or stop."""
 	from fluorine.utils.reactivity import meteor_config
 
 	production_mode = meteor_config.get("production_mode")
@@ -624,7 +620,6 @@ def nginx_conf(hosts_web=None, hosts_app=None, production=None):
 		Make config file for nginx with meteor support.
 	"""
 	ch._generate_fluorine_nginx_conf(hosts_web=hosts_web, hosts_app=hosts_app, production=production)
-
 
 
 commands = [
