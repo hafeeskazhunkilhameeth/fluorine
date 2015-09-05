@@ -2,11 +2,11 @@
 from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
-
 import frappe, os
-from pymongo import MongoClient
+
 
 def set_frappe_users(host, port, db_name):
+	from pymongo import MongoClient
 
 	host = host.replace("http://", "")
 	client = MongoClient(host, port)
