@@ -289,11 +289,16 @@ def fluorine_build_context(context, whatfor):
 
 	frappe.local.meteor_ignores = list_ignores
 
+	curr_app = meteor_config.get("current_dev_app", "").strip()
 	apps = get_active_apps(whatfor)
+	#set current dev app in last
+	apps.remove(curr_app)
+	apps.append(curr_app)
+
+	#go from current dev app then last installed app to first installed app in order.
 	known_apps = apps[::-1]
 	custom_pattern = get_custom_pattern(whatfor, custom_pattern=None)
 
-	curr_app = meteor_config.get("current_dev_app", "").strip()
 	#set current app as the first app
 	if curr_app != known_apps[0]:
 		known_apps.remove(curr_app)

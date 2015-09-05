@@ -221,7 +221,7 @@ def get_active_apps(whatfor):
 
 	return active_apps
 
-
+"""
 def _get_active_apps():
 	from fluorine.utils import APPS as apps, get_attr_from_json
 	from fluorine.utils.reactivity import make_meteor_ignor_files
@@ -240,7 +240,7 @@ def _get_active_apps():
 			active_apps.append(app)
 
 	return active_apps
-
+"""
 
 def check_updates(whatfor, bench=".."):
 	from fluorine.utils.reactivity import meteor_config
