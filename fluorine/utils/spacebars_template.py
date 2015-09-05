@@ -291,9 +291,10 @@ def fluorine_build_context(context, whatfor):
 
 	curr_app = meteor_config.get("current_dev_app", "").strip()
 	apps = get_active_apps(whatfor)
-	#set current dev app in last
-	apps.remove(curr_app)
-	apps.append(curr_app)
+	if apps[-1] != curr_app:
+		#set current dev app in last
+		apps.remove(curr_app)
+		apps.append(curr_app)
 
 	#go from current dev app then last installed app to first installed app in order.
 	known_apps = apps[::-1]
