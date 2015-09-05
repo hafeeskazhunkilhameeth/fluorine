@@ -291,7 +291,7 @@ def fluorine_build_context(context, whatfor):
 
 	curr_app = meteor_config.get("current_dev_app", "").strip()
 	apps = get_active_apps(whatfor)
-	if apps[-1] != curr_app:
+	if curr_app != apps[-1]:
 		#set current dev app in last
 		apps.remove(curr_app)
 		apps.append(curr_app)
@@ -301,9 +301,9 @@ def fluorine_build_context(context, whatfor):
 	custom_pattern = get_custom_pattern(whatfor, custom_pattern=None)
 
 	#set current app as the first app
-	if curr_app != known_apps[0]:
-		known_apps.remove(curr_app)
-		known_apps.insert(0, curr_app)
+	#if curr_app != known_apps[0]:
+	#	known_apps.remove(curr_app)
+	#	known_apps.insert(0, curr_app)
 
 	process_react_templates(context, known_apps, whatfor, custom_pattern)
 
