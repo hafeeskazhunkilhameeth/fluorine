@@ -81,11 +81,10 @@ def _cmd_create_meteor_apps():
 
 @click.command('make-fluorine-app')
 @click.argument('app')
-@click.option('--all', is_flag=True, help='Make app for desk and web. This is the default if nothing is provide.')
-@click.option('--web', is_flag=True, help='Make app for web.')
-@click.option('--desk', is_flag=True, help='Make app for desk.')
-def cmd_make_fluorine_app(app, all=False, web=False, desk=False):
-	"""Turn any frappe module into an fluorine app."""
+@click.option('--web', is_flag=True, help='Make only for web.')
+@click.option('--desk', is_flag=True, help='Make only for desk.')
+def cmd_make_fluorine_app(app, web=False, desk=False):
+	"""Turn any frappe module into a fluorine app. Default is to make a web and desk app."""
 	from shutil import copyfile
 
 	try:
@@ -96,9 +95,7 @@ def cmd_make_fluorine_app(app, all=False, web=False, desk=False):
 
 	whatfor = whatfor_all
 
-	if all:
-		whatfor = whatfor_all
-	elif web:
+	if web:
 		whatfor = meteor_web_app
 	elif desk:
 		whatfor = meteor_desk_app
