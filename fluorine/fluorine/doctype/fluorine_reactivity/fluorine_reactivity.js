@@ -18,17 +18,17 @@ cur_frm.cscript.fluor_update_fluorine_apps_btn = function(doc){
 
 cur_frm.cscript.refresh = function(doc){
 	var cs = cur_frm.cscript;
-	if(cs.devmode == 0){
+	/*if(cs.devmode == 0){
 		unhide_field(["update_fluor_apps"]);
 	}else{
 		hide_field(["update_fluor_apps"]);
-	}
+	}*/
 
 	if(doc.fluorine_state === "off"){
-		hide_field(["fluorine_reactivity", "fluorine_base_template"]);
+		hide_field(["fluorine_reactivity"]);
 		//doc.fluor_dev_mode = 0;
 	}else{
-		unhide_field(["fluorine_reactivity", "fluorine_base_template"]);
+		unhide_field(["fluorine_reactivity"]);
 	}
 
 	if (doc.check_mongodb == 1){
@@ -40,18 +40,18 @@ cur_frm.cscript.refresh = function(doc){
 
 cur_frm.cscript["fluorine_state"] = function(doc){
 	if(doc.fluorine_state === "off"){
-		hide_field(["fluorine_reactivity", "fluorine_base_template"]);
+		hide_field(["fluorine_reactivity"]);
 	}else{
-		unhide_field(["fluorine_reactivity", "fluorine_base_template"]);
+		unhide_field(["fluorine_reactivity"]);
 	}
 }
 
 cur_frm.cscript["fluor_dev_mode"] = function(doc){
-	if (cur_frm.cscript.devmode === 1){
+	/*if (cur_frm.cscript.devmode === 1){
 		hide_field(["update_fluor_apps"]);
 	}else{
 		unhide_field(["update_fluor_apps"]);
-	}
+	}*/
 }
 
 cur_frm.cscript["check_mongodb"] = function(doc){

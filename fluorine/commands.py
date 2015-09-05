@@ -217,7 +217,7 @@ def cmd_get_apps_packages_list(custom_file_to_add=None, custom_file_to_remove=No
 
 @click.command('get-current-state')
 def cmd_get_state():
-	"""Set the current app."""
+	"""Get the current state."""
 	from fluorine.utils.reactivity import meteor_config
 
 	production_mode = meteor_config.get("production_mode")
@@ -241,7 +241,7 @@ def cmd_get_state():
 @click.command('current-dev-app')
 @click.argument('app')
 def set_current_app(app):
-	"""Set the current app."""
+	"""Set the current app for develop."""
 	from fluorine.utils.reactivity import meteor_config
 	from fluorine.utils.meteor.utils import update_common_config
 
