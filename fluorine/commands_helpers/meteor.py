@@ -499,8 +499,8 @@ class MeteorProduction(object):
 		if not self.check_meteor_apps():
 			raise click.ClickException("Please install meteor app first. From command line issue 'bench fluorine create-meteor-apps.'")
 
-		if self.check_updates():
-			raise click.ClickException("There are updates in your apps. To update production you must press button 'run_updates' in fluorine app.")
+		#if self.check_updates():
+		#	raise click.ClickException("There are updates in your apps. To update production you must press button 'run_updates' in fluorine app.")
 
 		self.update_meteor_conf_file()
 		self.update_doctype()
@@ -561,15 +561,15 @@ class MeteorProduction(object):
 		click.echo("Checking for meteor apps folder. Please wait.")
 		return check_meteor_apps_created(self.doc)
 
-	def check_updates(self):
+	#def check_updates(self):
 
-		click.echo("Checking for fluorine apps updates. Please wait.")
-		for whatfor in whatfor_all:
-			if check_updates(whatfor, bench=self.bench):
-				click.echo("%s: fluorine apps needs to update." % whatfor)
-			else:
-				click.echo("%s: fluorine apps are updated." % whatfor)
-		return
+	#	click.echo("Checking for fluorine apps updates. Please wait.")
+	#	for whatfor in whatfor_all:
+	#		if check_updates(whatfor, bench=self.bench):
+	#			click.echo("%s: fluorine apps needs to update." % whatfor)
+	#		else:
+	#			click.echo("%s: fluorine apps are updated." % whatfor)
+	#	return
 
 	def check_custom_mongo(self):
 		from fluorine.commands_helpers import mongo

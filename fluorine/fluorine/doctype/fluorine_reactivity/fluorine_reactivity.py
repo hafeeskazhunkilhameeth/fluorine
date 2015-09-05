@@ -175,32 +175,31 @@ def save_to_common_site_config(doc, meteor_config=None):
 @frappe.whitelist()
 def prepare_to_update():
 	from fluorine.utils import whatfor_all
-	from fluorine.utils.reactivity import meteor_config
-	from fluorine.utils.meteor.utils import update_common_config
-	from fluorine.commands import add_meteor_packages
+	#from fluorine.utils.reactivity import meteor_config
+	#from fluorine.utils.meteor.utils import update_common_config
+	#from fluorine.commands import add_meteor_packages
 	from fluorine.commands_helpers.meteor import update_versions, check_updates
 
-	doc = frappe.get_doc("Fluorine Reactivity")
+	#doc = frappe.get_doc("Fluorine Reactivity")
 
 	check_meteor_apps_created()
 	bench = "../../bench-repo/"
 	msg = []
 
-	if doc.fluorine_state == "off" and doc.fluor_dev_mode == 0:
-		update_versions(bench=bench)
-		for whatfor in whatfor_all:
-			if not check_updates(whatfor, bench=bench):
-				msg.append(_("%s: Sorry, There are no updates." % whatfor))
-				continue
-			else:
-				msg.append(_("%s: There are updates." % whatfor))
-			prepare_make_meteor_file(whatfor)
-		meteor_config["on_update"] = 1
-		add_meteor_packages()
-		update_common_config(meteor_config)
-		frappe.msgprint("\n".join(msg))
-	else:
-		frappe.throw(_("Please set state off and/or developer mode off first."))
+	#if doc.fluorine_state == "off" and doc.fluor_dev_mode == 0:
+	update_versions(bench=bench)
+	for whatfor in whatfor_all:
+		if not check_updates(whatfor, bench=bench):
+			msg.append(_("%s: Sorry, There are no updates." % whatfor))
+		else:
+			msg.append(_("%s: There are updates." % whatfor))
+		#prepare_make_meteor_file(whatfor)
+	#meteor_config["on_update"] = 1
+	#add_meteor_packages()
+	#update_common_config(meteor_config)
+	frappe.msgprint("\n".join(msg))
+	#else:
+	#	frappe.throw(_("Please set state off and/or developer mode off first."))
 
 
 def prepare_make_meteor_file(whatfor):
