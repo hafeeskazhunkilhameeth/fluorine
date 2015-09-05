@@ -70,13 +70,47 @@ def add_meteor_packages(apps=None, file_add=None):
 		for app in apps:
 			meteor_add_package(app, whatfor, file_add=file_add)
 
-def _cmd_create_meteor_apps(doc):
+def _cmd_create_meteor_apps():
 	from fluorine.utils.install import create_meteor_apps
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import check_meteor_apps_created
 
-	if not check_meteor_apps_created(doc, with_error=False):
+	if not check_meteor_apps_created(with_error=False):
 		create_meteor_apps()
 		add_meteor_packages()
+
+
+@click.command('make-fluorine-app')
+@click.argument('app')
+@click.option('--all', is_flag=True, help='Make app for desk and web. This is the default if nothing is provide.')
+@click.option('--web', is_flag=True, help='Make app for web.')
+@click.option('--desk', is_flag=True, help='Make app for desk.')
+def cmd_make_fluorine_app(app, all=False, web=False, desk=False):
+	"""Turn your module in an fluorine app."""
+	from shutil import copyfile
+
+	try:
+		app_path = frappe.get_app_path(app)
+	except:
+		meteor_echo("%s: This app does not exist." % app)
+		return
+
+	whatfor = whatfor_all
+
+	if all:
+		whatfor = whatfor_all
+	elif web:
+		whatfor = meteor_web_app
+	elif desk:
+		whatfor = meteor_desk_app
+
+	fluorine_path = frappe.get_app_path("fluorine")
+
+	for w in whatfor:
+		frappe.create_folder(os.path.join(app_path, "templates", "react", w))
+
+	src = os.path.join(fluorine_path, "templates", "react",".gitignore")
+	dst = os.path.join(app_path, "templates", "react", ".gitignore")
+	copyfile(src, dst)
 
 
 @click.command('check-updates')
@@ -196,12 +230,12 @@ def cmd_reset_meteor_packages(app=None, site=None):
 def cmd_create_meteor_apps(site=None):
 	"""Create meteor apps."""
 
-	if site == None:
-		site = get_default_site()
+	#if site == None:
+	#	site = get_default_site()
 
-	doc = get_doctype("Fluorine Reactivity", site)
+	#doc = get_doctype("Fluorine Reactivity", site)
 
-	_cmd_create_meteor_apps(doc)
+	_cmd_create_meteor_apps()
 
 
 @click.command('get-apps-packages-list')
@@ -605,6 +639,7 @@ commands = [
 	cmd_remove_meteor_packages,
 	cmd_restore_common_config,
 	cmd_get_state,
+	cmd_make_fluorine_app,
 	cmd_get_apps_packages_list,
 	#setup_production,
 	cmd_update_version,
