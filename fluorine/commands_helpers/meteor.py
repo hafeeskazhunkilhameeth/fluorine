@@ -5,6 +5,18 @@ import frappe, click, os
 from fluorine.utils import whatfor_all, meteor_desk_app, meteor_web_app
 
 
+def prepare_make_meteor_file(whatfor):
+	from fluorine.templates.pages.fluorine_home import get_context as fluorine_get_context
+	from fluorine.utils import meteor_desk_app, fluor_get_context as get_context
+
+	#prepare_compile_environment(whatfor)
+	if whatfor == meteor_desk_app:
+		frappe.local.path = "desk"
+		return get_context("desk")
+	else:
+		return fluorine_get_context(frappe._dict())
+
+
 def make_production_link():
 	from fluorine.utils.file import get_path_reactivity
 
@@ -76,7 +88,8 @@ def run_npm():
 
 
 def make_start_meteor_script(doc):
-	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import get_mongo_exports, get_root_exports
+	from fluorine.utils.procfile import get_root_exports
+	from fluorine.utils.mongodb.utils import get_mongo_exports
 	from fluorine.utils.file import get_path_reactivity, save_file
 	from distutils.spawn import find_executable
 	import stat
@@ -91,7 +104,7 @@ def make_start_meteor_script(doc):
 	for app in whatfor_all:#("meteor_app", "meteor_web"):
 		meteor_final_path = os.path.join(react_path, app.replace("meteor", "final"), "bundle/exec_meteor")
 		exp_mongo, mongo_default = get_mongo_exports(doc)
-		mthost, mtport, forwarded_count = get_root_exports(doc, app)
+		mthost, mtport, forwarded_count = get_root_exports(app)
 		msf = get_meteor_settings(app, production=True)
 		if msf:
 			msf = "export %s" % msf
@@ -130,7 +143,8 @@ def get_meteor_settings(app, production=False):
 
 
 def get_meteor_environment(doc, whatfor):
-	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import get_mongo_exports, get_root_exports
+	from fluorine.utils.mongodb.utils import get_mongo_exports
+	from fluorine.utils.procfile import get_root_exports
 
 	conf = frappe._dict()
 
@@ -143,7 +157,7 @@ def get_meteor_environment(doc, whatfor):
 	mongo_url, mongo_default = get_mongo_exports(doc)
 
 	conf.mongo_url = mongo_url.strip().replace("export MONGO_URL=", "")
-	conf.root_url, conf.port, forwarded_count = get_root_exports(doc, whatfor)
+	conf.root_url, conf.port, forwarded_count = get_root_exports(whatfor)
 	conf.forwarded_count = forwarded_count.replace("export", "").strip()
 	msettings = get_meteor_settings(whatfor, production=True)
 	if msettings:
@@ -184,43 +198,6 @@ def remove_from_assets():
 	except:
 		pass
 
-
-def is_valid_fluorine_app(app, whatfor=None):
-
-	if not whatfor:
-		whatfor = whatfor_all
-	elif isinstance(whatfor, basestring):
-		whatfor = [whatfor]
-
-	for w in whatfor:
-		apps = get_active_apps(w)
-		if app in apps:
-			return True
-
-	return False
-
-
-def get_active_apps(whatfor):
-	from fluorine.utils import APPS as apps, get_attr_from_json
-	from fluorine.utils.reactivity import make_meteor_ignor_files, list_ignores
-
-	if not list_ignores:
-		list_ignores = make_meteor_ignor_files()
-
-	#ign_apps = ign_files.remove.get("apps")
-	ign_apps = get_attr_from_json([whatfor, "remove", "apps"], list_ignores)
-
-	active_apps = []
-	for app in apps:
-		app_path = frappe.get_app_path(app)
-		meteor_app = os.path.join(app_path, "templates", "react", whatfor)
-		#meteor_web = os.path.join(app_path, "templates", "react", meteor_web_app)
-		#if (os.path.exists(meteor_app) or os.path.exists(meteor_web)) and app not in ign_apps:
-		if os.path.exists(meteor_app) and app not in ign_apps:
-			active_apps.append(app)
-
-	return active_apps
-
 """
 def _get_active_apps():
 	from fluorine.utils import APPS as apps, get_attr_from_json
@@ -243,6 +220,7 @@ def _get_active_apps():
 """
 
 def check_updates(whatfor, bench=".."):
+	from fluorine.utils.apps import get_active_apps
 	from fluorine.utils.reactivity import meteor_config
 	from bench_helpers import get_current_version
 	import semantic_version
@@ -265,6 +243,7 @@ def check_updates(whatfor, bench=".."):
 	return False
 
 def update_versions(whatfor=None, bench=".."):
+	from fluorine.utils.apps import get_active_apps
 	from bench_helpers import get_current_version
 	from fluorine.utils.reactivity import meteor_config
 	from fluorine.utils.meteor.utils import update_common_config
@@ -335,7 +314,7 @@ class MeteorContext(object):
 	def make_context(self):
 		from fluorine.utils import prepare_environment
 		from fluorine.utils.reactivity import start_meteor
-		from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import prepare_make_meteor_file, prepare_compile_environment
+		#from fluorine.command import prepare_make_meteor_file
 
 		make_public_folders()
 		prepare_environment()
@@ -406,8 +385,8 @@ class MeteorDevelop(object):
 		meteor_config["stop"] = 0
 
 	def check_meteor_apps(self):
-		from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import check_meteor_apps_created
-
+		from fluorine.utils.apps import check_meteor_apps_created
+		#from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import check_meteor_apps_created
 		click.echo("Checking for meteor apps folder. Please wait.")
 		return check_meteor_apps_created(self.doc)
 
@@ -434,7 +413,8 @@ class MeteorDevelop(object):
 		self.m_ctx.make_context()
 
 	def make_mongo(self):
-		from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import make_mongodb_default
+		#from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import make_mongodb_default
+		from fluorine.utils.mongodb.utils import make_mongodb_default
 		from fluorine.utils import meteor_config
 		from fluorine.utils.meteor.utils import PORT
 
@@ -455,7 +435,7 @@ class MeteorDevelop(object):
 		remove_from_assets()
 
 	def save_procfile(self):
-		from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile
+		from fluorine.utils.procfile import save_to_procfile
 
 		save_to_procfile(self.doc)
 
@@ -566,8 +546,8 @@ class MeteorProduction(object):
 
 
 	def check_meteor_apps(self):
-		from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import check_meteor_apps_created
-
+		from fluorine.utils.apps import check_meteor_apps_created
+		#from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import check_meteor_apps_created
 		click.echo("Checking for meteor apps folder. Please wait.")
 		return check_meteor_apps_created(self.doc)
 
@@ -618,7 +598,8 @@ class MeteorProduction(object):
 		self.m_ctx.make_meteor_properties()
 
 	def build_json(self):
-		from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import make_final_app_client
+		#from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import make_final_app_client
+		from fluorine.utils.finals import make_final_app_client
 
 		click.echo("Make build.json for meteor_app.")
 		make_final_app_client()
@@ -632,7 +613,8 @@ class MeteorProduction(object):
 		make_production_link()
 
 	def remove_from_procfile(self):
-		from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile
+		#from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile
+		from fluorine.utils.procfile import remove_from_procfile
 
 		remove_from_procfile()
 

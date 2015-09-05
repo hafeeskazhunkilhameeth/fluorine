@@ -84,8 +84,10 @@ def process_permission_files_folders(ff):
 
 	return list_ff_add, list_ff_remove
 
+
 def make_meteor_ignor_files():
 	from fluorine.utils import whatfor_all, meteor_desk_app, meteor_web_app
+	from fluorine.utils import get_attr_from_json
 
 	global list_ignores
 
@@ -106,6 +108,14 @@ def make_meteor_ignor_files():
 				"files_folders": list_meteor_files_folders_add
 			}
 		})
+
+		if meteor_config.get("production_mode") or frappe.local.making_production:
+			l = get_attr_from_json([whatfor, "remove", "files_folders"], list_ignores)
+			l.update({
+				"all":{
+					"remove": [{"pattern": "highlight/?.*"}]
+				}
+			})
 
 	logger = logging.getLogger("frappe")
 	logger.error("list_ignores {}".format(list_ignores))

@@ -10,17 +10,9 @@ from frappe import _
 class FluorineReactivity(Document):
 
 	def on_update(self, method=None):
-		#from fluorine.utils.file import save_custom_template
 		from fluorine.utils.reactivity import meteor_config
 
 		meteor_config["developer_mode"] = self.fluor_dev_mode
-
-		#if self.fluorine_state == "off" and self.fluor_dev_mode == 0:
-		#	meteor_config["production_mode"] = 1
-
-		#if self.fluorine_base_template and self.fluorine_base_template.lower() != "default":
-		#	save_custom_template(self.fluorine_base_template)
-
 		if self.current_dev_app and self.current_dev_app.strip() != "":
 			meteor_config["current_dev_app"] = self.current_dev_app
 
@@ -36,91 +28,6 @@ class FluorineReactivity(Document):
 			if self.current_dev_app not in apps:
 				return frappe.throw("App %s is not a valid meteor app. To be a valid meteor app it must exist as installed app and must exist templates/react/meteor_app and/or\
 				 					templates/react/meteor_web folder" % self.current_dev_app)
-
-
-def get_root_exports(doc, app):
-	from fluorine.utils.reactivity import meteor_config
-	from fluorine.utils.meteor.utils import default_path_prefix, PORT
-
-	meteor_dev = meteor_config.get("meteor_dev", None)
-	count = meteor_config.get("meteor_http_forwarded_count") or "1"
-	forwarded_count = "export HTTP_FORWARDED_COUNT='" + str(count) + "'"
-	if meteor_dev:
-		meteor = meteor_dev.get(app)
-		default_prefix = default_path_prefix if app=="meteor_app" else ""
-		prefix = meteor.get("ROOT_URL_PATH_PREFIX") or ""
-		mthost = meteor_dev.get("host") + (prefix if prefix else default_prefix)
-		mtport = meteor.get("port") or PORT.get(app)
-
-		return (mthost, mtport, forwarded_count)
-
-def get_mongo_exports(doc):
-	from fluorine.utils.reactivity import meteor_config
-
-	mongo_default = False
-	if doc.check_mongodb and doc.fluor_mongo_host.strip():
-		user_pass = "%s:%s@" % (doc.mongo_user, doc.mongo_pass) if doc.mongo_user and doc.mongo_pass else ''
-		mghost = doc.fluor_mongo_host.replace("http://","").replace("mongodb://","").strip(' \t\n\r')
-		export_mongo = "export MONGO_URL=mongodb://%s%s:%s/%s " % (user_pass, mghost, doc.fluor_mongo_port, doc.fluor_mongo_database)
-	else:
-		mongo_conf = meteor_config.get("meteor_mongo")
-		db = mongo_conf.get("db") or "fluorine"
-		port = mongo_conf.get("port") or 27017
-		host = mongo_conf.get("host") or "127.0.0.1"
-		export_mongo = "export MONGO_URL=mongodb://%s:%s/%s " % (host.replace("http://","").replace("mongodb://","").strip(' \t\n\r'), port, db)
-		mongo_default = True
-
-	return export_mongo, mongo_default
-
-
-def save_to_procfile(doc, production_debug=False):
-	from fluorine.utils.file import writelines
-
-	procfile, procfile_path = get_procfile()
-	#tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
-	#meteor_apps = tostart.get(doc.fluorine_reactivity)
-
-	from fluorine.commands_helpers.meteor import get_meteor_settings
-
-	for app in ("meteor_app", "meteor_web"):
-		export_mongo, mongo_default = get_mongo_exports(doc)
-		mthost, mtport, forwarded_count = get_root_exports(doc, app)
-
-		if production_debug:
-			final_app = app.replace("meteor", "final")
-			procfile.insert(0, "%s: (cd apps/reactivity/%s/bundle && ./exec_meteor)\n" %
-							(final_app, final_app))
-		else:
-			if app == "meteor_web" and mongo_default:
-				exp_mongo = ""
-			else:
-				exp_mongo = export_mongo + " && "
-
-			msf= get_meteor_settings(app)
-			procfile.insert(0, "%s: (%s%s && export ROOT_URL=%s && cd apps/reactivity/%s && meteor --port %s%s)\n" %
-							(app, exp_mongo, forwarded_count, mthost, app, mtport, msf))
-
-		writelines(procfile_path, procfile)
-
-
-def get_procfile():
-	from fluorine.utils.file import readlines
-	from fluorine.utils.fjinja2.utils import c
-
-	re_meteor_procfile = c(r"^(meteor_app:|meteor_web:|final_app:|final_web:)")
-	procfile_dir = os.path.normpath(os.path.join(os.getcwd(), ".."))
-	procfile_path = os.path.join(procfile_dir, "Procfile")
-
-	procfile = readlines(procfile_path)
-	procfile = [p for p in procfile if not re_meteor_procfile.match(p)]
-
-	return procfile, procfile_path
-
-def remove_from_procfile():
-	from fluorine.utils.file import writelines
-
-	procfile, procfile_path = get_procfile()
-	writelines(procfile_path, procfile)
 
 
 def save_to_common_site_config(doc, meteor_config=None):
@@ -175,45 +82,35 @@ def save_to_common_site_config(doc, meteor_config=None):
 @frappe.whitelist()
 def check_apps_updates():
 	from fluorine.utils import whatfor_all
-	#from fluorine.utils.reactivity import meteor_config
-	#from fluorine.utils.meteor.utils import update_common_config
-	#from fluorine.commands import add_meteor_packages
 	from fluorine.commands_helpers.meteor import update_versions, check_updates
 
-	#doc = frappe.get_doc("Fluorine Reactivity")
-
-	#check_meteor_apps_created()
 	bench = "../../bench-repo/"
 	msg = []
 
-	#if doc.fluorine_state == "off" and doc.fluor_dev_mode == 0:
 	update_versions(bench=bench)
 	for whatfor in whatfor_all:
 		if not check_updates(whatfor, bench=bench):
 			msg.append(_("%s: Sorry, There are no updates." % whatfor))
 		else:
 			msg.append(_("%s: There are updates." % whatfor))
-		#prepare_make_meteor_file(whatfor)
-	#meteor_config["on_update"] = 1
-	#add_meteor_packages()
-	#update_common_config(meteor_config)
+
 	frappe.msgprint("\n".join(msg))
-	#else:
-	#	frappe.throw(_("Please set state off and/or developer mode off first."))
 
 
+"""
 def prepare_make_meteor_file(whatfor):
 	from fluorine.templates.pages.fluorine_home import get_context as fluorine_get_context
 	from fluorine.utils import meteor_desk_app, fluor_get_context as get_context
 
-	prepare_compile_environment(whatfor)
+	#prepare_compile_environment(whatfor)
 	if whatfor == meteor_desk_app:
 		frappe.local.path = "desk"
 		return get_context("desk")
 	else:
 		return fluorine_get_context(frappe._dict())
+"""
 
-
+"""
 def prepare_compile_environment(whatfor):
 	from fluorine.utils import get_attr_from_json
 	from fluorine.utils.reactivity import meteor_config
@@ -226,8 +123,10 @@ def prepare_compile_environment(whatfor):
 				"remove": [{"pattern": "highlight/?.*"}]
 			}
 		})
+"""
 
 
+"""
 def make_final_app_client(jquery=0):
 	import json
 	from fluorine.utils.file import get_path_reactivity, read, save_js_file
@@ -278,7 +177,7 @@ def build_frappe_json_files(manifest, build_json, jquery=0):
 				build_json["js/meteor_app.min.js"].append(pack_path)
 			elif type == "css":
 				build_json["css/meteor_app.css"].append(pack_path)
-
+"""
 
 def remove_tmp_app_dir(src, dst):
 	from fluorine.utils.react_file_loader import remove_directory
@@ -288,6 +187,7 @@ def remove_tmp_app_dir(src, dst):
 	except:
 		pass
 
+"""
 def make_mongodb_default(conf, port=3070):
 	from fluorine.utils import meteor_web_app
 
@@ -324,7 +224,9 @@ def make_mongodb_default(conf, port=3070):
 				"db": db,
 				"type": "default"
 			}
+"""
 
+"""
 def check_meteor_apps_created(with_error=True):
 	from fluorine.utils.file import get_path_reactivity
 	from frappe import _
@@ -346,7 +248,9 @@ def check_meteor_apps_created(with_error=True):
 		frappe.throw(_(msg))
 
 	return not error
+"""
 
+"""
 def is_open_port(ip="127.0.0.1", port=3070):
 	import socket
 	is_open = False
@@ -356,3 +260,4 @@ def is_open_port(ip="127.0.0.1", port=3070):
 		is_open = True
 	sock.close()
 	return is_open
+"""

@@ -189,6 +189,16 @@ def prepare_environment():
 		else:
 			print "error get_context"
 
+def is_open_port(ip="127.0.0.1", port=3070):
+	import socket
+	is_open = False
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	result = sock.connect_ex((ip,port))
+	if result == 0:
+		is_open = True
+	sock.close()
+	return is_open
+
 
 if check_dev_mode():
 	#PATCH HOOKS
