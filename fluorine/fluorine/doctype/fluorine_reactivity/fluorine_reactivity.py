@@ -182,7 +182,7 @@ def prepare_to_update():
 
 	#doc = frappe.get_doc("Fluorine Reactivity")
 
-	check_meteor_apps_created()
+	#check_meteor_apps_created()
 	bench = "../../bench-repo/"
 	msg = []
 

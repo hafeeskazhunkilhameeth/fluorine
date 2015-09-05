@@ -264,7 +264,7 @@ def check_updates(whatfor, bench=".."):
 
 	return False
 
-def update_versions(bench=".."):
+def update_versions(whatfor=None, bench=".."):
 	from bench_helpers import get_current_version
 	from fluorine.utils.reactivity import meteor_config
 	from fluorine.utils.meteor.utils import update_common_config
@@ -272,13 +272,14 @@ def update_versions(bench=".."):
 	meteor_config.pop("versions", None)
 	versions = meteor_config["versions"] = frappe._dict({meteor_desk_app:{}, meteor_web_app:{}})
 
-	for whatfor in whatfor_all:
+	if not whatfor:
+		whatfor = whatfor_all
+	elif isinstance(whatfor, basestring):
+		whatfor = [whatfor]
 
-		apps = get_active_apps(whatfor)
-
-
-		app_version = versions.get(whatfor)
-
+	for w in whatfor:
+		apps = get_active_apps(w)
+		app_version = versions.get(w)
 		for app in apps:
 			version = get_current_version(app, bench=bench)
 			app_version[app] = str(version)
@@ -499,7 +500,7 @@ class MeteorProduction(object):
 		if not self.check_meteor_apps():
 			raise click.ClickException("Please install meteor app first. From command line issue 'bench fluorine create-meteor-apps.'")
 
-		#if self.check_updates():
+		self.check_updates()
 		#	raise click.ClickException("There are updates in your apps. To update production you must press button 'run_updates' in fluorine app.")
 
 		self.update_meteor_conf_file()
@@ -561,15 +562,16 @@ class MeteorProduction(object):
 		click.echo("Checking for meteor apps folder. Please wait.")
 		return check_meteor_apps_created(self.doc)
 
-	#def check_updates(self):
+	def check_updates(self):
 
-	#	click.echo("Checking for fluorine apps updates. Please wait.")
-	#	for whatfor in whatfor_all:
-	#		if check_updates(whatfor, bench=self.bench):
-	#			click.echo("%s: fluorine apps needs to update." % whatfor)
-	#		else:
-	#			click.echo("%s: fluorine apps are updated." % whatfor)
-	#	return
+		click.echo("Checking for fluorine apps updates. Please wait.")
+		for whatfor in whatfor_all:
+			if check_updates(whatfor, bench=self.bench):
+				click.echo("%s: updating versions." % whatfor)
+				update_versions(whatfor=whatfor, bench=self.bench)
+			else:
+				click.echo("%s: fluorine apps are updated." % whatfor)
+		return
 
 	def check_custom_mongo(self):
 		from fluorine.commands_helpers import mongo
