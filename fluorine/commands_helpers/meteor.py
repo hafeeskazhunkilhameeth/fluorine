@@ -381,6 +381,7 @@ class MeteorDevelop(object):
 		if not self.check_meteor_apps():
 			raise click.ClickException("Please install meteor app first. From command line issue 'bench fluorine create-meteor-apps.'")
 
+		self.check_updates()
 		self.update_doctype()
 		self.update_meteor_conf_file()
 		update_url_port(self.doc, self.meteor_config, self.server_port, self.ddp_port)
@@ -409,6 +410,17 @@ class MeteorDevelop(object):
 
 		click.echo("Checking for meteor apps folder. Please wait.")
 		return check_meteor_apps_created(self.doc)
+
+	def check_updates(self):
+
+		click.echo("Checking for fluorine apps updates. Please wait.")
+		for whatfor in whatfor_all:
+			if check_updates(whatfor, bench=self.bench):
+				click.echo("%s: updating versions." % whatfor)
+				update_versions(whatfor=whatfor, bench=self.bench)
+			else:
+				click.echo("%s: fluorine apps are updated." % whatfor)
+		return
 
 	def update_list_packages(self):
 		from fluorine.utils.meteor.packages import update_packages_list
