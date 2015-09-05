@@ -108,9 +108,10 @@ def cmd_make_fluorine_app(app, all=False, web=False, desk=False):
 	for w in whatfor:
 		frappe.create_folder(os.path.join(app_path, "templates", "react", w))
 
-	src = os.path.join(fluorine_path, "templates", "react",".gitignore")
 	dst = os.path.join(app_path, "templates", "react", ".gitignore")
-	copyfile(src, dst)
+	if not os.path.exists(dst):
+		src = os.path.join(fluorine_path, "templates", "react",".gitignore")
+		copyfile(src, dst)
 
 
 @click.command('check-updates')
