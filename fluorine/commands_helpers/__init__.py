@@ -22,7 +22,6 @@ def get_hosts(doc, production=False):
 	from fluorine.utils import get_attr_from_json
 	from fluorine.utils.meteor.utils import PORT
 	from fluorine.utils.file import get_path_reactivity
-	import re
 
 	#CONFIG FILE
 	path_reactivity = get_path_reactivity()
