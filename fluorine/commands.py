@@ -85,7 +85,7 @@ def _cmd_create_meteor_apps():
 @click.option('--web', is_flag=True, help='Make app for web.')
 @click.option('--desk', is_flag=True, help='Make app for desk.')
 def cmd_make_fluorine_app(app, all=False, web=False, desk=False):
-	"""Turn your module in an fluorine app."""
+	"""Turn any frappe module into an fluorine app."""
 	from shutil import copyfile
 
 	try:
