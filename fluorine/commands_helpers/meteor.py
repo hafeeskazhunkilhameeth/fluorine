@@ -536,7 +536,7 @@ class MeteorProduction(object):
 
 	def make_script_startup(self):
 		if self.debug:
-			from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile
+			from fluorine.utils.procfile import save_to_procfile
 
 			make_start_meteor_script(self.doc)
 			save_to_procfile(self.doc, production_debug=True)
