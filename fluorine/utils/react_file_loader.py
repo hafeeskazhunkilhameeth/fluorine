@@ -164,7 +164,7 @@ def read_client_xhtml_files(start_folder, whatfor, appname, meteor_ignore=None, 
 				continue
 			ext = f.rsplit(".", 1)
 			path = os.path.join(root, f)
-			obj = {"name":f, "path": path, "relpath": relpath, "filePath": root, "fileName": ext[0], "deep": deeper}
+			obj = {"name": f, "path": path, "relpath": relpath, "filePath": root, "fileName": ext[0], "deep": deeper}
 			if RE_MAIN.search(str(f)):
 				if islib:
 					main_lib_files.append(obj)
