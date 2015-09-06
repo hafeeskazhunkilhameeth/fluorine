@@ -65,6 +65,7 @@ def process_permission_apps(apps):
 def process_permission_files_folders(ff):
 	"""
 	below app_name is a valid fluorine app and pattern is any valid regular expression.
+	See make_meteor_ignor_files below for more information.
 
 	Structure:
 
@@ -73,8 +74,13 @@ def process_permission_files_folders(ff):
 			"app_name":{
 				remove:[{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
 				add:[{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
+			},
+			"all": {
+				remove: [{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
+				add:[{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
 			}
 		}
+		Use `all` to apply to any folder or file of any valid fluorine app.
 		You can provide pattern or folder. Pattern takes precedence over folder.
 		If you provide folder then it will be converted in pattern by "^%s/?.*" % folder_name, and will ignore any file and/or folder with that name.
 
