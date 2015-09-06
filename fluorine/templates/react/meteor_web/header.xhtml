@@ -1,8 +1,10 @@
-<head>
-    {% for include in meteor_web_include_css -%}
-	    <link type="text/css" rel="stylesheet" href="{{ include }}">
-	{%- endfor -%}
-    {% for include in meteor_web_include_js -%}
-	    <script type="text/javascript" src="{{ include }}"></script>
-	{%- endfor -%}
-</head>
+{% if meteor_web_include_css or meteor_web_include_js %}
+	<head>
+		{% for include in meteor_web_include_css -%}
+			<link type="text/css" rel="stylesheet" href="{{ include }}">
+		{%- endfor -%}
+		{% for include in meteor_web_include_js -%}
+			<script type="text/javascript" src="{{ include }}"></script>
+		{%- endfor -%}
+	</head>
+{% endif %}
