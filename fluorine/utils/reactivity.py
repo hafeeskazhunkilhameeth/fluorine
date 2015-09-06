@@ -61,26 +61,27 @@ def process_permission_apps(apps):
 
 	return list_apps_remove
 
-"""
-below app_name is a valid fluorine app.
 
-Structure:
-
-IN:
-	ff = {
-		"app_name":{
-			remove:[{"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
-			add:[{"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
-		}
-	}
-
-OUT:
-	list_ff_add and list_ff_remove = {
-		"app_name":["pattern_1", "pattern_2"]
-	}
-
-"""
 def process_permission_files_folders(ff):
+	"""
+	below app_name is a valid fluorine app and pattern is any valid regular expression.
+
+	Structure:
+
+	IN:
+		ff = {
+			"app_name":{
+				remove:[{"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
+				add:[{"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
+			}
+		}
+
+	OUT:
+		list_ff_add and list_ff_remove = {
+			"app_name":["pattern_1", "pattern_2"]
+		}
+
+	"""
 	from fluorine.utils.fjinja2.utils import c
 
 	list_ff_add = frappe._dict()
@@ -105,12 +106,22 @@ def process_permission_files_folders(ff):
 
 
 def make_meteor_ignor_files():
+	"""
+	This list of permissions is used only by read_client_xhtml_files function.
+	This permission file reflect a list of apps and the list of files and folders to ignore when read xhtml files.
+	If the function don't read some xhtml (with their folder) files then they don't appears in output files to meteor app.
+	As an example take highlight: "highlight/?.*".
+	This regular expression will ignore everything inside folder highlight and also any file with name highlight and with any extension.
+	"""
 	from fluorine.utils import whatfor_all, meteor_desk_app, meteor_web_app
 	from fluorine.utils import get_attr_from_json
+	from fluorine.utils.fjinja2.utils import c
 
 	global list_ignores
 
 	list_ignores = frappe._dict({meteor_web_app:{}, meteor_desk_app:{}})
+
+	logger = logging.getLogger("frappe")
 
 	for whatfor in whatfor_all:
 		conf = get_permission_files_json(whatfor)
@@ -131,13 +142,15 @@ def make_meteor_ignor_files():
 		if meteor_config.get("production_mode") or frappe.local.making_production:
 			l = get_attr_from_json([whatfor, "remove", "files_folders"], list_ignores)
 			l.update({
-				"all":{
-					"remove": [{"pattern": "highlight/?.*"}]
-				}
+				"all":[c("^highlight/?.*")]
+				#"all":{
+					#"remove": [{"pattern": c("highlight/?.*")}]
+				#	"remove": [c("highlight/?.*")]
+				#}
 			})
+			#logger.error("list_ignores inside highlight 4 {}".format(list_ignores))
 
-	logger = logging.getLogger("frappe")
-	logger.error("list_ignores {}".format(list_ignores))
+
 	return list_ignores
 
 
@@ -157,7 +170,7 @@ def get_permission_files_json(whatfor):
 	#curre develop app override everything follow by last installed app.
 	for app in apps:
 		app_path = frappe.get_app_path(app)
-		perm_path = os.path.join(app_path, "templates", "react", whatfor, "permission_files.json")
+		perm_path = os.path.join(app_path, "templates", "react", whatfor, "permissions.json")
 		if os.path.exists(perm_path):
 			conf_file = frappe.get_file_json(perm_path)
 			for k,v in conf_file.iteritems():

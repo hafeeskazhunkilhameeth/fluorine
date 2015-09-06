@@ -217,10 +217,11 @@ def match_path(startpath, excludes, includes):
 			print fname
 
 def check_remove_files_folders(file,  files_folder_remove):
-	if files_folder_remove:
-		for pattern in files_folder_remove:
-			if pattern.match(file):
-				return True
+	#if files_folder_remove:
+	files_folder_remove = files_folder_remove or []
+	for pattern in files_folder_remove:
+		if pattern.match(file):
+			return True
 	return False
 
 # copy the translations files from apps from the first installed to the last installed so we can replace with new ones
@@ -302,7 +303,7 @@ import re
 c = lambda t:re.compile(t, re.S|re.M)
 common_pattern = c(r"templates/(.*)/?common/(.*)")
 
-#@profile
+
 def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 	from fluorine.utils import meteor_desk_app, meteor_web_app
 

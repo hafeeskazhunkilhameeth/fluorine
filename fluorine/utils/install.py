@@ -69,10 +69,10 @@ def copy_common_config(path_reactivity):
 
 	copyfile(src, dst)
 
-	src = os.path.join(app_path, "templates", "permission_files.json")
-	if os.path.exists(src):
-		dst = os.path.join(path_reactivity, "permission_files.json")
-		copyfile(src, dst)
+	#src = os.path.join(app_path, "templates", "permission_files.json")
+	#if os.path.exists(src):
+	#	dst = os.path.join(path_reactivity, "permission_files.json")
+	#	copyfile(src, dst)
 
 def create_meteor_apps(path_reactivity=None):
 	import subprocess

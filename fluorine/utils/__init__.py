@@ -44,7 +44,9 @@ def get_attr_from_json(attrs, _json_):
 	tmp_attr = _json_
 
 	for attr in attrs:
-		tmp_attr = tmp_attr.get(attr) or {}
+		tmp_attr = tmp_attr.get(attr)
+		if tmp_attr == None:
+			tmp_attr = {}
 
 	return tmp_attr
 
