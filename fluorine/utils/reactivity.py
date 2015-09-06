@@ -65,6 +65,8 @@ def process_permission_apps(apps):
 below app_name is a valid fluorine app.
 
 Structure:
+
+IN:
 	ff = {
 		"app_name":{
 			remove:[{"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
@@ -72,6 +74,7 @@ Structure:
 		}
 	}
 
+OUT:
 	list_ff_add and list_ff_remove = {
 		"app_name":["pattern_1", "pattern_2"]
 	}
@@ -135,7 +138,6 @@ def make_meteor_ignor_files():
 
 	logger = logging.getLogger("frappe")
 	logger.error("list_ignores {}".format(list_ignores))
-	# "list_ignores {}".format(list_ignores)
 	return list_ignores
 
 
