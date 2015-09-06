@@ -319,7 +319,7 @@ def get_meteor_appId(path):
 def prepare_client_files(curr_app):
 	from fluorine.utils.react_file_loader import remove_directory
 	from fluorine.utils.file import get_path_reactivity, save_file
-	from fluorine.commands_helpers.meteor import get_active_apps
+	from fluorine.utils.apps import get_active_apps
 
 	react_path = get_path_reactivity()
 	curr_app_path = frappe.get_app_path(curr_app)
