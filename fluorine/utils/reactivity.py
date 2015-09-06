@@ -71,10 +71,12 @@ def process_permission_files_folders(ff):
 	IN:
 		ff = {
 			"app_name":{
-				remove:[{"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
-				add:[{"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
+				remove:[{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
+				add:[{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
 			}
 		}
+		You can provide pattern or folder. Pattern takes precedence over folder.
+		If you provide folder then it will be converted in pattern by "^%s/?.*" % folder_name, and will ignore any file and/or folder with that name.
 
 	OUT:
 		list_ff_add and list_ff_remove = {
@@ -92,15 +94,21 @@ def process_permission_files_folders(ff):
 		for r in remove:
 			if not list_ff_remove.get(k):
 				list_ff_remove[k] = []
-			pattern = c(r.get("pattern"))
-			list_ff_remove[k].append(pattern)
+			pattern = r.get("pattern")
+			if not pattern:
+				pattern = "^%s/?.*" % r.get("folder")
+			cpattern = c(pattern)
+			list_ff_remove[k].append(cpattern)
 
 		add = v.get("add") or []
 		for a in add:
 			if not list_ff_add.get(k):
 				list_ff_add[k] = []
-			pattern = c(a.get("pattern"))
-			list_ff_add[k].append(pattern)
+			pattern = a.get("pattern")
+			if not pattern:
+				pattern = "^%s/?.*" % a.get("folder")
+			cpattern = c(pattern)
+			list_ff_add[k].append(cpattern)
 
 	return list_ff_add, list_ff_remove
 
