@@ -61,6 +61,22 @@ def process_permission_apps(apps):
 
 	return list_apps_remove
 
+"""
+below app_name is a valid fluorine app.
+
+Structure:
+	ff = {
+		"app_name":{
+			remove:[{"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
+			add:[{"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
+		}
+	}
+
+	list_ff_add and list_ff_remove = {
+		"app_name":["pattern_1", "pattern_2"]
+	}
+
+"""
 def process_permission_files_folders(ff):
 	from fluorine.utils.fjinja2.utils import c
 
@@ -124,11 +140,19 @@ def make_meteor_ignor_files():
 
 
 def get_permission_files_json(whatfor):
-	from fluorine.utils import APPS as apps
+	#from fluorine.utils import APPS as apps
+	from fluorine.utils.apps import get_active_apps
 
+	curr_app = meteor_config.get("current_dev_app", "").strip()
+	apps = get_active_apps(whatfor)
+	if curr_app != apps[-1]:
+		#set current dev app in last
+		apps.remove(curr_app)
+		apps.append(curr_app)
 
 	conf_perm = frappe._dict()
 
+	#curre develop app override everything follow by last installed app.
 	for app in apps:
 		app_path = frappe.get_app_path(app)
 		perm_path = os.path.join(app_path, "templates", "react", whatfor, "permission_files.json")
