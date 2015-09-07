@@ -252,6 +252,23 @@ def get_permission_files_json(whatfor):
 
 	#from current dev app passing by last installed to first installed
 	for app in apps:
+		"""
+		permission.json has the following structure:
+			{
+				"apps":{
+					"app_name":{#remove and add are mutually exclusive. remove takes precedence to add.
+						"remove":0,
+						"add":1
+					}
+				},
+				"files_folders":{
+					"app_name":{
+						"remove":[{"folder": "folder_name"}, {"file": "file_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
+						"add":[{"folder": "folder_name"}, {"file": "file_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
+					}
+				}
+			}
+		"""
 		app_path = frappe.get_app_path(app)
 		perm_path = os.path.join(app_path, "templates", "react", whatfor, "permissions.json")
 		if os.path.exists(perm_path):
