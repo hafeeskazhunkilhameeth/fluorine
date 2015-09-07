@@ -112,7 +112,7 @@ def read_client_xhtml_files(start_folder, whatfor, appname, meteor_ignore=None, 
 
 	topfolder = True
 
-	list_meteor_files_folders_remove = get_attr_from_json([whatfor, "remove", "files_folders"], meteor_ignore)
+	list_meteor_files_folders_remove = get_attr_from_json(["remove", "files_folders"], meteor_ignore)
 	all_files_folder_remove = list_meteor_files_folders_remove.get("all")
 	appname_files_folder_remove = list_meteor_files_folders_remove.get(appname)
 

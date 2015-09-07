@@ -257,6 +257,7 @@ def get_web_pages(context):
 
 
 def fluorine_build_context(context, whatfor):
+	from fluorine.utils.reactivity import get_read_file_patterns
 	from fluorine.utils.apps import get_active_apps
 	from fluorine.utils import meteor_web_app, meteor_config
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation, copy_mobile_config_file
@@ -287,7 +288,7 @@ def fluorine_build_context(context, whatfor):
 
 	path_reactivity = get_path_reactivity()
 
-	frappe.local.meteor_ignores = list_ignores
+	frappe.local.meteor_ignores = list_ignores.get(whatfor)
 
 	curr_app = meteor_config.get("current_dev_app", "").strip()
 	apps = get_active_apps(whatfor)
@@ -310,7 +311,7 @@ def fluorine_build_context(context, whatfor):
 	fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
 	empty_directory(fluorine_publicjs_dst_path, ignore=(".meteor",))
 
-	make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, custom_pattern=["*.xhtml"])
+	make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, custom_pattern=get_read_file_patterns())
 
 	copy_project_translation(apps, whatfor, custom_pattern)
 
@@ -332,7 +333,7 @@ def process_react_templates(context, apps, whatfor, custom_pattern):
 	#spacebars_templates = {}
 
 	#list_apps_remove = frappe.local.meteor_ignores.get("remove", {}).get("apps")
-	list_apps_remove = get_attr_from_json([whatfor, "remove", "apps"], frappe.local.meteor_ignores)
+	list_apps_remove = get_attr_from_json(["remove", "apps"], frappe.local.meteor_ignores)
 
 	for app in apps:
 		if app in list_apps_remove:
