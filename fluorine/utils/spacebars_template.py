@@ -341,7 +341,7 @@ def process_react_templates(context, apps, whatfor, custom_pattern):
 		pathname = frappe.get_app_path(app)
 		path = os.path.join(pathname, "templates", "react")
 		if os.path.exists(path):
-			files = read_client_xhtml_files(path, whatfor, app, meteor_ignore=frappe.local.meteor_ignores, custom_pattern=custom_pattern)
+			files = read_client_xhtml_files(path, app, meteor_ignore=frappe.local.meteor_ignores, custom_pattern=custom_pattern)
 			for f in files:
 				for obj in reversed(f):
 				#for obj in f:

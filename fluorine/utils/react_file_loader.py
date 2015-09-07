@@ -98,7 +98,7 @@ def get_custom_pattern(whatfor, custom_pattern=None):
 	return pattern, ignored_names_any, ignored_names_top
 
 
-def read_client_xhtml_files(start_folder, whatfor, appname, meteor_ignore=None, custom_pattern=None):
+def read_client_xhtml_files(start_folder, appname, meteor_ignore=None, custom_pattern=None):
 	import fnmatch
 	from fluorine.utils.file import check_remove_files_folders
 	from fluorine.utils import get_attr_from_json
