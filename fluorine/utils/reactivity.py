@@ -86,7 +86,7 @@ def _process_permission_files_folders(ff):
 
 	OUT:
 		list_ff_add and list_ff_remove = {
-			"app_name":["pattern_1", "pattern_2"]
+			"app_name":set(["pattern_1", "pattern_2"])
 		}
 
 	"""
@@ -203,14 +203,18 @@ def make_meteor_ignor_files():
 		})
 
 		if meteor_config.get("production_mode") or frappe.local.making_production:
-			l = get_attr_from_json([whatfor, "remove", "files_folders"], list_ignores)
-			l.update({
-				"all":[c("^highlight/?.*")]
-				#"all":{
-					#"remove": [{"pattern": c("highlight/?.*")}]
-				#	"remove": [c("highlight/?.*")]
-				#}
-			})
+			lff = get_attr_from_json([whatfor, "remove", "files_folders"], list_ignores)
+			lall = lff.get("all")
+			if not lall:
+				lff.update({
+					"all":set([c("^highlight/?.*")])
+					#"all":{
+						#"remove": [{"pattern": c("highlight/?.*")}]
+					#	"remove": [c("highlight/?.*")]
+					#}
+				})
+			else:
+				lall.add(c("^highlights/?.*"))
 			#logger.error("list_ignores inside highlight 4 {}".format(list_ignores))
 
 
@@ -244,12 +248,12 @@ def get_permission_files_json(whatfor):
 				if k not in list_apps_remove:
 					list_apps_add.add(k)
 
-	def add_pattern_to_list(appname, obj, plist):
+	def add_pattern_to_list(appname, pattern, plist):
 		if not plist.get(appname):
 			plist[appname] = set([])
-		pattern = obj.get("pattern")
-		if not pattern:
-			pattern = "^%s/?.*" % obj.get("folder")
+		#pattern = obj.get("pattern")
+		#if not pattern:
+		#	pattern = "^%s/?.*" % obj.get("folder")
 		plist[appname].add(pattern)
 
 	def process_permission_files_folders(conf_file):
@@ -261,49 +265,53 @@ def get_permission_files_json(whatfor):
 			ladd = list_ff_add.get(k)
 			for r in remove:
 				found = False
+				pattern = r.get("pattern") or "^%s/?.*" % r.get("folder")
 				#r is an dict with pattern string of folder name
 				#if k is all must agains all k
 				if k == "all":
-					for key, value in list_ff_add:
-						if r in value:
+					for key, values in list_ff_add.iteritems():
+						if pattern in values:
 							found = True
 							break
 					if not found:
-						add_pattern_to_list(k, r, list_ff_remove)
+						add_pattern_to_list(k, pattern, list_ff_remove)
 				else:
 					#check if it is already added by any older app if so then don't remove
-					if r not in ladd.get("add"):
-						add_pattern_to_list(k, r, list_ff_remove)
+					if pattern not in ladd.get("add"):
+						add_pattern_to_list(k, pattern, list_ff_remove)
 
 			add = v.get("add") or []
 			lremove = list_ff_remove.get(k)
 			for a in add:
 				found = False
+				pattern = a.get("pattern") or "^%s/?.*" % a.get("folder")
 				#if k is all must agains all k
 				if k == "all":
-					for key, value in list_ff_remove:
-						if a in value:
+					for key, values in list_ff_remove.iteritems():
+						if pattern in values:
 							found = True
 							break
 					if not found:
-						add_pattern_to_list(k, a, list_ff_add)
+						add_pattern_to_list(k, pattern, list_ff_add)
 				else:
 					#a is a pattern string
 					#check if it is already removed by any older app if so then don't add
-					if a not in lremove.get("remove"):
-						add_pattern_to_list(k, a, list_ff_add)
+					if pattern not in lremove.get("remove"):
+						add_pattern_to_list(k, pattern, list_ff_add)
 
 	def compile_pattern():
 		from fluorine.utils.fjinja2.utils import c
 
-		for k,v in list_ff_remove.iteritems():
-			remove = v.get("remove")
-			v["remove"] = [c(r) for r in remove]
+		for k,values in list_ff_remove.iteritems():
+			#remove = v.get("remove")
+			list_ff_remove[k] = set([c(v) for v in values])
 
-		for k,v in list_ff_add.iteritems():
-			add = v.get("add")
-			v["add"] = [c(r) for r in add]
+		for k,values in list_ff_add.iteritems():
+			#add = v.get("add")
+			#v["add"] = [c(r) for r in add]
+			list_ff_add[k] = set([c(v) for v in values])
 
+	#from current dev app passing by last installed to first installed
 	for app in apps:
 		app_path = frappe.get_app_path(app)
 		perm_path = os.path.join(app_path, "templates", "react", whatfor, "permissions.json")
