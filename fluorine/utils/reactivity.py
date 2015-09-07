@@ -207,14 +207,14 @@ def make_meteor_ignor_files():
 			lall = lff.get("all")
 			if not lall:
 				lff.update({
-					"all":set([c("^highlights/?.*")])
+					"all":set([c("^highlight/?.*")])
 					#"all":{
 						#"remove": [{"pattern": c("highlight/?.*")}]
 					#	"remove": [c("highlight/?.*")]
 					#}
 				})
 			else:
-				lall.add(c("^highlights/?.*"))
+				lall.add(c("^highlight/?.*"))
 			#logger.error("list_ignores inside highlight 4 {}".format(list_ignores))
 
 
