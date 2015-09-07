@@ -99,7 +99,7 @@ def get_custom_pattern(whatfor, custom_pattern=None):
 
 
 def read_client_xhtml_files(start_folder, appname, meteor_ignore=None, custom_pattern=None):
-	import fnmatch
+	#import fnmatch
 	from fluorine.utils.file import check_remove_files_folders
 	from fluorine.utils import get_attr_from_json
 
@@ -122,11 +122,23 @@ def read_client_xhtml_files(start_folder, appname, meteor_ignore=None, custom_pa
 
 		if topfolder:
 			ign_dirs.update(ignored_names_top)
-			[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
 			topfolder = False
 		else:
 			ign_dirs.update(ignored_names_any)
-			[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
+
+		for toexclude in ign_dirs:
+			if toexclude in dirs:
+				dirs.remove(toexclude)
+
+		#get the relative path between start_folder (app/templates/react) and root folder
+		#so dirs to exclude must have as base root dirs inside react folder. Ex. meteor_web/highlight as meteor_web is inside react folder.
+		relpath = os.path.relpath(root, start_folder)
+		for dir in dirs[::]:
+			f = os.path.join(relpath, dir)
+			for source in (all_files_folder_remove, appname_files_folder_remove):
+				if check_remove_files_folders(f, source):
+					dirs.remove(dir)
+					break
 
 		islib = False
 

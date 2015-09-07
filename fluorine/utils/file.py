@@ -216,7 +216,9 @@ def match_path(startpath, excludes, includes):
 		for fname in files:
 			print fname
 
-def check_remove_files_folders(f,  files_folder_remove, root=None):
+def check_remove_files_folders(f,  files_folder_remove):
+	# Remove the first pattern found.
+	# This is from the current dev app or one from the last installed app to the first.
 	files_folder_remove = files_folder_remove or []
 	for pattern in files_folder_remove:
 		if pattern.match(f):

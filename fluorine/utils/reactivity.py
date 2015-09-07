@@ -107,7 +107,8 @@ def make_meteor_ignor_files():
 				})
 			else:
 				lall.add(c(pattern))
-			#logger.error("list_ignores inside highlight 4 {}".format(list_ignores))
+
+		#logger.error("list_ignores inside highlight {}".format(list_meteor_files_folders_remove))
 
 
 	return list_ignores
@@ -115,6 +116,8 @@ def make_meteor_ignor_files():
 
 def get_permission_files_json(whatfor):
 	from fluorine.utils.apps import get_active_apps
+
+	logger = logging.getLogger("frappe")
 
 	list_ff_add = frappe._dict()
 	list_ff_remove = frappe._dict()
@@ -161,14 +164,14 @@ def get_permission_files_json(whatfor):
 					add:[{"file": "file_name"}, {"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
 				},
 				"all": {
-					remove: [{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
-					add:[{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
+					remove: [{"file": "file_name"}, {"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
+					add:[{"file": "file_name"}, {"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
 				}
 			}
 			Use `all` to apply to any folder or file of any valid fluorine app.
 			You can provide pattern or folder. Pattern takes precedence over folder.
-			If you provide folder then it will be converted in pattern by "^%s/?.*" % folder_name, and will ignore any file and/or folder with that name.
-
+			If you provide folder then it will be converted in pattern by "^%s/.*|^%s$" % (folder_name, folder_name) and will ignore any file and/or folder with that name.
+			If you provide a file stay as is.
 		OUT:
 			list_ff_add and list_ff_remove = {
 				"app_name":set(["pattern_1", "pattern_2"])
@@ -176,6 +179,8 @@ def get_permission_files_json(whatfor):
 
 		"""
 		ff = conf_file.get("files_folders") or {}
+		#logger.error("list_ignores inside highlight {}".format(ff))
+		#logger.error("list_ignores inside highlight {}".format(ff))
 		for k, v in ff.iteritems():
 			#k is appname or `all` and v is a dict with remove and/or add
 			remove = v.get("remove") or []
@@ -186,7 +191,7 @@ def get_permission_files_json(whatfor):
 				if not pattern:
 					folder = r.get("folder")
 					if folder:
-						pattern = "^%s/?.*" % r.get("folder")
+						pattern = "^%s/.*|^%s$" % (folder, folder)
 					else:
 						pattern = r.get("file")
 				#r is an dict with pattern string of folder name
@@ -211,10 +216,10 @@ def get_permission_files_json(whatfor):
 				if not pattern:
 					folder = a.get("folder")
 					if folder:
-						pattern = "^%s/?.*" % a.get("folder")
+						pattern = "^%s/.*|^%s$" % (folder, folder)
 					else:
 						pattern = a.get("file")
-				#if k is all must agains all k
+				#if k is all must be agains all k
 				if k == "all":
 					for key, values in list_ff_remove.iteritems():
 						if pattern in values:
