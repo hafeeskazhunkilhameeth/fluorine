@@ -189,6 +189,7 @@ def make_includes(context):
 	context["include_js"] = include_js + context.meteor_package_js
 	context["include_css"] = include_css + context.meteor_package_css
 
+
 def get_app_pages(context):
 	from fluorine.utils import meteor_desk_app
 	from fluorine.utils.meteor.utils import make_meteor_props
@@ -203,7 +204,6 @@ def get_app_pages(context):
 	except:
 		making_production = False
 
-	print "online devemod 2 {} prodc {}".format(devmode, making_production)
 
 	if devmode and not making_production:
 		make_meteor_props(context, meteor_desk_app)
@@ -291,17 +291,10 @@ def fluorine_build_context(context, whatfor):
 	return context
 
 def process_react_templates(apps, custom_pattern):
-
 	from fluorine.utils import get_attr_from_json
-	#from fluorine.utils.fhooks import get_xhtml_context
 	from react_file_loader import read_client_xhtml_files
-	#from fluorine.utils.fhooks import get_extra_context_func, get_general_context
-	#from fluorine.utils.meteor.utils import compile_spacebars_templates
-	#from reactivity import extras_context_methods
 
-	#spacebars_templates = {}
 
-	#list_apps_remove = frappe.local.meteor_ignores.get("remove", {}).get("apps")
 	list_apps_remove = get_attr_from_json(["remove", "apps"], frappe.local.meteor_ignores)
 
 	for app in apps:
@@ -329,6 +322,7 @@ def process_react_templates(apps, custom_pattern):
 		arr.append("})();\n")
 		context.compiled_spacebars_js = arr
 	"""
+
 
 def process_extra_context(apps, whatfor, context):
 	from fluorine.utils.fhooks import get_xhtml_context
