@@ -265,6 +265,10 @@ def get_permission_files_json(whatfor):
 					"app_name":{
 						"remove":[{"folder": "folder_name"}, {"file": "file_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
 						"add":[{"folder": "folder_name"}, {"file": "file_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
+					},
+					"all":{
+						"remove":[{"folder": "folder_name"}, {"file": "file_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
+						"add":[{"folder": "folder_name"}, {"file": "file_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
 					}
 				}
 			}
