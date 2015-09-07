@@ -253,7 +253,7 @@ def get_permission_files_json(whatfor):
 	#from current dev app passing by last installed to first installed
 	for app in apps:
 		"""
-		permission.json has the following structure:
+			permission.json has the following structure:
 			{
 				"apps":{
 					"app_name":{#remove and add are mutually exclusive. remove takes precedence to add.
