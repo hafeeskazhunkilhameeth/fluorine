@@ -46,127 +46,6 @@ def get_extras_context_method(site):
 
 list_ignores = None
 
-def _process_permission_apps(apps):
-
-	list_apps_add = []
-	list_apps_remove = []
-
-	for k, v in apps.iteritems():
-		if v.get("remove", 0):
-			if k not in list_apps_add:
-				list_apps_remove.append(k)
-		elif v.get("add", 0):
-			if k not in list_apps_remove:
-				list_apps_add.append(k)
-
-	return list_apps_remove
-
-
-def _process_permission_files_folders(ff):
-	"""
-	below app_name is a valid fluorine app and pattern is any valid regular expression.
-	See make_meteor_ignor_files below for more information.
-
-	Structure:
-
-	IN:
-		ff = {
-			"app_name":{
-				remove:[{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
-				add:[{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
-			},
-			"all": {
-				remove: [{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
-				add:[{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
-			}
-		}
-		Use `all` to apply to any folder or file of any valid fluorine app.
-		You can provide pattern or folder. Pattern takes precedence over folder.
-		If you provide folder then it will be converted in pattern by "^%s/?.*" % folder_name, and will ignore any file and/or folder with that name.
-
-	OUT:
-		list_ff_add and list_ff_remove = {
-			"app_name":set(["pattern_1", "pattern_2"])
-		}
-
-	"""
-	from fluorine.utils.fjinja2.utils import c
-
-	list_ff_add = frappe._dict()
-	list_ff_remove = frappe._dict()
-
-	for k, v in ff.iteritems():
-		remove = v.get("remove") or []
-		for r in remove:
-			if not list_ff_remove.get(k):
-				list_ff_remove[k] = []
-			pattern = r.get("pattern")
-			if not pattern:
-				pattern = "^%s/?.*" % r.get("folder")
-			cpattern = c(pattern)
-			list_ff_remove[k].append(cpattern)
-
-		add = v.get("add") or []
-		for a in add:
-			if not list_ff_add.get(k):
-				list_ff_add[k] = []
-			pattern = a.get("pattern")
-			if not pattern:
-				pattern = "^%s/?.*" % a.get("folder")
-			cpattern = c(pattern)
-			list_ff_add[k].append(cpattern)
-
-	return list_ff_add, list_ff_remove
-
-
-def _make_meteor_ignor_files():
-	"""
-	This list of permissions is used only by read_client_xhtml_files function.
-	This permission file reflect a list of apps and the list of files and folders to ignore when read xhtml files.
-	If the function don't read some xhtml (with their folder) files then they don't appears in output files to meteor app.
-	As an example take highlight: "highlight/?.*".
-	This regular expression will ignore everything inside folder highlight and also any file with name highlight and with any extension.
-	"""
-	from fluorine.utils import whatfor_all, meteor_desk_app, meteor_web_app
-	from fluorine.utils import get_attr_from_json
-	from fluorine.utils.fjinja2.utils import c
-
-	global list_ignores
-
-	list_ignores = frappe._dict({meteor_web_app:{}, meteor_desk_app:{}})
-
-	logger = logging.getLogger("frappe")
-
-	for whatfor in whatfor_all:
-		conf = get_permission_files_json(whatfor)
-		list_apps_remove = process_permission_apps(conf.get("apps") or {})
-		list_meteor_files_folders_add, list_meteor_files_folders_remove = process_permission_files_folders(conf.get("files_folders") or {})
-
-		list_ignores.get(whatfor).update({
-			"remove":{
-				"apps": list_apps_remove,
-				"files_folders": list_meteor_files_folders_remove
-			},
-			"add":{
-				"apps": [],
-				"files_folders": list_meteor_files_folders_add
-			}
-		})
-
-		if meteor_config.get("production_mode") or frappe.local.making_production:
-			l = get_attr_from_json([whatfor, "remove", "files_folders"], list_ignores)
-			l.update({
-				"all":[c("^highlight/?.*")]
-				#"all":{
-					#"remove": [{"pattern": c("highlight/?.*")}]
-				#	"remove": [c("highlight/?.*")]
-				#}
-			})
-			#logger.error("list_ignores inside highlight 4 {}".format(list_ignores))
-
-
-	return list_ignores
-
 
 def make_meteor_ignor_files():
 	"""
@@ -251,13 +130,36 @@ def get_permission_files_json(whatfor):
 	def add_pattern_to_list(appname, pattern, plist):
 		if not plist.get(appname):
 			plist[appname] = set([])
-		#pattern = obj.get("pattern")
-		#if not pattern:
-		#	pattern = "^%s/?.*" % obj.get("folder")
 		plist[appname].add(pattern)
 
 	def process_permission_files_folders(conf_file):
+		"""
+		below app_name is a valid fluorine app and pattern is any valid regular expression.
+		See make_meteor_ignor_files below for more information.
 
+		Structure:
+
+		IN:
+			ff = {
+				"app_name":{
+					remove:[{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
+					add:[{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
+				},
+				"all": {
+					remove: [{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
+					add:[{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
+				}
+			}
+			Use `all` to apply to any folder or file of any valid fluorine app.
+			You can provide pattern or folder. Pattern takes precedence over folder.
+			If you provide folder then it will be converted in pattern by "^%s/?.*" % folder_name, and will ignore any file and/or folder with that name.
+
+		OUT:
+			list_ff_add and list_ff_remove = {
+				"app_name":set(["pattern_1", "pattern_2"])
+			}
+
+		"""
 		ff = conf_file.get("files_folders") or {}
 		for k, v in ff.iteritems():
 			#k is appname or `all` and v is a dict with remove and/or add
@@ -303,12 +205,9 @@ def get_permission_files_json(whatfor):
 		from fluorine.utils.fjinja2.utils import c
 
 		for k,values in list_ff_remove.iteritems():
-			#remove = v.get("remove")
 			list_ff_remove[k] = set([c(v) for v in values])
 
 		for k,values in list_ff_add.iteritems():
-			#add = v.get("add")
-			#v["add"] = [c(r) for r in add]
 			list_ff_add[k] = set([c(v) for v in values])
 
 	#from current dev app passing by last installed to first installed
