@@ -290,6 +290,9 @@ def get_general_context(context, apps, whatfor):
 				nctx = module.get_context(context, ctx, whatfor)
 				if not nctx:
 					continue
+				if isinstance(nctx, dict):
+					nctx = [nctx]
+
 				for nc in nctx:
 					appname = nc.get("appname")
 					pattern = nc.get("pattern")
@@ -315,6 +318,7 @@ def get_general_context(context, apps, whatfor):
 
 	return
 
+
 def get_extra_context_func(context, apps, extras):
 
 	for app in apps:
@@ -325,7 +329,7 @@ def get_extra_context_func(context, apps, extras):
 		template_path = obj.template_path
 		for extra in extras:
 			if hasattr(module, extra):
-				extra_func = getattr(module, extra)#estava 'method_name'
+				extra_func = getattr(module, extra)
 				extra_func(context, app, template_path)
 
 def get_extras_context():

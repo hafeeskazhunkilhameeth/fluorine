@@ -168,27 +168,16 @@ def check_refs(tname, refs):
 
 
 def prepare_common_page_context(context, whatfor):
-	from fluorine.utils import check_dev_mode, jquery_include#, meteor_config
+	from fluorine.utils import check_dev_mode, jquery_include
 	from fluorine.utils.meteor.utils import build_meteor_context
-	#from fluorine.utils.file import set_config
 
 	devmode = check_dev_mode()
 	context.developer_mode = devmode
 	context.jquery_include = jquery_include()
 
-	#doc = frappe.get_doc("Fluorine Reactivity")
-
 	#Meteor
 	build_meteor_context(context, whatfor)
 	context.meteor_web = True
-	#context.custom_template = doc.fluorine_base_template
-
-	#if devmode:
-	#	set_config({
-	#		"production_mode": 0
-	#	})
-
-		#meteor_config["production_mode"] = 0
 
 	return fluorine_build_context(context, whatfor)
 
@@ -196,28 +185,14 @@ def make_includes(context):
 
 	include_js = context.get("include_js",[])
 	include_css = context.get("include_css", [])
-#	try:
-#		include_js.remove("/assets/js/meteor_app.min.js")
-#	except:
-#		pass
-#	finally:
+
 	context["include_js"] = include_js + context.meteor_package_js
 	context["include_css"] = include_css + context.meteor_package_css
 
 def get_app_pages(context):
-	#from fluorine.utils.module import get_app_context
 	from fluorine.utils import meteor_desk_app
 	from fluorine.utils.meteor.utils import make_meteor_props
 
-	"""
-	def get_frappe_context(context):
-
-		app = "frappe"
-		app_path = frappe.get_app_path(app)
-		path = os.path.join(app_path, "templates", "pages")
-		ret = get_app_context(context, path, app, app_path, "desk.py")
-		return ret
-	"""
 
 	context = prepare_common_page_context(context, meteor_desk_app)
 
@@ -245,13 +220,6 @@ def get_web_pages(context):
 	context.meteor_web_include_js = frappe.get_hooks("meteor_web_include_js")
 
 	context = prepare_common_page_context(context, meteor_web_app)
-
-	#if devmode:
-	#TODO ver se é preciso remove tb o css gerado
-	#	try:
-	#		context.meteor_web_include_js.remove("/assets/fluorine/js/meteor_web.js")
-	#	except:
-	#		pass
 
 	return context
 
@@ -301,12 +269,13 @@ def fluorine_build_context(context, whatfor):
 	known_apps = apps[::-1]
 	custom_pattern = get_custom_pattern(whatfor, custom_pattern=None)
 
-	#set current app as the first app
-	#if curr_app != known_apps[0]:
-	#	known_apps.remove(curr_app)
-	#	known_apps.insert(0, curr_app)
+	process_react_templates(known_apps, custom_pattern)
 
-	process_react_templates(context, known_apps, whatfor, custom_pattern)
+	#do not revert apps. Use from first installed app to current dev app
+	#This way we can use context from the first installed to the last installed
+	#NOTE others apps may depend on current dev appp but it may be out of other!
+	process_extra_context(apps, whatfor, context)
+	compile_jinja_templates(context, whatfor)
 
 	fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
 	empty_directory(fluorine_publicjs_dst_path, ignore=(".meteor",))
@@ -321,14 +290,14 @@ def fluorine_build_context(context, whatfor):
 
 	return context
 
-def process_react_templates(context, apps, whatfor, custom_pattern):
+def process_react_templates(apps, custom_pattern):
 
 	from fluorine.utils import get_attr_from_json
-	from fluorine.utils.fhooks import get_xhtml_context
+	#from fluorine.utils.fhooks import get_xhtml_context
 	from react_file_loader import read_client_xhtml_files
-	from fluorine.utils.fhooks import get_extra_context_func, get_general_context
+	#from fluorine.utils.fhooks import get_extra_context_func, get_general_context
 	#from fluorine.utils.meteor.utils import compile_spacebars_templates
-	from reactivity import extras_context_methods
+	#from reactivity import extras_context_methods
 
 	#spacebars_templates = {}
 
@@ -351,14 +320,6 @@ def process_react_templates(context, apps, whatfor, custom_pattern):
 					spacebars_template_path = os.path.join(os.path.relpath(root, pathname), file_name)
 					addto_meteor_templates_list(spacebars_template_path)
 
-	#get the context from all the python files of templates
-	get_xhtml_context(context)
-	get_extra_context_func(context, apps[::-1], extras_context_methods)
-
-	get_general_context(context, apps[::-1], whatfor)
-
-	compile_jinja_templates(context, whatfor)
-
 	#only compile if meteor_app or meteor_frappe
 	"""
 	if spacebars_templates:
@@ -368,6 +329,21 @@ def process_react_templates(context, apps, whatfor, custom_pattern):
 		arr.append("})();\n")
 		context.compiled_spacebars_js = arr
 	"""
+
+def process_extra_context(apps, whatfor, context):
+	from fluorine.utils.fhooks import get_xhtml_context
+	from fluorine.utils.fhooks import get_extra_context_func, get_general_context
+	from reactivity import extras_context_methods
+
+	#get the context from all the python files of templates
+	get_xhtml_context(context)
+
+	#get extra context from meteor_general_context.py file. Here we put files to exclude from meteor app.
+	get_general_context(context, apps, whatfor)
+
+	#get extra context from custom functions
+	get_extra_context_func(context, apps, extras_context_methods)
+
 
 def addto_meteor_templates_list(template_path):
 	from fluorine.utils.fhooks import get_xhtml_files_to_add_remove
