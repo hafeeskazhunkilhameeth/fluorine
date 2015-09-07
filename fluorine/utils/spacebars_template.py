@@ -280,7 +280,8 @@ def fluorine_build_context(context, whatfor):
 	fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
 	empty_directory(fluorine_publicjs_dst_path, ignore=(".meteor",))
 
-	make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, custom_pattern=get_read_file_patterns())
+	read_file_pattern = get_read_file_patterns()
+	make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, custom_pattern=read_file_pattern.keys())
 
 	copy_project_translation(apps, whatfor, custom_pattern)
 

@@ -169,7 +169,7 @@ def check_read_file_pattern(f):
 	import fnmatch
 
 	patterns = get_read_file_patterns()
-	for pattern  in patterns:
+	for pattern in patterns.keys():
 		if fnmatch.fnmatch(f, pattern):
 			return True
 	return False

@@ -7,16 +7,24 @@ import frappe
 
 start_db = False
 
+read_patterns = None
 
+#read_patterns is a dict with extension to read and extension to write
 def get_read_file_patterns():
 
-	patterns = ["*.xhtml"]
-
-	read_patterns = meteor_config.get("read_patterns")
+	global read_patterns
 	if read_patterns:
-		patterns.extend(read_patterns)
+		return read_patterns
 
-	return patterns
+	read_patterns = {"*.xhtml": "html"}
+
+	read_file_patterns = meteor_config.get("read_patterns", {})
+	for k, v in read_file_patterns.iteritems():
+		if not k.startswith("*."):
+			k = "*.%s" % k
+		read_patterns[k] = v
+
+	return read_patterns
 
 
 def check_mongodb(conf):
