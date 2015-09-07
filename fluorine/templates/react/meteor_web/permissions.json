@@ -3,5 +3,10 @@
     "ekaiser":{
       "remove": 0
     }
+  },
+  "files_folders":{
+	  "fluorine":{
+	 	 "add": [{"folder": "highlight"}]
+  	  }
   }
 }

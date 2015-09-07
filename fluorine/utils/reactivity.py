@@ -207,14 +207,14 @@ def make_meteor_ignor_files():
 			lall = lff.get("all")
 			if not lall:
 				lff.update({
-					"all":set([c("^highlight/?.*")])
+					"all":set([c("^highlights/?.*")])
 					#"all":{
 						#"remove": [{"pattern": c("highlight/?.*")}]
 					#	"remove": [c("highlight/?.*")]
 					#}
 				})
 			else:
-				lall.add(c("^highlight/?.*"))
+				lall.add(c("^highlights/?.*"))
 			#logger.error("list_ignores inside highlight 4 {}".format(list_ignores))
 
 
@@ -262,7 +262,7 @@ def get_permission_files_json(whatfor):
 		for k, v in ff.iteritems():
 			#k is appname or `all` and v is a dict with remove and/or add
 			remove = v.get("remove") or []
-			ladd = list_ff_add.get(k)
+			ladd = list_ff_add.get(k, {})
 			for r in remove:
 				found = False
 				pattern = r.get("pattern") or "^%s/?.*" % r.get("folder")
@@ -277,11 +277,11 @@ def get_permission_files_json(whatfor):
 						add_pattern_to_list(k, pattern, list_ff_remove)
 				else:
 					#check if it is already added by any older app if so then don't remove
-					if pattern not in ladd.get("add"):
+					if pattern not in ladd.get("add", []):
 						add_pattern_to_list(k, pattern, list_ff_remove)
 
 			add = v.get("add") or []
-			lremove = list_ff_remove.get(k)
+			lremove = list_ff_remove.get(k, {})
 			for a in add:
 				found = False
 				pattern = a.get("pattern") or "^%s/?.*" % a.get("folder")
@@ -296,7 +296,7 @@ def get_permission_files_json(whatfor):
 				else:
 					#a is a pattern string
 					#check if it is already removed by any older app if so then don't add
-					if pattern not in lremove.get("remove"):
+					if pattern not in lremove.get("remove", []):
 						add_pattern_to_list(k, pattern, list_ff_add)
 
 	def compile_pattern():
