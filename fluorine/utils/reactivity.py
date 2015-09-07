@@ -224,35 +224,6 @@ def get_permission_files_json(whatfor):
 	return list_ff_add, list_ff_remove, list_apps_remove
 
 
-def _get_permission_files_json(whatfor):
-	from fluorine.utils.apps import get_active_apps
-
-
-	curr_app = meteor_config.get("current_dev_app", "").strip()
-	apps = get_active_apps(whatfor)
-	if curr_app != apps[-1]:
-		#set current dev app in last
-		apps.remove(curr_app)
-		apps.append(curr_app)
-
-	conf_perm = frappe._dict()
-
-	#curr develop app override everything follow by last installed app.
-	for app in apps:
-		app_path = frappe.get_app_path(app)
-		perm_path = os.path.join(app_path, "templates", "react", whatfor, "permissions.json")
-		if os.path.exists(perm_path):
-			conf_file = frappe.get_file_json(perm_path)
-			for k,v in conf_file.iteritems():
-				key = conf_perm.get(k)
-				if key:
-					key.update(v)
-				else:
-					conf_perm[k] = v
-
-	return conf_perm
-
-
 import logging
 logger = logging.getLogger("frappe")
 if not meteor_config.get("production_mode") and not meteor_config.get("stop"):
