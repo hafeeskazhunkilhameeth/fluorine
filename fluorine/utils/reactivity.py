@@ -214,7 +214,7 @@ def make_meteor_ignor_files():
 					#}
 				})
 			else:
-				lall.add(c("^highlights/?.*"))
+				lall.add(c("^highlight/?.*"))
 			#logger.error("list_ignores inside highlight 4 {}".format(list_ignores))
 
 
