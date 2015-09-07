@@ -82,29 +82,18 @@ def get_custom_pattern(whatfor, custom_pattern=None):
 	from shutil import ignore_patterns
 
 	_whatfor = [meteor_desk_app, meteor_web_app]
-	exclude = [""]
+
 	custom_pattern = custom_pattern or []
 	ignored_names_top = ["public","tests","server","temp","private"]
 	ignored_names_any = ["tests","server","temp"]
-	if isinstance(whatfor, basestring):
-		whatfor = [whatfor]
 
-	is_for_meteor_frappe = "meteor_frappe" in whatfor
-	if is_for_meteor_frappe:
-		ignored_names_top.extend([meteor_desk_app, meteor_web_app])
-
-	try:
-		for w in whatfor:
-			_whatfor.remove(w)
-		exclude = _whatfor
-	except:
-		pass
+	_whatfor.remove(whatfor)
 
 	custom_pattern = set(custom_pattern)
 	pattern = ignore_patterns(*custom_pattern)
 
-	ignored_names_top.extend(exclude)
-	ignored_names_any.extend(exclude)
+	ignored_names_top.extend(_whatfor)
+	ignored_names_any.extend(_whatfor)
 
 	return pattern, ignored_names_any, ignored_names_top
 
@@ -119,12 +108,10 @@ def read_client_xhtml_files(start_folder, whatfor, appname, meteor_ignore=None, 
 	main_files = []
 	main_lib_files = []
 
-	is_for_meteor_frappe = "meteor_frappe" in whatfor
 	pattern, ignored_names_any, ignored_names_top  = custom_pattern
 
 	topfolder = True
 
-	#list_meteor_files_folders_remove = meteor_ignore.get("remove").get("files_folders")
 	list_meteor_files_folders_remove = get_attr_from_json([whatfor, "remove", "files_folders"], meteor_ignore)
 	all_files_folder_remove = list_meteor_files_folders_remove.get("all")
 	appname_files_folder_remove = list_meteor_files_folders_remove.get(appname)
@@ -132,39 +119,27 @@ def read_client_xhtml_files(start_folder, whatfor, appname, meteor_ignore=None, 
 	for root, dirs, files in os.walk(start_folder):
 
 		ign_dirs = pattern(start_folder, dirs)
-		try:
-			if topfolder:
-				ign_dirs.update(ignored_names_top)
-				[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
-				topfolder = False
-			else:
-				ign_dirs.update(ignored_names_any)
-				[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
-		except:
-			print "remove exclude 3 {} no exclude in dirs ".format(ignored_names_top)
-			pass
 
-		#only read files within meteor_frappe folder
-		if is_for_meteor_frappe:
-			if not RE_MFRAPPE.search(root):
-				continue
+		if topfolder:
+			ign_dirs.update(ignored_names_top)
+			[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
+			topfolder = False
+		else:
+			ign_dirs.update(ignored_names_any)
+			[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
 
 		islib = False
-		relpath = os.path.relpath(root, start_folder)
 
 		if RE_LIB.search(root):
 			islib = True
 
-		deeper = len(root.split("/"))
-
-		files = [toinclude for toinclude in files if fnmatch.fnmatch(toinclude, "*xhtml")]
+		files = [toinclude for toinclude in files if check_read_file_pattern(toinclude)]
 
 		for f in files:
 			if check_remove_files_folders(f,  all_files_folder_remove) or check_remove_files_folders(f, appname_files_folder_remove):
 				continue
-			ext = f.rsplit(".", 1)
 			path = os.path.join(root, f)
-			obj = {"name": f, "path": path, "relpath": relpath, "filePath": root, "fileName": ext[0], "deep": deeper}
+			obj = {"name": f, "path": path}
 			if RE_MAIN.search(str(f)):
 				if islib:
 					main_lib_files.append(obj)
@@ -176,3 +151,14 @@ def read_client_xhtml_files(start_folder, whatfor, appname, meteor_ignore=None, 
 				files_to_read.append(obj)
 
 	return (files_in_lib, files_to_read, main_lib_files, main_files)
+
+
+def check_read_file_pattern(f):
+	from fluorine.utils.reactivity import get_read_file_patterns
+	import fnmatch
+
+	patterns = get_read_file_patterns()
+	for pattern  in patterns:
+		if fnmatch.fnmatch(f, pattern):
+			return True
+	return False

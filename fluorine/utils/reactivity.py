@@ -7,6 +7,18 @@ import frappe
 
 start_db = False
 
+
+def get_read_file_patterns():
+
+	patterns = ["*.xhtml"]
+
+	read_patterns = meteor_config.get("read_patterns")
+	if read_patterns:
+		patterns.extend(read_patterns)
+
+	return patterns
+
+
 def check_mongodb(conf):
 	if not conf.get("meteor_mongo"):
 		return False
@@ -84,16 +96,17 @@ def make_meteor_ignor_files():
 		if meteor_config.get("production_mode") or frappe.local.making_production:
 			lff = get_attr_from_json([whatfor, "remove", "files_folders"], list_ignores)
 			lall = lff.get("all")
+			pattern = "highlight.xhtml"
 			if not lall:
 				lff.update({
-					"all":set([c("^highlight/?.*")])
+					"all":set([c(pattern)])#"^highlight/?.*"
 					#"all":{
 						#"remove": [{"pattern": c("highlight/?.*")}]
 					#	"remove": [c("highlight/?.*")]
 					#}
 				})
 			else:
-				lall.add(c("^highlight/?.*"))
+				lall.add(c(pattern))
 			#logger.error("list_ignores inside highlight 4 {}".format(list_ignores))
 
 
@@ -128,6 +141,8 @@ def get_permission_files_json(whatfor):
 					list_apps_add.add(k)
 
 	def add_pattern_to_list(appname, pattern, plist):
+		if not pattern:
+			return
 		if not plist.get(appname):
 			plist[appname] = set([])
 		plist[appname].add(pattern)
@@ -142,8 +157,8 @@ def get_permission_files_json(whatfor):
 		IN:
 			ff = {
 				"app_name":{
-					remove:[{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
-					add:[{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
+					remove:[{"folder": "folder_name"}, {"file": "file_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
+					add:[{"file": "file_name"}, {"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}]
 				},
 				"all": {
 					remove: [{"folder": "folder_name"}, {"pattern": "pattern_1"}, {"pattern": "pattern_2"}],
@@ -167,7 +182,13 @@ def get_permission_files_json(whatfor):
 			ladd = list_ff_add.get(k, {})
 			for r in remove:
 				found = False
-				pattern = r.get("pattern") or "^%s/?.*" % r.get("folder")
+				pattern = r.get("pattern")
+				if not pattern:
+					folder = r.get("folder")
+					if folder:
+						pattern = "^%s/?.*" % r.get("folder")
+					else:
+						pattern = r.get("file")
 				#r is an dict with pattern string of folder name
 				#if k is all must agains all k
 				if k == "all":
@@ -186,7 +207,13 @@ def get_permission_files_json(whatfor):
 			lremove = list_ff_remove.get(k, {})
 			for a in add:
 				found = False
-				pattern = a.get("pattern") or "^%s/?.*" % a.get("folder")
+				pattern = a.get("pattern")
+				if not pattern:
+					folder = a.get("folder")
+					if folder:
+						pattern = "^%s/?.*" % a.get("folder")
+					else:
+						pattern = a.get("file")
 				#if k is all must agains all k
 				if k == "all":
 					for key, values in list_ff_remove.iteritems():
