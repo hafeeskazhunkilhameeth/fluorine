@@ -3,30 +3,36 @@ from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
 
-def get_context(context, ctx, whatfor):
+def get_context(context, ctx):
 	highlight = []
 
-	if not context.developer_mode:
-		highlight.append({"appname": "fluorine", "action": "remove", "pattern": "highlight/.*"})
+	#if not context.developer_mode:
+	#	highlight.append({"appname": "fluorine", "action": "remove", "pattern": "highlight/.*"})
 
-	highlight.append({"appname":"fluorine", "action":"add", "pattern":"login/.*"})
+	#highlight.append({"appname":"fluorine", "action":"add", "pattern":"login/.*"})
 
 	return highlight
 
 
-def get_files_folders(context, whatfor):
+def get_files_folders(context):
+
+	remove = []
+
+	if not context.developer_mode:
+		pattern = "highlight.xhtml"
+		remove.append({"file":pattern})
 
 	return {
 		"IN":{
-		  "files_folders":{
-			  "fluorine":{
-				  "remove":[{"folder":"meteor_web/common"}]
-			  }
-		  }
+			"files_folders":{
+				"fluorine":{
+					"remove":remove
+				}
+			}
 		}
 	}
 
-def get_apps(context, whatfor):
+def get_apps(context):
 	return {
 		"IN":{
 		  "apps": {
@@ -36,3 +42,4 @@ def get_apps(context, whatfor):
 		  }
 		}
 	}
+

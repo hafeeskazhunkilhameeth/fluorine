@@ -92,7 +92,7 @@ def make_meteor_ignor_files():
 		apps.append(curr_app)
 
 	for whatfor in whatfor_all:
-		pfs_in = ProcessFileSystem(whatfor)
+		pfs_in = ProcessFileSystem(whatfor, curr_app)
 		# Apps removed by current dev app does not remove anything.
 		# The same is true for first installed apps that do not removed anything if they are removed by last installed apps.
 		while know_apps:
@@ -149,8 +149,10 @@ def make_meteor_ignor_files():
 
 class ProcessFileSystem(object):
 
-	def __init__(self, whatfor):
+	def __init__(self, whatfor, curr_dev_app):
 		self.whatfor = whatfor
+		self.curr_dev_app = curr_dev_app
+
 		self.list_ff_add = frappe._dict()
 		self.list_ff_remove = frappe._dict()
 
@@ -194,6 +196,8 @@ class ProcessFileSystem(object):
 	def process_permission_apps(self, conf_file):
 
 		apps = conf_file.get("apps") or {}
+		if self.curr_dev_app in apps:
+			apps.remove(self.curr_dev_app)
 		for k, v in apps.iteritems():
 			if v.get("remove", 0):
 				if k not in self.list_apps_add:
@@ -250,6 +254,8 @@ class ProcessFileSystem(object):
 				if not pattern:
 					folder = r.get("folder")
 					if folder:
+						if folder.endswith("/"):
+							folder = folder.rsplit("/",1)[0]
 						pattern = "^%s/.*|^%s$" % (folder, folder)
 					else:
 						pattern = r.get("file")
@@ -275,6 +281,8 @@ class ProcessFileSystem(object):
 				if not pattern:
 					folder = a.get("folder")
 					if folder:
+						if folder.endswith("/"):
+							folder = folder.rsplit("/",1)[0]
 						pattern = "^%s/.*|^%s$" % (folder, folder)
 					else:
 						pattern = a.get("file")

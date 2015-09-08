@@ -265,10 +265,15 @@ def fluorine_build_context(context, whatfor):
 		apps.remove(curr_app)
 		apps.append(curr_app)
 
-	pfs_in = ProcessFileSystem(whatfor)
-	pfs_out = ProcessFileSystem(whatfor)
+	pfs_in = ProcessFileSystem(whatfor, curr_app)
+	pfs_out = ProcessFileSystem(whatfor, curr_app)
 
+	process_common_context(apps, whatfor, context, pfs_in, pfs_out)
 	process_general_context(apps, whatfor, context, pfs_in, pfs_out)
+
+	pfs_in.compile_pattern()
+	pfs_out.compile_pattern()
+
 	apps_remove = pfs_in.get_apps_remove()
 	for r in apps_remove:
 		apps.remove(r)
@@ -291,7 +296,7 @@ def fluorine_build_context(context, whatfor):
 	read_file_pattern = get_read_file_patterns()
 	make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, pfs_out, custom_pattern=read_file_pattern.keys())
 
-	#custom_make_all_files_with_symlink(known_apps, fluorine_publicjs_dst_path, whatfor, custom_pattern=read_file_pattern.keys())
+	custom_make_all_files_with_symlink(known_apps, fluorine_publicjs_dst_path, whatfor, pfs_out, custom_pattern=read_file_pattern.keys())
 	copy_project_translation(apps, whatfor, pfs_out, custom_pattern)
 
 	#Only support for mibile in web app
@@ -355,6 +360,11 @@ def process_general_context(apps, whatfor, context, pfs_in, pfs_out):
 	#get extra context from meteor_general_context.py file. Here we put files to exclude from meteor app.
 	get_general_context(context, apps, whatfor, pfs_in, pfs_out)
 
+def process_common_context(apps, whatfor, context, pfs_in, pfs_out):
+	from fluorine.utils.context import get_common_context
+
+	#get extra context from meteor_general_context.py file. Here we put files to exclude from meteor app.
+	get_common_context(context, apps, whatfor, pfs_in, pfs_out)
 
 def addto_meteor_templates_list(template_path):
 	from fluorine.utils.context import get_xhtml_files_to_add_remove

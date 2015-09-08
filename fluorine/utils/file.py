@@ -306,7 +306,7 @@ def copy_mobile_config_file(apps, whatfor):
 #from profilehooks import profile, timecall, coverage
 import re
 c = lambda t:re.compile(t, re.S|re.M)
-common_pattern = c(r"templates/(.*)/?common/(.*)")
+#common_pattern = c(r"templates/(.*)/?common/(.*)")
 
 
 def make_all_files_with_symlink(dst, whatfor, psf_out, custom_pattern=None):
@@ -373,15 +373,13 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, custom_pattern=None):
 					#so dirs to exclude must have as base root dirs inside react folder. Ex. meteor_web/highlight as meteor_web is inside react folder.
 					relative_react = os.path.relpath(root, reactpath)
 					for dir in dirs[::]:
-						#f = os.path.join(relpath, dir)
-						for s in (all_files_folder_remove, appname_files_folder_remove):
-							if check_files_folders_patterns(dir, relative_react, s):
-								dirs.remove(dir)
-								break
+						if check_files_folders_patterns(dir, relative_react, all_files_folder_remove) or\
+								check_files_folders_patterns(dir, relative_react, appname_files_folder_remove):
+							dirs.remove(dir)
+							break
 
 					ign_names = pattern(root, files)
 					relative_file = os.path.relpath(root, meteorpath)
-
 
 					for f in files:
 						if f in ign_names or check_files_folders_patterns(f, relative_react, all_files_folder_remove) or check_files_folders_patterns(f, relative_react, appname_files_folder_remove):
@@ -392,9 +390,9 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, custom_pattern=None):
 						if check_remove(source):
 							continue
 
-						found = madd.match(source) or common_pattern.match(source) or\
-								check_files_folders_patterns(f, relative_react, all_files_folder_add) or\
-								check_files_folders_patterns(f, relative_react, appname_files_folder_add)
+						found = madd.match(source)#or common_pattern.match(source)#or\
+								#check_files_folders_patterns(f, relative_react, all_files_folder_add) or\
+								#check_files_folders_patterns(f, relative_react, appname_files_folder_add)
 						if found:
 							try:
 								frappe.create_folder(os.path.realpath(os.path.join(destpath, relative_file)))
@@ -410,8 +408,8 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, psf_out, custom_patte
 	folders_path = []
 	custom_pattern = custom_pattern or []
 
-	if isinstance(whatfor, basestring):
-		whatfor = [whatfor]
+	#if isinstance(whatfor, basestring):
+	#	whatfor = [whatfor]
 
 	_whatfor.remove(whatfor)
 
@@ -435,13 +433,13 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, psf_out, custom_patte
 	for app in apps:
 		pathname = frappe.get_app_path(app)
 		reactpath = os.path.join(pathname, "templates", "react")
-
+		#meteorpath = os.path.join(reactpath, whatfor)
 		appname_files_folder_add = list_meteor_files_folders_add.get(app)
 
 		if os.path.exists(reactpath):
 			folders_path.append(app)
 			app_folders = "/".join(folders_path)
-			destpath = os.path.join(dst, app_folders)
+			#destpath = os.path.join(dst, app_folders)
 
 			for root, dirs, files in os.walk(reactpath):
 
@@ -459,6 +457,7 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, psf_out, custom_patte
 
 				ign_names = pattern(root, files)
 				relative_react = os.path.relpath(root, reactpath)
+				#relative_file = os.path.relpath(root, meteorpath)
 
 				for f in files:
 					if f in ign_names:
@@ -467,8 +466,14 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, psf_out, custom_patte
 					if check_files_folders_patterns(f, relative_react, all_files_folder_add) or\
 							check_files_folders_patterns(f, relative_react, appname_files_folder_add):
 						try:
-							frappe.create_folder(os.path.realpath(os.path.join(destpath, relative_react)))
-							os.symlink(os.path.join(root, f), os.path.realpath(os.path.join(destpath, os.path.join(relative_react,f))))
+							print "startswitd whatfor {}".format(relative_react)
+							if relative_react.startswith(whatfor):
+								#relative_react = relative_react.replace("%s/" % whatfor, "")
+								relative_react = relative_react.replace(whatfor, app_folders)
+							#else:
+							#	relative_react = relative_react.replace(whatfor, app_folders)
+							frappe.create_folder(os.path.realpath(os.path.join(dst, relative_react)))
+							os.symlink(os.path.join(root, f), os.path.realpath(os.path.join(dst, os.path.join(relative_react,f))))
 						except:
 							pass
 

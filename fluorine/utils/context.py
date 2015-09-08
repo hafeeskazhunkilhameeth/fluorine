@@ -125,9 +125,8 @@ def get_general_context(context, apps, whatfor, pfs_in, pfs_out):
 		module = get_app_module(path, app, app_path, "meteor_general_context.py")
 		if module:
 			if hasattr(module, "get_context"):
-				nctx = module.get_context(context, ctx, whatfor)
-				if not nctx:
-					continue
+				nctx = module.get_context(context, ctx) or []
+
 				if isinstance(nctx, dict):
 					nctx = [nctx]
 
@@ -142,16 +141,17 @@ def get_general_context(context, apps, whatfor, pfs_in, pfs_out):
 					ctx[appname].append({"pattern": pattern, "action": action})
 
 			if hasattr(module, "get_files_folders"):
-				ff = module.get_files_folders(context, whatfor) or {}
+				ff = module.get_files_folders(context) or {}
+				print "get_files_folders {}".format(ff)
 
 				ffin = ff.get("IN") or ff.get("in") or {}
 				pfs_in.feed_files_folders(ffin)
 
 				ffout = ff.get("OUT") or ff.get("out") or {}
-				pfs_in.feed_files_folders(ffout)
+				pfs_out.feed_files_folders(ffout)
 
 			if hasattr(module, "get_apps"):
-				fapps = module.get_apps(context, whatfor) or {}
+				fapps = module.get_apps(context) or {}
 
 				appsin = fapps.get("IN") or fapps.get("in") or {}
 				pfs_in.feed_apps(appsin)
@@ -159,8 +159,8 @@ def get_general_context(context, apps, whatfor, pfs_in, pfs_out):
 				appsout = fapps.get("OUT") or fapps.get("out") or {}
 				pfs_out.feed_apps(appsout)
 
-	pfs_in.compile_pattern()
-	pfs_out.compile_pattern()
+	#pfs_in.compile_pattern()
+	#pfs_out.compile_pattern()
 
 	for k,v in ctx.iteritems():
 		for obj in v:
@@ -176,6 +176,72 @@ def get_general_context(context, apps, whatfor, pfs_in, pfs_out):
 				frappe.local.files_to_remove.get(k).append({"tname": "", "pattern": pattern})
 
 	return
+
+
+def get_common_context(context, apps, whatfor, pfs_in, pfs_out):
+
+	from fluorine.utils.module import get_app_module
+
+	ctx = frappe._dict()
+
+	for app in apps:
+		app_path = frappe.get_app_path(app)
+		path = os.path.join(app_path, "templates", "react")
+		module = get_app_module(path, app, app_path, "meteor_common_context.py")
+		if module:
+			if hasattr(module, "get_context"):
+				nctx = module.get_context(context, ctx, whatfor) or []
+
+				if isinstance(nctx, dict):
+					nctx = [nctx]
+
+				for nc in nctx:
+					appname = nc.get("appname")
+					pattern = nc.get("pattern")
+					pattern = os.path.join("templates", "react", whatfor, pattern)
+					action = nc.get("action", "add")
+					if not ctx.get(appname):
+						ctx[appname] = []
+
+					ctx[appname].append({"pattern": pattern, "action": action})
+
+			if hasattr(module, "get_files_folders"):
+				ff = module.get_files_folders(context, whatfor) or {}
+				print "get_files_folders {}".format(ff)
+
+				ffin = ff.get("IN") or ff.get("in") or {}
+				pfs_in.feed_files_folders(ffin)
+
+				ffout = ff.get("OUT") or ff.get("out") or {}
+				pfs_out.feed_files_folders(ffout)
+
+			if hasattr(module, "get_apps"):
+				fapps = module.get_apps(context, whatfor) or {}
+
+				appsin = fapps.get("IN") or fapps.get("in") or {}
+				pfs_in.feed_apps(appsin)
+
+				appsout = fapps.get("OUT") or fapps.get("out") or {}
+				pfs_out.feed_apps(appsout)
+
+	#pfs_in.compile_pattern()
+	#pfs_out.compile_pattern()
+
+	for k,v in ctx.iteritems():
+		for obj in v:
+			pattern = obj.get("pattern")
+			action = obj.get("action", "add")
+			if action == "add":
+				if not frappe.local.files_to_add.get(k):
+					frappe.local.files_to_add[k] = []
+				frappe.local.files_to_add.get(k).append({"tname": "", "pattern": pattern})
+			elif action == "remove":
+				if not frappe.local.files_to_remove.get(k):
+					frappe.local.files_to_remove[k] = []
+				frappe.local.files_to_remove.get(k).append({"tname": "", "pattern": pattern})
+
+	return
+
 
 
 def get_extra_context_func(context, apps, extras):
