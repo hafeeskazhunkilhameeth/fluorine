@@ -242,12 +242,12 @@ def copy_meteor_languages(start_folders, dest_folder, appname, psf_out, custom_p
 	for st_folder in start_folders:
 		for root, dirs, files in os.walk(st_folder):
 			ign_dirs = pattern(st_folder, dirs)
-			try:
-				ign_dirs.update(ignored_names_any)
-				[dirs.remove(toexclude) for toexclude in ign_dirs if toexclude in dirs]
-			except:
-				print "remove exclude 3 {} no exclude in dirs ".format(ignored_names_top)
-				pass
+
+			ign_dirs.update(ignored_names_any)
+
+			for toexclude in ign_dirs:
+				if toexclude in dirs:
+					dirs.remove(toexclude)
 
 			relative_react = os.path.relpath(root, st_folder)
 			files = [toinclude for toinclude in files if fnmatch.fnmatch(toinclude, "*i18n.json") or fnmatch.fnmatch(toinclude, "*project-tap.i18n")]
@@ -336,9 +336,9 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, custom_pattern=None):
 	#list_meteor_files_folders_remove = get_attr_from_json(["remove", "files_folders"], meteor_ignore)
 	list_meteor_files_folders_remove = psf_out.get_remove_files_folders()
 	#list_meteor_files_folders_add = get_attr_from_json(["add", "files_folders"], meteor_ignore)
-	list_meteor_files_folders_add = psf_out.get_add_files_folders()
+	#list_meteor_files_folders_add = psf_out.get_add_files_folders()
 	all_files_folder_remove = list_meteor_files_folders_remove.get("all")
-	all_files_folder_add = list_meteor_files_folders_add.get("all")
+	#all_files_folder_add = list_meteor_files_folders_add.get("all")
 
 	for app, paths in frappe.local.files_to_add.iteritems():
 		pathname = frappe.get_app_path(app)
@@ -346,7 +346,7 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, custom_pattern=None):
 		meteorpath = os.path.join(reactpath, whatfor)
 
 		appname_files_folder_remove = list_meteor_files_folders_remove.get(app)
-		appname_files_folder_add = list_meteor_files_folders_add.get(app)
+		#appname_files_folder_add = list_meteor_files_folders_add.get(app)
 
 		if os.path.exists(meteorpath) and paths:
 			folders_path.append(app)
