@@ -60,3 +60,133 @@ def prepare_context_meteor_file(whatfor):
 		return get_context("desk")
 	else:
 		return fluorine_get_context(frappe._dict())
+
+
+def get_xhtml_files_to_add_remove(context, template_path):
+	obj = frappe.local.meteor_map_templates.get(template_path)
+	path = obj.realpath[:-6] + ".py"
+	appname = obj.get("appname")
+	module = get_xhtml_module(appname, template_path, path)
+	if module:
+
+		if hasattr(module, "get_files_to_add"):
+			ret = module.get_files_to_add(context, appname, template_path, obj.get("template_obj"))
+			if ret:
+				if isinstance(ret, basestring):
+					context.files_to_add.append({"tname": "", "pattern": ret, "page": template_path})
+				else:
+					context.files_to_add.append(ret)
+
+		if hasattr(module, "get_files_to_remove"):
+			ret = module.get_files_to_remove(context, appname, template_path, obj.get("template_obj"))
+			if ret:
+				if isinstance(ret, basestring):
+					context.files_to_remove.append({"tname": "", "pattern": ret, "page": template_path})
+				else:
+					context.files_to_remove.append(ret)
+
+def get_xhtml_context(context):
+
+	for template_path in reversed(frappe.local.meteor_map_templates.keys()):
+		obj = frappe.local.meteor_map_templates.get(template_path)
+		path = obj.realpath[:-6] + ".py"
+		appname = obj.get("appname")
+		module = get_xhtml_module(appname, template_path, path)
+		if module:
+			if hasattr(module, "get_context"):
+				ret = module.get_context(context, appname, template_path, obj.get("template_obj"))
+				if ret:
+					#print "get context app_path 6 controller_path {} ret {}".format(controller_path + ".py", ret)
+					context.update(ret)
+			if hasattr(module, "get_children"):
+				context.get_children = module.get_children
+
+#TODO - ver file.py function process_ignores_from_files
+def get_xhtml_module(appname, template_path, path):
+
+	if os.path.exists(path):
+		controller_path = os.path.join(appname, template_path).replace(os.path.sep, ".")[:-6]
+		module = frappe.get_module(controller_path)
+		frappe.local.module_registe[appname] = frappe._dict({"template_path": template_path, "module": module})
+		return module
+
+	return None
+
+
+def get_general_context(context, apps, whatfor, pfs_in, pfs_out):
+
+	from fluorine.utils.module import get_app_module
+
+	ctx = frappe._dict()
+
+	for app in apps:
+		app_path = frappe.get_app_path(app)
+		path = os.path.join(app_path, "templates", "react", whatfor)
+		module = get_app_module(path, app, app_path, "meteor_general_context.py")
+		if module:
+			if hasattr(module, "get_context"):
+				nctx = module.get_context(context, ctx, whatfor)
+				if not nctx:
+					continue
+				if isinstance(nctx, dict):
+					nctx = [nctx]
+
+				for nc in nctx:
+					appname = nc.get("appname")
+					pattern = nc.get("pattern")
+					pattern = os.path.join("templates", "react", whatfor, pattern)
+					action = nc.get("action", "add")
+					if not ctx.get(appname):
+						ctx[appname] = []
+
+					ctx[appname].append({"pattern": pattern, "action": action})
+
+			if hasattr(module, "get_files_folders"):
+				ff = module.get_files_folders(context, whatfor) or {}
+
+				ffin = ff.get("IN") or ff.get("in") or {}
+				pfs_in.feed_files_folders(ffin)
+
+				ffout = ff.get("OUT") or ff.get("out") or {}
+				pfs_in.feed_files_folders(ffout)
+
+			if hasattr(module, "get_apps"):
+				fapps = module.get_apps(context, whatfor) or {}
+
+				appsin = fapps.get("IN") or fapps.get("in") or {}
+				pfs_in.feed_apps(appsin)
+
+				appsout = fapps.get("OUT") or fapps.get("out") or {}
+				pfs_out.feed_apps(appsout)
+
+	pfs_in.compile_pattern()
+	pfs_out.compile_pattern()
+
+	for k,v in ctx.iteritems():
+		for obj in v:
+			pattern = obj.get("pattern")
+			action = obj.get("action", "add")
+			if action == "add":
+				if not frappe.local.files_to_add.get(k):
+					frappe.local.files_to_add[k] = []
+				frappe.local.files_to_add.get(k).append({"tname": "", "pattern": pattern})
+			elif action == "remove":
+				if not frappe.local.files_to_remove.get(k):
+					frappe.local.files_to_remove[k] = []
+				frappe.local.files_to_remove.get(k).append({"tname": "", "pattern": pattern})
+
+	return
+
+
+def get_extra_context_func(context, apps, extras):
+
+	for app in apps:
+		obj = frappe.local.module_registe.get(app)
+		if not obj:
+			continue
+		module = obj.module
+		template_path = obj.template_path
+		for extra in extras:
+			if hasattr(module, extra):
+				extra_func = getattr(module, extra)
+				extra_func(context, app, template_path)

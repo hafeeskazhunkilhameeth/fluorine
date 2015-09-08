@@ -216,24 +216,26 @@ def match_path(startpath, excludes, includes):
 		for fname in files:
 			print fname
 
-def check_remove_files_folders(f,  files_folder_remove):
+def check_files_folders_patterns(f, relpath, files_folder_remove):
 	# Remove the first pattern found.
 	# This is from the current dev app or one from the last installed app to the first.
 	files_folder_remove = files_folder_remove or []
+	path = os.path.join(relpath, f)
 	for pattern in files_folder_remove:
-		if pattern.match(f):
+		if pattern.match(f) or pattern.match(path):
 			return True
 	return False
 
 # copy the translations files from apps from the first installed to the last installed so we can replace with new ones
 # project-tap.i18n can be replaced with new data from last installed apps
-def copy_meteor_languages(start_folders, dest_folder, appname, whatfor=None, custom_pattern=None):
-	from fluorine.utils import get_attr_from_json
+def copy_meteor_languages(start_folders, dest_folder, appname, psf_out, custom_pattern=None):
+	#from fluorine.utils import get_attr_from_json
 	import fnmatch
 
 	pattern, ignored_names_any, ignored_names_top  = custom_pattern
 	#list_meteor_files_folders_remove = frappe.local.meteor_ignores.get("remove").get("files_folders")
-	list_meteor_files_folders_remove = get_attr_from_json([whatfor, "remove", "files_folders"], frappe.local.meteor_ignores)
+	#list_meteor_files_folders_remove = get_attr_from_json([whatfor, "remove", "files_folders"], frappe.local.meteor_ignores)
+	list_meteor_files_folders_remove = psf_out.get_remove_files_folders()
 	all_files_folder_remove = list_meteor_files_folders_remove.get("all")
 	appname_files_folder_remove = list_meteor_files_folders_remove.get(appname)
 
@@ -247,10 +249,12 @@ def copy_meteor_languages(start_folders, dest_folder, appname, whatfor=None, cus
 				print "remove exclude 3 {} no exclude in dirs ".format(ignored_names_top)
 				pass
 
+			relative_react = os.path.relpath(root, st_folder)
 			files = [toinclude for toinclude in files if fnmatch.fnmatch(toinclude, "*i18n.json") or fnmatch.fnmatch(toinclude, "*project-tap.i18n")]
 
 			for f in files:
-				if check_remove_files_folders(f,  all_files_folder_remove) or check_remove_files_folders(f, appname_files_folder_remove):
+				if check_files_folders_patterns(f,  relative_react, all_files_folder_remove) or\
+						check_files_folders_patterns(f, relative_react, appname_files_folder_remove):
 					continue
 				try:
 					frappe.create_folder(dest_folder)
@@ -259,7 +263,7 @@ def copy_meteor_languages(start_folders, dest_folder, appname, whatfor=None, cus
 				except:
 					pass
 
-def copy_project_translation(apps, whatfor, custom_pattern=None):
+def copy_project_translation(apps, whatfor, pfs_out, custom_pattern=None):
 
 	path_reactivity = get_path_reactivity()
 	i18n_files_route = "tap-i18n"#"translations"
@@ -278,7 +282,7 @@ def copy_project_translation(apps, whatfor, custom_pattern=None):
 		elif os.path.exists(src_project_path_root):
 			os.symlink(src_project_path_root, destpath)
 
-		copy_meteor_languages([os.path.join(path, i18n_files_route), os.path.join(path, whatfor, i18n_files_route)], os.path.join(path_reactivity, whatfor, i18n_files_route), app, custom_pattern=custom_pattern)
+		copy_meteor_languages([os.path.join(path, i18n_files_route), os.path.join(path, whatfor, i18n_files_route)], os.path.join(path_reactivity, whatfor, i18n_files_route), app, pfs_out, custom_pattern=custom_pattern)
 
 
 """
@@ -305,7 +309,7 @@ c = lambda t:re.compile(t, re.S|re.M)
 common_pattern = c(r"templates/(.*)/?common/(.*)")
 
 
-def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
+def make_all_files_with_symlink(dst, whatfor, psf_out, custom_pattern=None):
 	from fluorine.utils import meteor_desk_app, meteor_web_app
 
 	_whatfor = [meteor_desk_app, meteor_web_app]
@@ -313,27 +317,36 @@ def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 	exclude = ["private", "public"]
 	custom_pattern = custom_pattern or []
 
-	if isinstance(whatfor, basestring):
-		whatfor = [whatfor]
+	#if isinstance(whatfor, basestring):
+	#	whatfor = [whatfor]
 
-	try:
-		for w in whatfor:
-			_whatfor.remove(w)
-		exclude.extend(_whatfor)
-	except:
-		pass
+	_whatfor.remove(whatfor)
+
+	exclude.extend(_whatfor)
 
 	custom_pattern = set(custom_pattern)
 	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", "*.xhtml", ".gitignore"])
 	pattern = ignore_patterns(*custom_pattern)
-	dst_public_assets_path = os.path.join(get_path_reactivity(), whatfor[0], "public", "assets")
-	dst_private_path = os.path.join(get_path_reactivity(), whatfor[0], "private")
-	dst_tests_path = os.path.join(get_path_reactivity(), whatfor[0], "tests")
+
+	dst_public_assets_path = os.path.join(get_path_reactivity(), whatfor, "public", "assets")
+	dst_private_path = os.path.join(get_path_reactivity(), whatfor, "private")
+	dst_tests_path = os.path.join(get_path_reactivity(), whatfor, "tests")
+
+	#meteor_ignore = frappe.local.meteor_ignores
+	#list_meteor_files_folders_remove = get_attr_from_json(["remove", "files_folders"], meteor_ignore)
+	list_meteor_files_folders_remove = psf_out.get_remove_files_folders()
+	#list_meteor_files_folders_add = get_attr_from_json(["add", "files_folders"], meteor_ignore)
+	list_meteor_files_folders_add = psf_out.get_add_files_folders()
+	all_files_folder_remove = list_meteor_files_folders_remove.get("all")
+	all_files_folder_add = list_meteor_files_folders_add.get("all")
 
 	for app, paths in frappe.local.files_to_add.iteritems():
 		pathname = frappe.get_app_path(app)
-		meteorpath = os.path.join(pathname, "templates", "react", whatfor[0])
-		app_path = frappe.get_app_path(app)
+		reactpath = os.path.join(pathname, "templates", "react")
+		meteorpath = os.path.join(reactpath, whatfor)
+
+		appname_files_folder_remove = list_meteor_files_folders_remove.get(app)
+		appname_files_folder_add = list_meteor_files_folders_add.get(app)
 
 		if os.path.exists(meteorpath) and paths:
 			folders_path.append(app)
@@ -346,36 +359,119 @@ def make_all_files_with_symlink(dst, whatfor, custom_pattern=None):
 			for obj in paths:
 				tpath = obj.get("tname")
 				if tpath:
-					relpath = os.path.relpath(tpath[:-6], os.path.join("templates", "react", whatfor[0]))
+					relpath = os.path.relpath(tpath[:-6], os.path.join("templates", "react", whatfor))
 					startpath = os.path.normpath(os.path.join(meteorpath, relpath, ".."))
 				else:
-					startpath = os.path.join(app_path, os.path.join("templates", "react", whatfor[0]))
+					startpath = os.path.join(pathname, os.path.join("templates", "react", whatfor))
 
 				pat = obj.get("pattern")
 				madd = c(pat)
 
 				for root, dirs, files in os.walk(startpath):
 
+					#get the relative path between start_folder (app/templates/react) and root folder
+					#so dirs to exclude must have as base root dirs inside react folder. Ex. meteor_web/highlight as meteor_web is inside react folder.
+					relative_react = os.path.relpath(root, reactpath)
+					for dir in dirs[::]:
+						#f = os.path.join(relpath, dir)
+						for s in (all_files_folder_remove, appname_files_folder_remove):
+							if check_files_folders_patterns(dir, relative_react, s):
+								dirs.remove(dir)
+								break
+
 					ign_names = pattern(root, files)
+					relative_file = os.path.relpath(root, meteorpath)
+
 
 					for f in files:
-						if f in ign_names:
+						if f in ign_names or check_files_folders_patterns(f, relative_react, all_files_folder_remove) or check_files_folders_patterns(f, relative_react, appname_files_folder_remove):
 							continue
 
-						relative_file = os.path.relpath(root, meteorpath)
-
-						source = os.path.normpath(os.path.join("templates", "react", whatfor[0], relative_file, f))
+						source = os.path.normpath(os.path.join("templates", "react", whatfor, relative_file, f))
 
 						if check_remove(source):
 							continue
 
-						found = madd.match(source) or common_pattern.match(source)
+						found = madd.match(source) or common_pattern.match(source) or\
+								check_files_folders_patterns(f, relative_react, all_files_folder_add) or\
+								check_files_folders_patterns(f, relative_react, appname_files_folder_add)
 						if found:
 							try:
 								frappe.create_folder(os.path.realpath(os.path.join(destpath, relative_file)))
 								os.symlink(os.path.join(root, f), os.path.realpath(os.path.join(destpath, os.path.join(relative_file,f))))
 							except:
 								pass
+
+
+def custom_make_all_files_with_symlink(apps, dst, whatfor, psf_out, custom_pattern=None):
+	from fluorine.utils import meteor_desk_app, meteor_web_app
+
+	_whatfor = [meteor_desk_app, meteor_web_app]
+	folders_path = []
+	custom_pattern = custom_pattern or []
+
+	if isinstance(whatfor, basestring):
+		whatfor = [whatfor]
+
+	_whatfor.remove(whatfor)
+
+	ignored_names_top = ["public","tests","temp","private"]
+	ignored_names_any = ["tests","temp"]
+
+	ignored_names_top.extend(_whatfor)
+	ignored_names_any.extend(_whatfor)
+
+	custom_pattern = set(custom_pattern)
+	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", "*.xhtml", ".gitignore"])
+	pattern = ignore_patterns(*custom_pattern)
+
+	#meteor_ignore = frappe.local.meteor_ignores
+	#list_meteor_files_folders_add = get_attr_from_json(["add", "files_folders"], meteor_ignore)
+	list_meteor_files_folders_add = psf_out.get_add_files_folders()
+	all_files_folder_add = list_meteor_files_folders_add.get("all")
+
+	topfolder = True
+
+	for app in apps:
+		pathname = frappe.get_app_path(app)
+		reactpath = os.path.join(pathname, "templates", "react")
+
+		appname_files_folder_add = list_meteor_files_folders_add.get(app)
+
+		if os.path.exists(reactpath):
+			folders_path.append(app)
+			app_folders = "/".join(folders_path)
+			destpath = os.path.join(dst, app_folders)
+
+			for root, dirs, files in os.walk(reactpath):
+
+				ign_dirs = pattern(root, dirs)
+				if topfolder:
+					ign_dirs.update(ignored_names_top)
+					topfolder = False
+				else:
+					ign_dirs.update(ignored_names_any)
+
+				for toexclude in ign_dirs:
+					if toexclude in dirs:
+						dirs.remove(toexclude)
+
+
+				ign_names = pattern(root, files)
+				relative_react = os.path.relpath(root, reactpath)
+
+				for f in files:
+					if f in ign_names:
+						continue
+
+					if check_files_folders_patterns(f, relative_react, all_files_folder_add) or\
+							check_files_folders_patterns(f, relative_react, appname_files_folder_add):
+						try:
+							frappe.create_folder(os.path.realpath(os.path.join(destpath, relative_react)))
+							os.symlink(os.path.join(root, f), os.path.realpath(os.path.join(destpath, os.path.join(relative_react,f))))
+						except:
+							pass
+
 
 
 def make_tests(app_path, dst_tests_path, app, whatfor, custom_pattern=None):

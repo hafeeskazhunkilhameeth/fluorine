@@ -228,8 +228,8 @@ def fluorine_build_context(context, whatfor):
 	from fluorine.utils.reactivity import get_read_file_patterns
 	from fluorine.utils.apps import get_active_apps
 	from fluorine.utils import meteor_web_app, meteor_config
-	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation, copy_mobile_config_file
-	from reactivity import list_ignores
+	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation, copy_mobile_config_file, custom_make_all_files_with_symlink
+	from reactivity import list_ignores, ProcessFileSystem
 	from react_file_loader import get_custom_pattern
 
 
@@ -265,25 +265,34 @@ def fluorine_build_context(context, whatfor):
 		apps.remove(curr_app)
 		apps.append(curr_app)
 
+	pfs_in = ProcessFileSystem(whatfor)
+	pfs_out = ProcessFileSystem(whatfor)
+
+	process_general_context(apps, whatfor, context, pfs_in, pfs_out)
+	apps_remove = pfs_in.get_apps_remove()
+	for r in apps_remove:
+		apps.remove(r)
 	#go from current dev app then last installed app to first installed app in order.
 	known_apps = apps[::-1]
 	custom_pattern = get_custom_pattern(whatfor, custom_pattern=None)
 
-	process_react_templates(known_apps, custom_pattern)
+	process_react_templates(known_apps, custom_pattern, pfs_in)
 
 	#do not revert apps. Use from first installed app to current dev app
 	#This way we can use context from the first installed to the last installed
 	#NOTE others apps may depend on current dev appp but it may be out of other!
 	process_extra_context(apps, whatfor, context)
+	process_xhtml_context(apps, whatfor, context)
 	compile_jinja_templates(context, whatfor)
 
 	fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
 	empty_directory(fluorine_publicjs_dst_path, ignore=(".meteor",))
 
 	read_file_pattern = get_read_file_patterns()
-	make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, custom_pattern=read_file_pattern.keys())
+	make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, pfs_out, custom_pattern=read_file_pattern.keys())
 
-	copy_project_translation(apps, whatfor, custom_pattern)
+	#custom_make_all_files_with_symlink(known_apps, fluorine_publicjs_dst_path, whatfor, custom_pattern=read_file_pattern.keys())
+	copy_project_translation(apps, whatfor, pfs_out, custom_pattern)
 
 	#Only support for mibile in web app
 	if whatfor == meteor_web_app:
@@ -291,12 +300,13 @@ def fluorine_build_context(context, whatfor):
 
 	return context
 
-def process_react_templates(apps, custom_pattern):
+def process_react_templates(apps, custom_pattern, psf_in):
 	from fluorine.utils import get_attr_from_json
 	from react_file_loader import read_client_xhtml_files
 
 
-	list_apps_remove = get_attr_from_json(["remove", "apps"], frappe.local.meteor_ignores)
+	#list_apps_remove = get_attr_from_json(["remove", "apps"], frappe.local.meteor_ignores)
+	list_apps_remove = psf_in.get_apps_remove()
 
 	for app in apps:
 		if app in list_apps_remove:
@@ -304,7 +314,7 @@ def process_react_templates(apps, custom_pattern):
 		pathname = frappe.get_app_path(app)
 		path = os.path.join(pathname, "templates", "react")
 		if os.path.exists(path):
-			files = read_client_xhtml_files(path, app, meteor_ignore=frappe.local.meteor_ignores, custom_pattern=custom_pattern)
+			files = read_client_xhtml_files(path, app, psf_in, meteor_ignore=None, custom_pattern=custom_pattern)
 			for f in files:
 				for obj in reversed(f):
 				#for obj in f:
@@ -325,23 +335,29 @@ def process_react_templates(apps, custom_pattern):
 	"""
 
 
-def process_extra_context(apps, whatfor, context):
-	from fluorine.utils.fhooks import get_xhtml_context
-	from fluorine.utils.fhooks import get_extra_context_func, get_general_context
-	from reactivity import extras_context_methods
-
+def process_xhtml_context(apps, whatfor, context):
+	from fluorine.utils.context import get_xhtml_context
 	#get the context from all the python files of templates
 	get_xhtml_context(context)
 
-	#get extra context from meteor_general_context.py file. Here we put files to exclude from meteor app.
-	get_general_context(context, apps, whatfor)
+
+def process_extra_context(apps, whatfor, context):
+	from fluorine.utils.context import get_extra_context_func
+	from reactivity import extras_context_methods
 
 	#get extra context from custom functions
 	get_extra_context_func(context, apps, extras_context_methods)
 
 
+def process_general_context(apps, whatfor, context, pfs_in, pfs_out):
+	from fluorine.utils.context import get_general_context
+
+	#get extra context from meteor_general_context.py file. Here we put files to exclude from meteor app.
+	get_general_context(context, apps, whatfor, pfs_in, pfs_out)
+
+
 def addto_meteor_templates_list(template_path):
-	from fluorine.utils.fhooks import get_xhtml_files_to_add_remove
+	from fluorine.utils.context import get_xhtml_files_to_add_remove
 
 	if not frappe.local.meteor_map_templates.get(template_path, None):# and template_path not in frappe.local.templates_referenced:
 		template = fluorine_get_fenv().get_template(template_path)

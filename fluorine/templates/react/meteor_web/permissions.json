@@ -3,10 +3,5 @@
     "ekaiser":{
       "remove": 0
     }
-  },
-  "files_folders":{
-	  "fluorine":{
-  		  "remove":[{"folder":"meteor_web/common"}]
-  	  }
   }
 }

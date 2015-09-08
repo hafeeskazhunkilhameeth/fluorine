@@ -111,6 +111,9 @@ def fluor_get_context(path):
 def get_installed_apps():
 	import re
 
+	if APPS != None:
+		return APPS
+
 	global APPS
 	try:
 		with open("apps.txt") as f:
