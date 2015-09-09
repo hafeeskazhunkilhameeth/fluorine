@@ -104,7 +104,9 @@ def cmd_make_fluorine_app(app, web=False, desk=False):
 	fluorine_path = frappe.get_app_path("fluorine")
 
 	for w in whatfor:
-		frappe.create_folder(os.path.join(app_path, "templates", "react", w))
+		frappe.create_folder(os.path.join(app_path, "templates", "react"), with_init=True)
+		frappe.create_folder(os.path.join(app_path, "templates", "react", w), with_init=True)
+
 
 	dst = os.path.join(app_path, "templates", "react", ".gitignore")
 	if not os.path.exists(dst):

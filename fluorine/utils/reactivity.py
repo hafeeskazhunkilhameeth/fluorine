@@ -75,8 +75,11 @@ def make_meteor_ignor_files():
 	As an example take highlight: "highlight/?.*".
 	This regular expression will ignore everything inside folder highlight and also any file with name highlight and with any extension.
 	"""
-	from fluorine.utils import APPS as apps, whatfor_all, meteor_desk_app, meteor_web_app, get_attr_from_json
+	from fluorine.utils import APPS as apps, whatfor_all, meteor_desk_app, meteor_web_app#, get_attr_from_json
 	#from fluorine.utils.fjinja2.utils import c
+
+	if list_ignores != None:
+		return list_ignores
 
 	global list_ignores
 
@@ -194,17 +197,27 @@ class ProcessFileSystem(object):
 			apps.insert(0, curr_app)
 	"""
 	def process_permission_apps(self, conf_file):
+		from fluorine.utils import meteor_config
+
+		devmode = meteor_config.get("developer_mode")
+		prodmode = meteor_config.get("production_mode") or frappe.local.making_production
 
 		apps = conf_file.get("apps") or {}
 		if self.curr_dev_app in apps:
 			apps.remove(self.curr_dev_app)
+
+
 		for k, v in apps.iteritems():
+			constrains = v.get("constrains")
 			if v.get("remove", 0):
 				if k not in self.list_apps_add:
+					if constrains == "dm" and not devmode or constrains == "pm" and not prodmode:
+						continue
 					self.list_apps_remove.add(k)
 			elif v.get("add", 0):
 				if k not in self.list_apps_remove:
 					self.list_apps_add.add(k)
+
 
 	def add_pattern_to_list(self, appname, pattern, plist):
 		if not pattern:

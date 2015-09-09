@@ -423,6 +423,7 @@ class MeteorProduction(object):
 
 		self.build_assets()
 		self.remove_public_link()
+		self.remove_build()
 		self.start_services()
 
 
@@ -550,6 +551,11 @@ class MeteorProduction(object):
 		from fluorine.utils.finals import remove_public_link
 
 		remove_public_link()
+
+	def remove_build(self):
+		from fluorine.utils.finals import remove_build
+
+		remove_build()
 
 	def start_services(self):
 		from fluorine.commands_helpers import services

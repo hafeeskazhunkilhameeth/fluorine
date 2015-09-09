@@ -48,6 +48,14 @@ def remove_public_link():
 		remove_directory(folder)
 
 
+def remove_build():
+	fluorine_path = frappe.get_app_path("fluorine")
+	build_file = os.path.join(fluorine_path, "public", "build.json")
+
+	if os.path.exists(build_file):
+		os.unlink(build_file)
+
+
 def make_final_app_client(jquery=0):
 	import json
 	from fluorine.utils.file import get_path_reactivity, read, save_js_file

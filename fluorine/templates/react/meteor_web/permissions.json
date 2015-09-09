@@ -1,7 +1,8 @@
 {
   "apps": {
     "ekaiser":{
-      "remove": 0
+      "remove": 0,
+	  "constrains":"dm"
     }
   }
 }

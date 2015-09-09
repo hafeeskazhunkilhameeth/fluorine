@@ -259,11 +259,8 @@ def fluorine_build_context(context, whatfor):
 	frappe.local.meteor_ignores = list_ignores.get(whatfor)
 
 	curr_app = meteor_config.get("current_dev_app", "").strip()
+	#apps current dev app is in last
 	apps = get_active_apps(whatfor)
-	if curr_app != apps[-1]:
-		#set current dev app in last
-		apps.remove(curr_app)
-		apps.append(curr_app)
 
 	pfs_in = ProcessFileSystem(whatfor, curr_app)
 	pfs_out = ProcessFileSystem(whatfor, curr_app)
