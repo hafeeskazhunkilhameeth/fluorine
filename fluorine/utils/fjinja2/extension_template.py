@@ -82,6 +82,7 @@ class MeteorTemplate(Extension):
 		stream = parser.stream
 		tag = stream.next()
 
+		tkeep = nodes.Const(0)
 		hightlight = nodes.Const(0)
 		tname = stream.expect('name')
 		if tname:
@@ -94,6 +95,18 @@ class MeteorTemplate(Extension):
 			name = nameobj.value
 			if name == "highlight" or name == "hl":
 				hightlight = nodes.Const(1)
+			elif name == "tkeep":
+				tkeep = nodes.Const(1)
+			else:
+				parser.fail("You must provide a highlight after comma.")
+
+		if stream.skip_if("comma"):
+			nameobj = stream.expect('name')
+			name = nameobj.value
+			if name == "highlight" or name == "hl":
+				hightlight = nodes.Const(1)
+			elif name == "tkeep":
+				tkeep = nodes.Const(1)
 			else:
 				parser.fail("You must provide a highlight after comma.")
 
@@ -116,7 +129,7 @@ class MeteorTemplate(Extension):
 		ctx_ref = nodes.ContextReference()
 
 		return nodes.CallBlock(
-			self.call_method('_template', args=[ctx_ref, tname, filepath, lineno, hightlight]), [], [], body).\
+			self.call_method('_template', args=[ctx_ref, tname, filepath, lineno, hightlight, tkeep]), [], [], body).\
 				set_lineno(tag.lineno)
 
 
@@ -193,9 +206,15 @@ class MeteorTemplate(Extension):
 
 		return body
 
-	def _template(self, ctx, tname, filepath, lineno, hightlight, caller=None):
+	def _template(self, ctx, tname, filepath, lineno, hightlight, tkeep, caller=None):
 		"""Helper callback."""
+		from fluorine.utils.spacebars_template import add_to_path
 
+		obj = frappe.local.meteor_map_templates.get(filepath.replace("fluorine/", ""))
+		refs = obj.get("refs")
+		template = obj.get("template_obj")
+
+		print "tkeep {} filepath {} tname {}".format(tkeep, filepath, tname)
 		devmod = ctx.get("developer_mode")
 		source = caller()
 		if devmod and hightlight:
