@@ -78,10 +78,10 @@ def make_meteor_ignor_files():
 	from fluorine.utils import APPS as apps, whatfor_all, meteor_desk_app, meteor_web_app#, get_attr_from_json
 	#from fluorine.utils.fjinja2.utils import c
 
+	global list_ignores
+
 	if list_ignores != None:
 		return list_ignores
-
-	global list_ignores
 
 	list_ignores = frappe._dict({meteor_web_app:{}, meteor_desk_app:{}})
 

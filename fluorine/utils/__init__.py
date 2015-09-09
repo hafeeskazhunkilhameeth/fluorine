@@ -111,10 +111,11 @@ def fluor_get_context(path):
 def get_installed_apps():
 	import re
 
+	global APPS
+
 	if APPS != None:
 		return APPS
 
-	global APPS
 	try:
 		with open("apps.txt") as f:
 			APPS = re.sub(r" +", "", f.read()).split()
