@@ -114,13 +114,15 @@ def compile_jinja_templates(context, whatfor):
 					appname = obj.get("appname")
 					if not ctx.get(appname):
 						ctx[appname] = []
-					ctx.get(appname).append({"tname": template_path})
+					ctx.get(appname).append({"tname": template_path, "ref":False})
 
 					save_file(dstPath, content.encode(get_encoding()))
 					refs = obj.get("refs")
 					tcont = {}
 					for m in STARTTEMPLATE_SUB_ALL.finditer(content):
 						name = m.group(2)
+						#if template.name == "templates/react/meteor_web/extend_teste3.xhtml":
+						#print "template {} meteor templates {}".format(template.name, name)
 						tcont[name] = m.group(0)
 					add_to_path(toadd, template, refs, tcont)
 					#toadd.update(add)
@@ -158,6 +160,7 @@ def get_all_know_meteor_templates():
 
 	return mtemplates
 
+"""
 def remove_from_path(ctx, toadd):
 	for k, v in frappe.local.meteor_map_templates.iteritems():
 		template = v.get("template_obj")
@@ -171,9 +174,12 @@ def remove_from_path(ctx, toadd):
 				in_ext = k.rsplit(".", 1)[1]
 				ext_len = len(in_ext) + 1
 				ctx.files_to_remove.append({"tname": k[:-ext_len], "pattern": "", "page": k})
+"""
 
 def add_to_path(toadd, template, refs, tcont):
 	#toadd = {}
+	ctx = frappe.local.files_to_add
+
 	for tname in tcont.keys():
 
 		if template and tname not in template.blocks.keys():
@@ -191,6 +197,11 @@ def add_to_path(toadd, template, refs, tcont):
 			if not tappname.get(ref):
 				tappname[ref] = []
 			tappname.get(ref).append(tname)
+
+			if not ctx.get(appname):
+				ctx[appname] = []
+				if ref not in ctx.get(appname):
+					ctx.get(appname).append({"tname": ref, "ref": True})
 
 	return #toadd
 

@@ -134,12 +134,15 @@ class MyFileSystemLoader(FileSystemLoader):
 
 		env = fluorine_get_fenv()
 		for referenced_template_path in meta.find_referenced_templates(env.parse(source)):
-			if referenced_template_path:
+			#check if referenced_template_path exists and don't reference it self
+			if referenced_template_path and referenced_template_path != template:
 				if referenced_template_path not in frappe.local.templates_referenced:
 					frappe.local.templates_referenced.append(referenced_template_path)
 				refs = frappe.local.meteor_map_templates.get(template).get("refs")
 				refs.append(referenced_template_path)
 				addto_meteor_templates_list(referenced_template_path)
+			else:
+				frappe.throw("The template reference %s does't exist or it reference it self %s" % (referenced_template_path, template))
 
 	def get_source_old(self, environment, template):
 		contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, template)

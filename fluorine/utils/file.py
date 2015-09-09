@@ -367,24 +367,27 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, toadd, custom_pattern=Non
 				in_ext = tpath.rsplit(".", 1)[1]
 				out_ext = file_patterns.get("*.%s" % in_ext)
 				ext_len = len(in_ext) + 1
+
 				relpath = os.path.relpath(tpath[:-ext_len], os.path.join("templates", "react", whatfor))
 				#relpath = os.path.relpath(tpath[:-ext_len], os.path.join("templates", "react", whatfor))
 				#startpath = os.path.normpath(os.path.join(meteorpath, relpath, ".."))
 				startpath = os.path.normpath(os.path.join(meteorpath, relpath))
-				startpath_parent = os.path.normpath(os.path.join(startpath, ".."))
-				relative_file = os.path.relpath(startpath_parent, meteorpath)
-				f = os.path.basename(tpath)[:-ext_len] + ".%s" % out_ext
 				#print "app {} and relpath {} startpath {}".format(app, relpath, startpath)
-				dst_base = os.path.realpath(os.path.join(destpath, os.path.join(relative_file,f)))
-				src_base = os.path.join(startpath_parent, f)
 
-				frappe.create_folder(os.path.dirname(dst_base))
-				#print "app {} tpath {} pattern {}".format(app, tpath, obj.get("pattern"))
-				#TODO remove when i remove duplicates in paths
-				#if os.path.exists(src_base) and not os.path.exists(dst_base):
-				os.symlink(src_base, dst_base)
+				if not obj.get("ref"):
+					startpath_parent = os.path.normpath(os.path.join(startpath, ".."))
+					relative_file = os.path.relpath(startpath_parent, meteorpath)
+					f = os.path.basename(tpath)[:-ext_len] + ".%s" % out_ext
+					dst_base = os.path.realpath(os.path.join(destpath, os.path.join(relative_file,f)))
+					src_base = os.path.join(startpath_parent, f)
 
-				used_templates = toadd.get(app, {}).get(tpath)
+					frappe.create_folder(os.path.dirname(dst_base))
+					#print "app {} tpath {} pattern {}".format(app, tpath, obj.get("pattern"))
+					#TODO remove when i remove duplicates in paths
+					#if os.path.exists(src_base) and not os.path.exists(dst_base):
+					os.symlink(src_base, dst_base)
+
+				used_templates = toadd.get(app, {}).get(tpath) or []
 				print "app {} tpath {} used_templates {} know_templates {}".format(app, tpath, used_templates, known_templates.get(app))
 
 				#pat = obj.get("pattern")
@@ -403,8 +406,6 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, toadd, custom_pattern=Non
 								check_files_folders_patterns(dir, relative_react, appname_files_folder_remove):
 							dirs.remove(dir)
 							break
-
-
 
 					ign_names = pattern(root, files)
 					relative_file = os.path.relpath(root, meteorpath)

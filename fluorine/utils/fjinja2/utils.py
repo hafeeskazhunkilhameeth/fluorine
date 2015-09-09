@@ -54,10 +54,12 @@ def get_doc_from_deep(template, deep=1):
 		return doc, deep
 	return None, 1
 
+"""
 def get_pattern_path(name, path):
 	pattern = path + r"/(?:.+?/)?(?:(?:%s)/(?:.+)|(?:%s/?$))" % (name, name)
 	#pattern = path + r"(/.+?/%s/.*)?|(/.+/%s$)?" % (name, name)
 	return pattern
+"""
 
 def get_deep_refs(refs, tname, deep):
 
@@ -100,7 +102,7 @@ def tkeep(ctx, tname, page=None, deep=1, patterns=None):
 
 	fadd.append({"tname": tname, "pattern": patterns, "page": page})
 
-
+"""
 def local_tkeep(ctx, tname, page, patterns=None):
 
 	fadd = ctx.get("files_to_add")
@@ -131,6 +133,7 @@ def local_tkeep(ctx, tname, page, patterns=None):
 	else:
 		for pattern in patterns:
 			fadd.get(appname).append({"tname": page, "pattern": pattern})
+"""
 
 def get_msuper_inner_content(ctx, source):
 	s = STARTTEMPLATE_SUB_ALL.search(source)
