@@ -75,28 +75,35 @@ def fluorine_get_floader(encoding="utf-8"):
 
 
 def compile_jinja_templates(context, whatfor):
-	from fluorine.utils import meteor_desk_app
+	#from fluorine.utils import meteor_desk_app
 	from fluorine.utils import get_encoding
-	from file import save_file
+	from fluorine.utils.reactivity import get_read_file_patterns
+	from fluorine.utils.file import save_file
 	from fluorine.utils.fjinja2.utils import STARTTEMPLATE_SUB_ALL
 
-	out = {}
+	#out = {}
 	toadd = {}
 
 	keys = frappe.local.meteor_map_templates.keys()
+	file_patterns = get_read_file_patterns()
 
 	for template_path in keys:
 		obj = frappe.local.meteor_map_templates.get(template_path)
 		template = obj.get("template_obj")
-		realpath = obj.get("realpath")
-		dstPath = realpath[:-6] + ".html"
+
 		try:
 			if template_path not in frappe.local.templates_referenced:
 				content = concat(template.render(template.new_context(context)))
+				realpath = obj.get("realpath")
+
+				in_ext = realpath.rsplit(".", 1)[1]
+				out_ext = file_patterns.get("*.%s" % in_ext)
+				ext_len = len(in_ext) + 1
+				dstPath = realpath[:-ext_len] + ".%s" % out_ext
 
 				if content and template:
 					content = "\n\n".join([s for s in content.splitlines() if s])
-					pattern = template_path[:-6] + r"(?:\.).*"
+					pattern = template_path[:-ext_len] + r"\.%s" % out_ext
 					context.files_to_add.append({"tname": "", "pattern":pattern, "page": template_path})
 					save_file(dstPath, content.encode(get_encoding()))
 					refs = obj.get("refs")
@@ -106,8 +113,8 @@ def compile_jinja_templates(context, whatfor):
 						tcont[name] = m.group(0)
 					add = add_to_path(context, template, refs, tcont)
 					toadd.update(add)
-					if whatfor in (meteor_desk_app, "meteor_frappe"):
-						out.update(tcont)
+					#if whatfor in (meteor_desk_app, "meteor_frappe"):
+					#	out.update(tcont)
 		except Exception as e:
 			file_temp_path = obj.get("file_temp_path")
 			print "an error occurr removing file {} error {}".format(file_temp_path, e)
@@ -122,7 +129,7 @@ def compile_jinja_templates(context, whatfor):
 		page = obj.get("page")
 		local_tkeep({"files_to_add":frappe.local.files_to_add}, tname, page, patterns=pattern)
 
-	return out
+	return #out
 
 
 def remove_from_path(ctx, toadd):
@@ -133,8 +140,9 @@ def remove_from_path(ctx, toadd):
 				appname = v.get("appname")
 				if appname == toadd.get(block):
 					continue
-
-				ctx.files_to_remove.append({"tname": k[:-6], "pattern": "", "page": k})
+				in_ext = k.rsplit(".", 1)[1]
+				ext_len = len(in_ext) + 1
+				ctx.files_to_remove.append({"tname": k[:-ext_len], "pattern": "", "page": k})
 
 def add_to_path(ctx, template, refs, tcont):
 	toadd = {}
@@ -283,8 +291,9 @@ def fluorine_build_context(context, whatfor):
 	#do not revert apps. Use from first installed app to current dev app
 	#This way we can use context from the first installed to the last installed
 	#NOTE others apps may depend on current dev appp but it may be out of other!
-	process_extra_context(apps, whatfor, context)
-	process_xhtml_context(apps, whatfor, context)
+	process_extra_context(apps, context)
+	process_xhtml_context(context)
+
 	compile_jinja_templates(context, whatfor)
 
 	fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
@@ -303,11 +312,8 @@ def fluorine_build_context(context, whatfor):
 	return context
 
 def process_react_templates(apps, custom_pattern, psf_in):
-	from fluorine.utils import get_attr_from_json
 	from react_file_loader import read_client_xhtml_files
 
-
-	#list_apps_remove = get_attr_from_json(["remove", "apps"], frappe.local.meteor_ignores)
 	list_apps_remove = psf_in.get_apps_remove()
 
 	for app in apps:
@@ -319,7 +325,6 @@ def process_react_templates(apps, custom_pattern, psf_in):
 			files = read_client_xhtml_files(path, app, psf_in, meteor_ignore=None, custom_pattern=custom_pattern)
 			for f in files:
 				for obj in reversed(f):
-				#for obj in f:
 					file_path = obj.get("path")
 					file_name = obj.get("name")
 					root = file_path[:-len(file_name)]
@@ -337,13 +342,13 @@ def process_react_templates(apps, custom_pattern, psf_in):
 	"""
 
 
-def process_xhtml_context(apps, whatfor, context):
+def process_xhtml_context(context):
 	from fluorine.utils.context import get_xhtml_context
 	#get the context from all the python files of templates
 	get_xhtml_context(context)
 
 
-def process_extra_context(apps, whatfor, context):
+def process_extra_context(apps, context):
 	from fluorine.utils.context import get_extra_context_func
 	from reactivity import extras_context_methods
 
@@ -373,7 +378,5 @@ def addto_meteor_templates_list(template_path):
 		#TODO with template_path and frappe.local.meteor_map_templates.get(template_path) get refs if needed to pass macro template object
 		#TODO get the context from frappe.local.context!
 		get_xhtml_files_to_add_remove(frappe.local.context, template_path)
-		return True
-	return False
 
 

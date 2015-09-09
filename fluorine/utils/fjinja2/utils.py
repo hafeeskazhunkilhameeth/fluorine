@@ -56,6 +56,7 @@ def get_doc_from_deep(template, deep=1):
 
 def get_pattern_path(name, path):
 	pattern = path + r"/(?:.+?/)?(?:(?:%s)/(?:.+)|(?:%s/?$))" % (name, name)
+	#pattern = path + r"(/.+?/%s/.*)?|(/.+/%s$)?" % (name, name)
 	return pattern
 
 def get_deep_refs(refs, tname, deep):
@@ -92,12 +93,20 @@ def tkeep(ctx, tname, page=None, deep=1, patterns=None):
 		refs = obj.get("refs")
 		page = get_deep_refs(refs, tname, deep)
 
-	fadd = ctx.get("files_to_add",{})
+	fadd = ctx.get("files_to_add")
+	if fadd == None:
+		ctx["files_to_add"] = {}
+		fadd = ctx.get("files_to_add")
+
 	fadd.append({"tname": tname, "pattern": patterns, "page": page})
 
 
 def local_tkeep(ctx, tname, page, patterns=None):
-	fadd = ctx.get("files_to_add",{})
+
+	fadd = ctx.get("files_to_add")
+	if fadd == None:
+		ctx["files_to_add"] = {}
+		fadd = ctx.get("files_to_add")
 
 	if  patterns and isinstance(patterns, basestring):
 		patterns = [patterns]
@@ -108,12 +117,16 @@ def local_tkeep(ctx, tname, page, patterns=None):
 	if not fadd.get(appname):
 		fadd[appname] = []
 	template_path = obj.get("template")
+
+	in_ext = template_path.rsplit(".", 1)[1]
+	ext_len = len(in_ext) + 1
+
 	if not patterns:
-		pattern = get_pattern_path(tname, template_path[:-6])
+		pattern = get_pattern_path(tname, template_path[:-ext_len])
 		fadd.get(appname).append({"tname": page, "pattern":pattern})
 	elif tname:
 		for pattern in patterns:
-			pat = template_path[:-6] + r"/.*/"+ tname + "/" + pattern
+			pat = template_path[:-ext_len] + r"/.*/"+ tname + "/" + pattern
 			fadd.get(appname).append({"tname": page, "pattern": pat})
 	else:
 		for pattern in patterns:

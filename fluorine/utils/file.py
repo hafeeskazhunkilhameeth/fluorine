@@ -311,6 +311,7 @@ c = lambda t:re.compile(t, re.S|re.M)
 
 def make_all_files_with_symlink(dst, whatfor, psf_out, custom_pattern=None):
 	from fluorine.utils import meteor_desk_app, meteor_web_app
+	from fluorine.utils.reactivity import get_read_file_patterns
 
 	_whatfor = [meteor_desk_app, meteor_web_app]
 	folders_path = []
@@ -339,6 +340,7 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, custom_pattern=None):
 	#list_meteor_files_folders_add = psf_out.get_add_files_folders()
 	all_files_folder_remove = list_meteor_files_folders_remove.get("all")
 	#all_files_folder_add = list_meteor_files_folders_add.get("all")
+	file_patterns = get_read_file_patterns()
 
 	for app, paths in frappe.local.files_to_add.iteritems():
 		pathname = frappe.get_app_path(app)
@@ -359,8 +361,25 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, custom_pattern=None):
 			for obj in paths:
 				tpath = obj.get("tname")
 				if tpath:
-					relpath = os.path.relpath(tpath[:-6], os.path.join("templates", "react", whatfor))
-					startpath = os.path.normpath(os.path.join(meteorpath, relpath, ".."))
+					in_ext = tpath.rsplit(".", 1)[1]
+					out_ext = file_patterns.get("*.%s" % in_ext)
+					ext_len = len(in_ext) + 1
+					relpath = os.path.relpath(tpath[:-ext_len], os.path.join("templates", "react", whatfor))
+					#relpath = os.path.relpath(tpath[:-ext_len], os.path.join("templates", "react", whatfor))
+					#startpath = os.path.normpath(os.path.join(meteorpath, relpath, ".."))
+					startpath = os.path.normpath(os.path.join(meteorpath, relpath))
+					startpath_parent = os.path.normpath(os.path.join(startpath, ".."))
+					relative_file = os.path.relpath(startpath_parent, meteorpath)
+					f = os.path.basename(tpath)[:-ext_len] + ".%s" % out_ext
+
+					dst_base = os.path.realpath(os.path.join(destpath, os.path.join(relative_file,f)))
+					src_base = os.path.join(startpath_parent, f)
+
+					frappe.create_folder(os.path.dirname(dst_base))
+					#print "app {} tpath {} pattern {}".format(app, tpath, obj.get("pattern"))
+					#TODO remove when i remove duplicates in paths
+					if os.path.exists(src_base) and not os.path.exists(dst_base):
+						os.symlink(src_base, dst_base)
 				else:
 					startpath = os.path.join(pathname, os.path.join("templates", "react", whatfor))
 
@@ -386,7 +405,7 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, custom_pattern=None):
 							continue
 
 						source = os.path.normpath(os.path.join("templates", "react", whatfor, relative_file, f))
-
+						#print "app {} tpath {} pattern {} source {}".format(app, tpath, obj.get("pattern"), source)
 						if check_remove(source):
 							continue
 

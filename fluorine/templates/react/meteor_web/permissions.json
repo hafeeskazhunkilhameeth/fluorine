@@ -1,8 +1,8 @@
 {
   "apps": {
-    "ekaiser":{
+    "base_vat":{
       "remove": 0,
-	  "constrains":"dm"
+	  "constrains":"pm"
     }
   }
 }
