@@ -86,6 +86,11 @@ def compile_jinja_templates(context, whatfor):
 
 	keys = frappe.local.meteor_map_templates.keys()
 	file_patterns = get_read_file_patterns()
+	ctx = frappe.local.files_to_add
+	#fadd = ctx.get("files_to_add")
+	#if fadd == None:
+	#	ctx["files_to_add"] = {}
+	#fadd = ctx.get("files_to_add")
 
 	for template_path in keys:
 		obj = frappe.local.meteor_map_templates.get(template_path)
@@ -103,34 +108,55 @@ def compile_jinja_templates(context, whatfor):
 
 				if content and template:
 					content = "\n\n".join([s for s in content.splitlines() if s])
-					pattern = template_path[:-ext_len] + r"\.%s" % out_ext
-					context.files_to_add.append({"tname": "", "pattern":pattern, "page": template_path})
+					#pattern = "%s.%s" % (template_path[:-ext_len], out_ext)
+					#context.files_to_add.append({"tname": "", "pattern":pattern, "page": template_path})
+					#context.files_to_add.append({"tname": template_path, "file":pattern})
+					appname = obj.get("appname")
+					if not ctx.get(appname):
+						ctx[appname] = []
+					ctx.get(appname).append({"tname": template_path})
+
 					save_file(dstPath, content.encode(get_encoding()))
 					refs = obj.get("refs")
 					tcont = {}
 					for m in STARTTEMPLATE_SUB_ALL.finditer(content):
 						name = m.group(2)
 						tcont[name] = m.group(0)
-					add = add_to_path(context, template, refs, tcont)
-					toadd.update(add)
+					add_to_path(toadd, template, refs, tcont)
+					#toadd.update(add)
 					#if whatfor in (meteor_desk_app, "meteor_frappe"):
 					#	out.update(tcont)
 		except Exception as e:
 			file_temp_path = obj.get("file_temp_path")
 			print "an error occurr removing file {} error {}".format(file_temp_path, e)
 
-	remove_from_path(context, toadd)
+	#remove_from_path(context, toadd)
 
-	from fluorine.utils.fjinja2.utils import local_tkeep
+	#from fluorine.utils.fjinja2.utils import local_tkeep
 
+	"""
 	for obj in context.files_to_add:
 		tname = obj.get("tname")
 		pattern = obj.get("pattern")
 		page = obj.get("page")
 		local_tkeep({"files_to_add":frappe.local.files_to_add}, tname, page, patterns=pattern)
+	"""
+	return toadd
 
-	return #out
 
+def get_all_know_meteor_templates():
+	mtemplates = frappe._dict()
+	for k, v in frappe.local.meteor_map_templates.iteritems():
+		template = v.get("template_obj")
+		if template:
+			for block in template.blocks.keys():
+				appname = v.get("appname")
+				if not mtemplates.get(appname):
+					mtemplates[appname] = []
+				mtemplates[appname].append(block)#append({"tname":block, "obj": v})
+				print "all the known templates tname {} appname {}".format(block, appname)
+
+	return mtemplates
 
 def remove_from_path(ctx, toadd):
 	for k, v in frappe.local.meteor_map_templates.iteritems():
@@ -138,14 +164,16 @@ def remove_from_path(ctx, toadd):
 		if template:
 			for block in template.blocks.keys():
 				appname = v.get("appname")
-				if appname == toadd.get(block):
+				print "all the known templates tname {} appname {}".format(block, appname)
+				tname = toadd.get(block)
+				if tname and appname == tname.get(appname):
 					continue
 				in_ext = k.rsplit(".", 1)[1]
 				ext_len = len(in_ext) + 1
 				ctx.files_to_remove.append({"tname": k[:-ext_len], "pattern": "", "page": k})
 
-def add_to_path(ctx, template, refs, tcont):
-	toadd = {}
+def add_to_path(toadd, template, refs, tcont):
+	#toadd = {}
 	for tname in tcont.keys():
 
 		if template and tname not in template.blocks.keys():
@@ -156,10 +184,15 @@ def add_to_path(ctx, template, refs, tcont):
 		if ref:
 			obj = frappe.local.meteor_map_templates.get(ref)
 			appname = obj.get("appname")
-			ctx.files_to_add.append({"tname": tname, "pattern": "", "page": ref})
-			toadd[tname] = appname
+			#ctx.files_to_add.append({"tname": tname, "pattern": "", "page": ref})
+			if not toadd.get(appname):
+				toadd[appname] = {}
+			tappname = toadd.get(appname)
+			if not tappname.get(ref):
+				tappname[ref] = []
+			tappname.get(ref).append(tname)
 
-	return toadd
+	return #toadd
 
 
 def check_refs(tname, refs):
@@ -294,13 +327,13 @@ def fluorine_build_context(context, whatfor):
 	process_extra_context(apps, context)
 	process_xhtml_context(context)
 
-	compile_jinja_templates(context, whatfor)
+	toadd = compile_jinja_templates(context, whatfor)
 
 	fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
 	empty_directory(fluorine_publicjs_dst_path, ignore=(".meteor",))
 
 	read_file_pattern = get_read_file_patterns()
-	make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, pfs_out, custom_pattern=read_file_pattern.keys())
+	make_all_files_with_symlink(fluorine_publicjs_dst_path, whatfor, pfs_out, toadd, custom_pattern=read_file_pattern.keys())
 
 	custom_make_all_files_with_symlink(known_apps, fluorine_publicjs_dst_path, whatfor, pfs_out, custom_pattern=read_file_pattern.keys())
 	copy_project_translation(apps, whatfor, pfs_out, custom_pattern)

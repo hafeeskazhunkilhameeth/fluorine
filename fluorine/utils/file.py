@@ -309,9 +309,10 @@ c = lambda t:re.compile(t, re.S|re.M)
 #common_pattern = c(r"templates/(.*)/?common/(.*)")
 
 
-def make_all_files_with_symlink(dst, whatfor, psf_out, custom_pattern=None):
+def make_all_files_with_symlink(dst, whatfor, psf_out, toadd, custom_pattern=None):
 	from fluorine.utils import meteor_desk_app, meteor_web_app
 	from fluorine.utils.reactivity import get_read_file_patterns
+	from fluorine.utils.spacebars_template import get_all_know_meteor_templates
 
 	_whatfor = [meteor_desk_app, meteor_web_app]
 	folders_path = []
@@ -341,6 +342,7 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, custom_pattern=None):
 	all_files_folder_remove = list_meteor_files_folders_remove.get("all")
 	#all_files_folder_add = list_meteor_files_folders_add.get("all")
 	file_patterns = get_read_file_patterns()
+	known_templates = get_all_know_meteor_templates()
 
 	for app, paths in frappe.local.files_to_add.iteritems():
 		pathname = frappe.get_app_path(app)
@@ -360,31 +362,33 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, custom_pattern=None):
 
 			for obj in paths:
 				tpath = obj.get("tname")
-				if tpath:
-					in_ext = tpath.rsplit(".", 1)[1]
-					out_ext = file_patterns.get("*.%s" % in_ext)
-					ext_len = len(in_ext) + 1
-					relpath = os.path.relpath(tpath[:-ext_len], os.path.join("templates", "react", whatfor))
-					#relpath = os.path.relpath(tpath[:-ext_len], os.path.join("templates", "react", whatfor))
-					#startpath = os.path.normpath(os.path.join(meteorpath, relpath, ".."))
-					startpath = os.path.normpath(os.path.join(meteorpath, relpath))
-					startpath_parent = os.path.normpath(os.path.join(startpath, ".."))
-					relative_file = os.path.relpath(startpath_parent, meteorpath)
-					f = os.path.basename(tpath)[:-ext_len] + ".%s" % out_ext
 
-					dst_base = os.path.realpath(os.path.join(destpath, os.path.join(relative_file,f)))
-					src_base = os.path.join(startpath_parent, f)
+				#tfile = obj.get("file")
+				in_ext = tpath.rsplit(".", 1)[1]
+				out_ext = file_patterns.get("*.%s" % in_ext)
+				ext_len = len(in_ext) + 1
+				relpath = os.path.relpath(tpath[:-ext_len], os.path.join("templates", "react", whatfor))
+				#relpath = os.path.relpath(tpath[:-ext_len], os.path.join("templates", "react", whatfor))
+				#startpath = os.path.normpath(os.path.join(meteorpath, relpath, ".."))
+				startpath = os.path.normpath(os.path.join(meteorpath, relpath))
+				startpath_parent = os.path.normpath(os.path.join(startpath, ".."))
+				relative_file = os.path.relpath(startpath_parent, meteorpath)
+				f = os.path.basename(tpath)[:-ext_len] + ".%s" % out_ext
+				#print "app {} and relpath {} startpath {}".format(app, relpath, startpath)
+				dst_base = os.path.realpath(os.path.join(destpath, os.path.join(relative_file,f)))
+				src_base = os.path.join(startpath_parent, f)
 
-					frappe.create_folder(os.path.dirname(dst_base))
-					#print "app {} tpath {} pattern {}".format(app, tpath, obj.get("pattern"))
-					#TODO remove when i remove duplicates in paths
-					if os.path.exists(src_base) and not os.path.exists(dst_base):
-						os.symlink(src_base, dst_base)
-				else:
-					startpath = os.path.join(pathname, os.path.join("templates", "react", whatfor))
+				frappe.create_folder(os.path.dirname(dst_base))
+				#print "app {} tpath {} pattern {}".format(app, tpath, obj.get("pattern"))
+				#TODO remove when i remove duplicates in paths
+				#if os.path.exists(src_base) and not os.path.exists(dst_base):
+				os.symlink(src_base, dst_base)
 
-				pat = obj.get("pattern")
-				madd = c(pat)
+				used_templates = toadd.get(app, {}).get(tpath)
+				print "app {} tpath {} used_templates {} know_templates {}".format(app, tpath, used_templates, known_templates.get(app))
+
+				#pat = obj.get("pattern")
+				#madd = c(pat)
 
 				for root, dirs, files in os.walk(startpath):
 
@@ -392,10 +396,15 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, custom_pattern=None):
 					#so dirs to exclude must have as base root dirs inside react folder. Ex. meteor_web/highlight as meteor_web is inside react folder.
 					relative_react = os.path.relpath(root, reactpath)
 					for dir in dirs[::]:
+						if dir not in used_templates and dir in known_templates.get(app):
+							dirs.remove(dir)
+							break
 						if check_files_folders_patterns(dir, relative_react, all_files_folder_remove) or\
 								check_files_folders_patterns(dir, relative_react, appname_files_folder_remove):
 							dirs.remove(dir)
 							break
+
+
 
 					ign_names = pattern(root, files)
 					relative_file = os.path.relpath(root, meteorpath)
@@ -409,15 +418,16 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, custom_pattern=None):
 						if check_remove(source):
 							continue
 
-						found = madd.match(source)#or common_pattern.match(source)#or\
+
+						#found = madd.match(source)#or common_pattern.match(source)#or\
 								#check_files_folders_patterns(f, relative_react, all_files_folder_add) or\
 								#check_files_folders_patterns(f, relative_react, appname_files_folder_add)
-						if found:
-							try:
-								frappe.create_folder(os.path.realpath(os.path.join(destpath, relative_file)))
-								os.symlink(os.path.join(root, f), os.path.realpath(os.path.join(destpath, os.path.join(relative_file,f))))
-							except:
-								pass
+						#if found:
+						#	try:
+						frappe.create_folder(os.path.realpath(os.path.join(destpath, relative_file)))
+						os.symlink(os.path.join(root, f), os.path.realpath(os.path.join(destpath, os.path.join(relative_file,f))))
+							#except:
+							#	pass
 
 
 def custom_make_all_files_with_symlink(apps, dst, whatfor, psf_out, custom_pattern=None):
