@@ -216,12 +216,12 @@ def match_path(startpath, excludes, includes):
 		for fname in files:
 			print fname
 
-def check_files_folders_patterns(f, relpath, files_folder_remove):
+def check_files_folders_patterns(f, relpath, files_folder):
 	# Remove the first pattern found.
 	# This is from the current dev app or one from the last installed app to the first.
-	files_folder_remove = files_folder_remove or []
+	files_folder = files_folder or []
 	path = os.path.join(relpath, f)
-	for pattern in files_folder_remove:
+	for pattern in files_folder:
 		if pattern.match(f) or pattern.match(path):
 			return True
 	return False
@@ -309,13 +309,14 @@ c = lambda t:re.compile(t, re.S|re.M)
 #common_pattern = c(r"templates/(.*)/?common/(.*)")
 
 
-def make_all_files_with_symlink(dst, whatfor, psf_out, toadd, custom_pattern=None):
+def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom_pattern=None):
 	from fluorine.utils import meteor_desk_app, meteor_web_app
+	from fluorine.utils.apps import get_apps_path_order
 	from fluorine.utils.reactivity import get_read_file_patterns
 	from fluorine.utils.spacebars_template import get_all_know_meteor_templates
 
 	_whatfor = [meteor_desk_app, meteor_web_app]
-	folders_path = []
+	#folders_path = []
 	exclude = ["private", "public"]
 	custom_pattern = custom_pattern or []
 
@@ -336,7 +337,7 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, toadd, custom_pattern=Non
 
 	#meteor_ignore = frappe.local.meteor_ignores
 	#list_meteor_files_folders_remove = get_attr_from_json(["remove", "files_folders"], meteor_ignore)
-	list_meteor_files_folders_remove = psf_out.get_remove_files_folders()
+	list_meteor_files_folders_remove = pfs_out.get_remove_files_folders()
 	#list_meteor_files_folders_add = get_attr_from_json(["add", "files_folders"], meteor_ignore)
 	#list_meteor_files_folders_add = psf_out.get_add_files_folders()
 	all_files_folder_remove = list_meteor_files_folders_remove.get("all")
@@ -353,9 +354,11 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, toadd, custom_pattern=Non
 		#appname_files_folder_add = list_meteor_files_folders_add.get(app)
 
 		if os.path.exists(meteorpath) and paths:
-			folders_path.append(app)
-			app_folders = "/".join(folders_path)
-			destpath = os.path.join(dst, app_folders)
+			#folders_path.append(app)
+			#app_folders = "/".join(folders_path)
+			apps_path_order = get_apps_path_order(app, known_apps)
+			#destpath = os.path.join(dst, app_folders)
+			destpath = os.path.join(dst, apps_path_order)
 			make_public(pathname, dst_public_assets_path, app, whatfor, custom_pattern=custom_pattern)
 			make_private(meteorpath, dst_private_path, app, whatfor, custom_pattern=custom_pattern)
 			make_tests(meteorpath, dst_tests_path, app, whatfor, custom_pattern=custom_pattern)
@@ -401,11 +404,11 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, toadd, custom_pattern=Non
 					for dir in dirs[::]:
 						if dir not in used_templates and dir in known_templates.get(app):
 							dirs.remove(dir)
-							break
+							continue
 						if check_files_folders_patterns(dir, relative_react, all_files_folder_remove) or\
 								check_files_folders_patterns(dir, relative_react, appname_files_folder_remove):
 							dirs.remove(dir)
-							break
+							continue
 
 					ign_names = pattern(root, files)
 					relative_file = os.path.relpath(root, meteorpath)
@@ -431,8 +434,9 @@ def make_all_files_with_symlink(dst, whatfor, psf_out, toadd, custom_pattern=Non
 							#	pass
 
 
-def custom_make_all_files_with_symlink(apps, dst, whatfor, psf_out, custom_pattern=None):
+def custom_make_all_files_with_symlink(apps, dst, whatfor, pfs_out, custom_pattern=None):
 	from fluorine.utils import meteor_desk_app, meteor_web_app
+	from fluorine.utils.apps import get_apps_path_order
 
 	_whatfor = [meteor_desk_app, meteor_web_app]
 	folders_path = []
@@ -455,7 +459,7 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, psf_out, custom_patte
 
 	#meteor_ignore = frappe.local.meteor_ignores
 	#list_meteor_files_folders_add = get_attr_from_json(["add", "files_folders"], meteor_ignore)
-	list_meteor_files_folders_add = psf_out.get_add_files_folders()
+	list_meteor_files_folders_add = pfs_out.get_add_files_folders()
 	all_files_folder_add = list_meteor_files_folders_add.get("all")
 
 	topfolder = True
@@ -468,7 +472,8 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, psf_out, custom_patte
 
 		if os.path.exists(reactpath):
 			folders_path.append(app)
-			app_folders = "/".join(folders_path)
+			#app_folders = "/".join(folders_path)
+			app_folders = get_apps_path_order(app, apps)
 			#destpath = os.path.join(dst, app_folders)
 
 			for root, dirs, files in os.walk(reactpath):
@@ -496,11 +501,13 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, psf_out, custom_patte
 					if check_files_folders_patterns(f, relative_react, all_files_folder_add) or\
 							check_files_folders_patterns(f, relative_react, appname_files_folder_add):
 						try:
-							print "startswitd whatfor {}".format(relative_react)
+							#print "startswitd whatfor {}".format(relative_react)
 							if relative_react.startswith(whatfor):
 								#relative_react = relative_react.replace("%s/" % whatfor, "")
 								relative_react = relative_react.replace(whatfor, app_folders)
 							#else:
+							#if app == "base_vat":
+							#	print "files_folder {} root {} file {}".format(relative_react, root, f)
 							#	relative_react = relative_react.replace(whatfor, app_folders)
 							frappe.create_folder(os.path.realpath(os.path.join(dst, relative_react)))
 							os.symlink(os.path.join(root, f), os.path.realpath(os.path.join(dst, os.path.join(relative_react,f))))

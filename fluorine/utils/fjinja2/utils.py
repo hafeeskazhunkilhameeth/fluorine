@@ -88,8 +88,54 @@ def get_page(refs, tname):
 	return None
 
 @contextfunction
-def tkeep(ctx, tname, page=None, deep=1, patterns=None):
+def tkeep(ctx, patterns):
+	import os
+	from fluorine.utils.fjinja2.extension_template import get_appname, get_template_path
+	#from fluorine.utils.spacebars_template import check_refs
 
+	obj = frappe.local.context.current_xhtml_template
+	appname = get_appname(obj.get("template"))
+	tname = obj.get("tname")
+	template_path = get_template_path(appname, obj.get("template"))
+	#obj = frappe.local.meteor_map_templates.get(template_path)
+	#refs = obj.get("refs")
+	#ref = check_refs(tname, refs)
+	ref = get_meteor_template_parent_path(tname, template_path)
+
+	if not ref:
+		frappe.throw("mtkeep command only can be used inside meteor templates and only with fluorine templates (Ex. xhtml files) that extends another fluorine template.")
+	#get parent data. This template is in onother template because tkeep is used when extends templates
+	parent_obj = frappe.local.meteor_map_templates.get(ref)
+	parent_appname = parent_obj.get("appname")
+
+	#app_path = frappe.get_app_path(parent_appname)
+
+	pfs_out = frappe.local.context.pfs_out
+	list_meteor_files_folders_add = pfs_out.get_add_files_folders()
+	appname_files_folder_add = list_meteor_files_folders_add.get(parent_appname)
+	if not appname_files_folder_add:
+		list_meteor_files_folders_add[parent_appname] = set([])
+
+	appname_files_folder_add = list_meteor_files_folders_add.get(parent_appname)
+
+	if isinstance(patterns, basestring):
+		patterns = [patterns]
+
+	reactpath = os.path.join("templates", "react")
+	relpath = os.path.relpath(ref, reactpath)
+
+	tpath = relpath.rsplit(".", 1)[0]
+
+	for pattern in patterns:
+		pattern = "%s/.*/?%s/%s" % (tpath, tname, pattern)
+		print "pattern to use %s" % pattern
+		p = c(pattern)
+		appname_files_folder_add.add(p)
+	#export_meteor_template_out(tname, template_path)
+	#print "tname {} template_real_path {} pattern {}".format(obj.get("tname"), obj.get("template"), patterns)
+
+
+	"""
 	if not page:
 		obj = frappe.local.meteor_map_templates.get(ctx.name)
 		refs = obj.get("refs")
@@ -101,6 +147,7 @@ def tkeep(ctx, tname, page=None, deep=1, patterns=None):
 		fadd = ctx.get("files_to_add")
 
 	fadd.append({"tname": tname, "pattern": patterns, "page": page})
+	"""
 
 """
 def local_tkeep(ctx, tname, page, patterns=None):
@@ -206,3 +253,50 @@ def mdom_filter(ctx, source, page, **keyargs):
 
 def mecho(value, content=""):
 	return value + "  " + content
+
+
+def add_meteor_template_to_dict(appname, tname, template_path):
+	toadd = frappe.local.context.files_to_add
+
+	if not toadd.get(appname):
+		toadd[appname] = {}
+	tappname = toadd.get(appname)
+	if not tappname.get(template_path):
+		tappname[template_path] = set([])
+	tappname.get(template_path).add(tname)
+
+
+def add_fluroine_template_to_dict(appname, template_path, is_ref=True):
+
+	ctx = frappe.local.files_to_add
+
+	if not ctx.get(appname):
+		ctx[appname] = []
+
+	found = False
+	for obj in ctx.get(appname):
+		name = obj.get("tname")
+		if template_path == name:
+			found = True
+			break
+	if not found:
+		ctx.get(appname).append({"tname": template_path, "ref": is_ref})
+
+
+def add_meteor_template_to_out(appname, tname, template_path, is_ref=True):
+	add_fluroine_template_to_dict(appname, template_path, is_ref=is_ref)
+	add_meteor_template_to_dict(appname, tname, template_path)
+
+
+def export_meteor_template_out(tname, template_path):
+	obj = frappe.local.meteor_map_templates.get(template_path)
+	appname = obj.get("appname")
+	add_meteor_template_to_out(appname, tname, template_path)
+
+
+def get_meteor_template_parent_path(tname, template_path):
+	from fluorine.utils.spacebars_template import check_refs
+
+	obj = frappe.local.meteor_map_templates.get(template_path)
+	refs = obj.get("refs")
+	return check_refs(tname, refs)

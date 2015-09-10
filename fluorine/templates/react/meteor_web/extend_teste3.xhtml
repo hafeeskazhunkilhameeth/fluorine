@@ -8,3 +8,14 @@
 </template>
 {%- endmeteor -%}
 {% endblock %}
+
+
+{% block teste10 %}
+{%- meteor teste10 -%}
+<template name="teste10">
+    {% do mtkeep(patterns=["javascript/.*\.js$"]) %}
+    <p>From Fluorine teste10 template!!!</p>
+
+</template>
+{%- endmeteor -%}
+{% endblock %}

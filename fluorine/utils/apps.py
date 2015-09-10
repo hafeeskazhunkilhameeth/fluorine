@@ -76,3 +76,15 @@ def check_meteor_apps_created(with_error=True):
 		frappe.throw(_(msg))
 
 	return not error
+
+
+def get_apps_path_order(appname, apps):
+
+	path = ""
+
+	for app in apps:
+		path = os.path.join(path, app)
+		if app == appname:
+			break
+
+	return path

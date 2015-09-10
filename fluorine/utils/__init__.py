@@ -51,6 +51,11 @@ def get_attr_from_json(attrs, _json_):
 	return tmp_attr
 
 
+def get_frappe_apps_path():
+	import os
+
+	return os.path.normpath(os.path.join(os.path.realpath("."), "..", "apps"))
+
 def remove_from_hooks(hooks, stop=False):
 
 	base_template = "templates/fluorine_base.html"

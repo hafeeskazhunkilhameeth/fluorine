@@ -79,6 +79,9 @@ class MeteorTemplate(Extension):
 		# we only listen to ``'cache'`` so this will be a name token with
 		# `cache` as value.  We get the line number so that we can give
 		# that line number to the nodes we create by hand.
+
+		filename = parser.filename
+
 		stream = parser.stream
 		tag = stream.next()
 
@@ -110,15 +113,14 @@ class MeteorTemplate(Extension):
 			else:
 				parser.fail("You must provide a highlight after comma.")
 
-		app_path = os.path.normpath(os.path.join(frappe.get_app_path("fluorine"), "..", ".."))
-
-		filename = parser.filename
 
 		if filename:
-			filepath = os.path.relpath(parser.filename, app_path)
-			filepath = nodes.Const(filepath.split("/",1)[1])
+			template_real_path = nodes.Const(filename)
 		else:
-			filepath = nodes.Const(None)
+			template_real_path = nodes.Const(None)
+
+		#frappe.local.context.current_xhtml_template = {"tname": tname.value, "template": filename}
+		#print "current template {} template_path {}".format(tname.value, filename)
 
 		lineno = nodes.Const(tag.lineno)
 		stream.skip_if('colon')
@@ -129,7 +131,7 @@ class MeteorTemplate(Extension):
 		ctx_ref = nodes.ContextReference()
 
 		return nodes.CallBlock(
-			self.call_method('_template', args=[ctx_ref, tname, filepath, lineno, hightlight, tkeep]), [], [], body).\
+			self.call_method('_template', args=[ctx_ref, tname, template_real_path, lineno, hightlight, tkeep]), [], [], body).\
 				set_lineno(tag.lineno)
 
 
@@ -206,25 +208,32 @@ class MeteorTemplate(Extension):
 
 		return body
 
-	def _template(self, ctx, tname, filepath, lineno, hightlight, tkeep, caller=None):
+	def _template(self, ctx, tname, template_real_path, lineno, hightlight, tkeep, caller=None):
 		"""Helper callback."""
-		from fluorine.utils.spacebars_template import add_to_path
+		from fluorine.utils.fjinja2.utils import export_meteor_template_out, get_meteor_template_parent_path
 
-		obj = frappe.local.meteor_map_templates.get(filepath.replace("fluorine/", ""))
-		refs = obj.get("refs")
-		template = obj.get("template_obj")
+		app = get_appname(template_real_path)
+		relpath = get_template_path(app, template_real_path)
 
-		print "tkeep {} filepath {} tname {}".format(tkeep, filepath, tname)
+		frappe.local.context.current_xhtml_template = {"tname": tname, "template": template_real_path}
+
+		if tkeep and relpath:
+			ref = get_meteor_template_parent_path(tname, relpath)
+			if not ref:
+				frappe.throw("mtkeep command only can be used inside meteor templates and only with fluorine templates (Ex. xhtml files) that extends another fluorine template.")
+			export_meteor_template_out(tname, ref)
+
 		devmod = ctx.get("developer_mode")
+		hightlight_all = ctx.get("highlight_all")
 		source = caller()
-		if devmod and hightlight:
-			template = STARTTEMPLATE_SUB_ALL.sub(self.highlight(filepath, lineno), source)
+		if not frappe.local.making_production and (devmod and hightlight or devmod and hightlight_all):
+			template = STARTTEMPLATE_SUB_ALL.sub(self.highlight(relpath, lineno, app), source)
 		else:
 			template = """%s""" % (source)
 
 		return Markup(template.strip())
 
-	def highlight(self, filepath, lineno):
+	def highlight(self, filepath, lineno, appname):
 
 		filepath = filepath or ""
 		def _highlight(m):
@@ -232,9 +241,33 @@ class MeteorTemplate(Extension):
 			name = m.group(2)
 			content = m.group(4)
 			attrs = m.group(3)
-			debug = {"path": filepath, "lineno": lineno}
+			debug = {"app":appname, "path": filepath, "lineno": lineno}
 			template =\
 			"""<template name='%s'%s>\n\t<div class="{{ highlight "%s" '%s' }}">\n\t%s\n\t</div>\n</template>
 			""" % (name, attrs, name, json.dumps(debug), content)
 			return template
 		return _highlight
+
+
+
+def get_template_path(app, template_real_path):
+
+	app_path = frappe.get_app_path(app)
+	relpath = os.path.relpath(template_real_path, app_path)
+
+	return relpath
+
+def get_appname(template_real_path):
+	m = search_template(template_real_path)
+	if m:
+		app = m.group(1)
+		return app
+
+def search_template(template_real_path):
+	from fluorine.utils import get_frappe_apps_path
+
+	frappe_apps_path = get_frappe_apps_path()
+	pattern = "%s/(.+?)/.+" % frappe_apps_path
+	m = re.search(pattern, template_real_path, re.S)
+
+	return m
