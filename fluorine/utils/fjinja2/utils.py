@@ -87,6 +87,15 @@ def get_page(refs, tname):
 
 	return None
 
+def mtlog(msg):
+	from fluorine.commands import meteor_echo
+
+	obj = frappe.local.context.current_xhtml_template
+
+	msg = "fluorine template path: %s\n\nmeteor template:%s\n\n%s" % (obj.get("template"), obj.get("tname"), msg)
+
+	meteor_echo(msg, 80)
+
 @contextfunction
 def tkeep(ctx, patterns):
 	import os
@@ -128,7 +137,7 @@ def tkeep(ctx, patterns):
 
 	for pattern in patterns:
 		pattern = "%s/.*/?%s/%s" % (tpath, tname, pattern)
-		print "pattern to use %s" % pattern
+		#print "pattern to use %s" % pattern
 		p = c(pattern)
 		appname_files_folder_add.add(p)
 	#export_meteor_template_out(tname, template_path)

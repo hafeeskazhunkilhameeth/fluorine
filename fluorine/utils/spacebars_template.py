@@ -15,7 +15,7 @@ def fluorine_get_fenv():
 	from jinja2 import DebugUndefined
 	from fluorine.utils.fjinja2.fjinja import MyEnvironment
 	from fluorine.utils.fjinja2.extension_template import MeteorTemplate
-	from fluorine.utils.fjinja2.utils import mdom_filter, mself, msuper, tkeep
+	from fluorine.utils.fjinja2.utils import mdom_filter, mself, msuper, tkeep, mtlog
 
 	if not frappe.local.fenv:
 		encoding = get_encoding()
@@ -28,6 +28,7 @@ def fluorine_get_fenv():
 		fenv.globals.update({"mself":mself})
 		fenv.globals.update({"mtkeep":tkeep})
 		fenv.filters["mdom_filter"] = mdom_filter
+		fenv.filters["mlog"] = mtlog
 
 		frappe.local.fenv = fenv
 

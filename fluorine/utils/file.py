@@ -391,7 +391,7 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 					os.symlink(src_base, dst_base)
 
 				used_templates = toadd.get(app, {}).get(tpath) or []
-				print "app {} tpath {} used_templates {} know_templates {}".format(app, tpath, used_templates, known_templates.get(app))
+				#print "app {} tpath {} used_templates {} know_templates {}".format(app, tpath, used_templates, known_templates.get(app))
 
 				#pat = obj.get("pattern")
 				#madd = c(pat)
