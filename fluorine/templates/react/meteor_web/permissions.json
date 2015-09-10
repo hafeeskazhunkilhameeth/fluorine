@@ -1,8 +1,10 @@
 {
-  "apps": {
-    "base_vat":{
-      "remove": 0,
-	  "constrains":"pm"
+  "IN":{
+    "apps": {
+      "base_vat":{
+        "remove": 0,
+  	  "constrains":"pm"
+      }
     }
   }
 }

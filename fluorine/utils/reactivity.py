@@ -104,7 +104,8 @@ def make_meteor_ignor_files():
 			perm_path = os.path.join(app_path, "templates", "react", whatfor, "permissions.json")
 			if os.path.exists(perm_path):
 				conf_file = frappe.get_file_json(perm_path)
-				pfs_in.feed_apps(conf_file)
+				conf_in = conf_file.get("IN") or conf_file.get("in")
+				pfs_in.feed_apps(conf_in)
 				apps_remove = pfs_in.get_apps_remove()
 				for r in apps_remove:
 					try:
