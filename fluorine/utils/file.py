@@ -331,7 +331,7 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 
 	custom_pattern = get_default_custom_pattern(custom_pattern)
 	#custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", "*.xhtml", ".gitignore"])
-	custom_pattern.update.update(custom_pattern or [])
+	custom_pattern.update(custom_pattern or [])
 	pattern = ignore_patterns(*custom_pattern)
 
 	dst_public_assets_path = os.path.join(get_path_reactivity(), whatfor, "public", "assets")
