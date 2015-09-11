@@ -51,24 +51,37 @@ class MeteorContext(object):
 		make_includes(context)
 
 
-def clear_html(whatfor):
+def remove_output_files(whatfor):
 	from fluorine.utils.apps import get_active_apps
+	from fluorine.utils.reactivity import get_read_file_patterns
+
+
+	file_patterns = get_read_file_patterns()
 
 	apps = get_active_apps(whatfor)
 	for app in apps:
 		app_path = frappe.get_app_path(app)
 		reactive_path = os.path.join(app_path, "templates", "react", whatfor)
 		for root, dirs, files in os.walk(reactive_path):
-			files = [f for f in files if f.endswith(".html")]
-			for f in files:
-				os.unlink(os.path.join(root, f))
+			for in_ext, fp in file_patterns.iteritems():
+				out_ext = fp.get("ext")
+				#files = [f for f in files if f.endswith(".%s" % out_ext) and f.endswith(in_ext)]
+				for f in files:
+					f1 = "%s.%s" % (f.split(".",1)[0], in_ext.replace("*.", ""))
+					f2 = "%s.%s" % (f.split(".",1)[0], out_ext)
+					if f1 in files and f2 in files:
+						#print "removing ext_out {} ext_in {} f1 {} f2 {}".format(out_ext, in_ext, f1, f2)
+						if f.endswith(".%s" % out_ext):
+							#print "removing ext_out {} ext_in {} f {}".format(out_ext, in_ext, f)
+							os.unlink(os.path.join(root, f))
 
 
 def prepare_context_meteor_file(whatfor):
 	from fluorine.templates.pages.fluorine_home import get_context as fluorine_get_context
 	from fluorine.utils import meteor_desk_app, fluor_get_context as get_context
 
-	clear_html(whatfor)
+	remove_output_files(whatfor)
+
 	if whatfor == meteor_desk_app:
 		frappe.local.path = "desk"
 		return get_context("desk")

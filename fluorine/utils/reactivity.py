@@ -16,13 +16,14 @@ def get_read_file_patterns():
 	if read_patterns:
 		return read_patterns
 
-	read_patterns = {"*.xhtml": "html"}
+	read_patterns = {"*.xhtml": {"ext":"html"}}
 
 	read_file_patterns = meteor_config.get("read_patterns", {})
 	for k, v in read_file_patterns.iteritems():
 		if not k.startswith("*."):
 			k = "*.%s" % k
-		read_patterns[k] = v
+		read_patterns[k] = {"ext": v.get("ext"), "out": v.get("out", True)}
+		print "read_pattern {}".format(read_patterns)
 
 	return read_patterns
 

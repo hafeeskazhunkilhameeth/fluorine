@@ -369,7 +369,8 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 
 				#tfile = obj.get("file")
 				in_ext = tpath.rsplit(".", 1)[1]
-				out_ext = file_patterns.get("*.%s" % in_ext)
+				fp = file_patterns.get("*.%s" % in_ext)
+				out_ext = fp.get("ext")
 				ext_len = len(in_ext) + 1
 
 				relpath = os.path.relpath(tpath[:-ext_len], os.path.join("templates", "react", whatfor))
@@ -430,9 +431,10 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 						#if found:
 						#	try:
 						frappe.create_folder(os.path.realpath(os.path.join(destpath, relative_file)))
-						os.symlink(os.path.join(root, f), os.path.realpath(os.path.join(destpath, os.path.join(relative_file,f))))
-							#except:
-							#	pass
+						dest = os.path.realpath(os.path.join(destpath, os.path.join(relative_file,f)))
+						if not dest:
+							os.symlink(os.path.join(root, f), dest)
+
 
 
 def custom_make_all_files_with_symlink(apps, dst, whatfor, pfs_out, custom_pattern=None):

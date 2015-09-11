@@ -86,7 +86,7 @@ def compile_jinja_templates(context, whatfor):
 
 	keys = frappe.local.meteor_map_templates.keys()
 	file_patterns = get_read_file_patterns()
-	ctx = frappe.local.files_to_add
+	#ctx = frappe.local.files_to_add
 	#fadd = ctx.get("files_to_add")
 	#if fadd == None:
 	#	ctx["files_to_add"] = {}
@@ -102,7 +102,8 @@ def compile_jinja_templates(context, whatfor):
 				realpath = obj.get("realpath")
 
 				in_ext = realpath.rsplit(".", 1)[1]
-				out_ext = file_patterns.get("*.%s" % in_ext)
+				fp = file_patterns.get("*.%s" % in_ext)
+				out_ext = fp.get("ext")
 				ext_len = len(in_ext) + 1
 				dstPath = realpath[:-ext_len] + ".%s" % out_ext
 
@@ -111,8 +112,10 @@ def compile_jinja_templates(context, whatfor):
 					#pattern = "%s.%s" % (template_path[:-ext_len], out_ext)
 					#context.files_to_add.append({"tname": "", "pattern":pattern, "page": template_path})
 					#context.files_to_add.append({"tname": template_path, "file":pattern})
-					appname = obj.get("appname")
-					add_fluroine_template_to_dict(appname, template_path, is_ref=False)
+					auto_out = fp.get("out", True)
+					if auto_out:
+						appname = obj.get("appname")
+						add_fluroine_template_to_dict(appname, template_path, is_ref=False)
 					#if not ctx.get(appname):
 					#	ctx[appname] = []
 					#ctx.get(appname).append({"tname": template_path, "ref":False})
@@ -125,7 +128,8 @@ def compile_jinja_templates(context, whatfor):
 						#if template.name == "templates/react/meteor_web/extend_teste3.xhtml":
 						#print "template {} meteor templates {}".format(template.name, name)
 						tcont[name] = m.group(0)
-					add_to_path(template, refs, tcont)
+					if auto_out:
+						add_to_path(template, refs, tcont)
 					#toadd.update(add)
 					#if whatfor in (meteor_desk_app, "meteor_frappe"):
 					#	out.update(tcont)
