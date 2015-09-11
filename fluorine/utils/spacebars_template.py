@@ -289,7 +289,7 @@ def fluorine_build_context(context, whatfor):
 	from fluorine.utils import meteor_web_app, meteor_config
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation, copy_mobile_config_file, custom_make_all_files_with_symlink
 	from reactivity import list_ignores, ProcessFileSystem
-	from react_file_loader import get_custom_pattern, default_custom_pattern
+	from react_file_loader import get_custom_pattern, get_default_custom_pattern
 
 
 	frappe.local.context = context
@@ -341,7 +341,7 @@ def fluorine_build_context(context, whatfor):
 		apps.remove(r)
 	#go from current dev app then last installed app to first installed app in order.
 	known_apps = apps[::-1]
-	default_pattern = default_custom_pattern()
+	default_pattern = get_default_custom_pattern()
 	custom_pattern = get_custom_pattern(whatfor, custom_pattern=default_pattern)
 
 	process_react_templates(known_apps, custom_pattern, pfs_in)
