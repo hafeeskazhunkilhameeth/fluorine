@@ -319,7 +319,7 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 
 	_whatfor = [meteor_desk_app, meteor_web_app]
 	#folders_path = []
-	exclude = ["private", "public"]
+	#exclude = ["private", "public"]
 	#custom_pattern = custom_pattern or []
 
 	#if isinstance(whatfor, basestring):
@@ -327,11 +327,12 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 
 	_whatfor.remove(whatfor)
 
-	exclude.extend(_whatfor)
+	#exclude.extend(_whatfor)
 
+	#custom_pattern = set(custom_pattern)
 	custom_pattern = get_default_custom_pattern(custom_pattern)
-	#custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", "*.xhtml", ".gitignore"])
-	custom_pattern.update(custom_pattern)
+	#custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", ".gitignore"])
+	#custom_pattern.update(custom_pattern)
 	pattern = ignore_patterns(*custom_pattern)
 
 	dst_public_assets_path = os.path.join(get_path_reactivity(), whatfor, "public", "assets")
@@ -421,6 +422,7 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 						if f in ign_names or check_files_folders_patterns(f, relative_react, all_files_folder_remove) or check_files_folders_patterns(f, relative_react, appname_files_folder_remove):
 							continue
 
+						#print "files root {} f {}".format(root, f)
 						#source = os.path.normpath(os.path.join("templates", "react", whatfor, relative_file, f))
 						#print "app {} tpath {} pattern {} source {}".format(app, tpath, obj.get("pattern"), source)
 						#if check_remove(source):
@@ -434,7 +436,7 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 						#	try:
 						frappe.create_folder(os.path.realpath(os.path.join(destpath, relative_file)))
 						dest = os.path.realpath(os.path.join(destpath, os.path.join(relative_file,f)))
-						if not dest:
+						if not os.path.exists(dest):
 							os.symlink(os.path.join(root, f), dest)
 
 
@@ -442,10 +444,12 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 def custom_make_all_files_with_symlink(apps, dst, whatfor, pfs_out, custom_pattern=None):
 	from fluorine.utils import meteor_desk_app, meteor_web_app
 	from fluorine.utils.apps import get_apps_path_order
+	from fluorine.utils.react_file_loader import get_default_custom_pattern
+
 
 	_whatfor = [meteor_desk_app, meteor_web_app]
 	folders_path = []
-	custom_pattern = custom_pattern or []
+	#custom_pattern = custom_pattern or []
 
 	#if isinstance(whatfor, basestring):
 	#	whatfor = [whatfor]
@@ -458,8 +462,9 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, pfs_out, custom_patte
 	ignored_names_top.extend(_whatfor)
 	ignored_names_any.extend(_whatfor)
 
+	custom_pattern = get_default_custom_pattern(custom_pattern)
 	custom_pattern = set(custom_pattern)
-	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", "*.xhtml", ".gitignore"])
+	#custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", "*.xhtml", ".gitignore"])
 	pattern = ignore_patterns(*custom_pattern)
 
 	#meteor_ignore = frappe.local.meteor_ignores

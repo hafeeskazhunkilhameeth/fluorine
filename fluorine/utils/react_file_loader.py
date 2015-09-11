@@ -83,7 +83,7 @@ def get_default_custom_pattern(custom_pattern=None):
 
 	custom_pattern = custom_pattern or []
 	custom_pattern = set(custom_pattern)
-	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", "*.xhtml", ".gitignore"])
+	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", ".gitignore"])
 
 	return custom_pattern
 

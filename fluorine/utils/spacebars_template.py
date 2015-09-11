@@ -341,8 +341,9 @@ def fluorine_build_context(context, whatfor):
 		apps.remove(r)
 	#go from current dev app then last installed app to first installed app in order.
 	known_apps = apps[::-1]
-	default_pattern = get_default_custom_pattern()
-	custom_pattern = get_custom_pattern(whatfor, custom_pattern=default_pattern)
+
+	#default_pattern = get_default_custom_pattern()
+	custom_pattern = get_custom_pattern(whatfor, custom_pattern=None)
 
 	process_react_templates(known_apps, custom_pattern, pfs_in)
 
