@@ -222,6 +222,7 @@ def check_files_folders_patterns(f, relpath, files_folder):
 	files_folder = files_folder or []
 	path = os.path.join(relpath, f)
 	for pattern in files_folder:
+		#print "in pattern f is {} relpath {} match {}".format(f, relpath, pattern.match(f) or pattern.match(path))
 		if pattern.match(f) or pattern.match(path):
 			return True
 	return False
@@ -417,10 +418,10 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 						if f in ign_names or check_files_folders_patterns(f, relative_react, all_files_folder_remove) or check_files_folders_patterns(f, relative_react, appname_files_folder_remove):
 							continue
 
-						source = os.path.normpath(os.path.join("templates", "react", whatfor, relative_file, f))
+						#source = os.path.normpath(os.path.join("templates", "react", whatfor, relative_file, f))
 						#print "app {} tpath {} pattern {} source {}".format(app, tpath, obj.get("pattern"), source)
-						if check_remove(source):
-							continue
+						#if check_remove(source):
+						#	continue
 
 
 						#found = madd.match(source)#or common_pattern.match(source)#or\
@@ -498,19 +499,21 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, pfs_out, custom_patte
 					if f in ign_names:
 						continue
 
+					intern_relative_react = relative_react
+
 					if check_files_folders_patterns(f, relative_react, all_files_folder_add) or\
 							check_files_folders_patterns(f, relative_react, appname_files_folder_add):
 						try:
-							#print "startswitd whatfor {}".format(relative_react)
+							#print "startswitd whatfor {} files {} f {} ign_names {}".format(relative_react, files, f, ign_names)
 							if relative_react.startswith(whatfor):
 								#relative_react = relative_react.replace("%s/" % whatfor, "")
-								relative_react = relative_react.replace(whatfor, app_folders)
+								intern_relative_react = relative_react.replace(whatfor, app_folders)
 							#else:
 							#if app == "base_vat":
 							#	print "files_folder {} root {} file {}".format(relative_react, root, f)
 							#	relative_react = relative_react.replace(whatfor, app_folders)
-							frappe.create_folder(os.path.realpath(os.path.join(dst, relative_react)))
-							os.symlink(os.path.join(root, f), os.path.realpath(os.path.join(dst, os.path.join(relative_react,f))))
+							frappe.create_folder(os.path.realpath(os.path.join(dst, intern_relative_react)))
+							os.symlink(os.path.join(root, f), os.path.realpath(os.path.join(dst, os.path.join(intern_relative_react,f))))
 						except:
 							pass
 

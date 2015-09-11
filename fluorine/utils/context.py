@@ -1,13 +1,14 @@
 __author__ = 'luissaguas'
 
 import frappe,os, click
-from fluorine.utils import whatfor_all, meteor_desk_app
+from fluorine.utils import whatfor_all, meteor_desk_app, set_making_production
 
 
 class MeteorContext(object):
 	def __init__(self, production=True):
 		self.context = frappe._dict({meteor_desk_app:None})
-		frappe.local.making_production = production
+		#frappe.local.making_production = production
+		set_making_production(production)
 
 	def meteor_init(self, mongo_custom=False):
 		from fluorine.utils.file import get_path_reactivity

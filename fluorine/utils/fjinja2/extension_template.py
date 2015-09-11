@@ -221,6 +221,7 @@ class MeteorTemplate(Extension):
 	def _template(self, ctx, tname, template_real_path, lineno, hightlight, tkeep, caller=None):
 		"""Helper callback."""
 		from fluorine.utils.fjinja2.utils import export_meteor_template_out, get_meteor_template_parent_path
+		from fluorine.utils import is_making_production
 
 		app = get_appname(template_real_path)
 		relpath = get_template_path(app, template_real_path)
@@ -236,7 +237,7 @@ class MeteorTemplate(Extension):
 		devmod = ctx.get("developer_mode")
 		hightlight_all = ctx.get("highlight_all")
 		source = caller()
-		if not frappe.local.making_production and (devmod and hightlight or devmod and hightlight_all):
+		if not is_making_production() and (devmod and hightlight or devmod and hightlight_all):
 			template = STARTTEMPLATE_SUB_ALL.sub(self.highlight(relpath, lineno, app), source)
 		else:
 			template = """%s""" % (source)

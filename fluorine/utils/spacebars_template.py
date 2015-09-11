@@ -249,22 +249,16 @@ def make_includes(context):
 
 
 def get_app_pages(context):
-	from fluorine.utils import meteor_desk_app
+	from fluorine.utils import meteor_desk_app, is_making_production
 	from fluorine.utils.meteor.utils import make_meteor_props
-
 
 	context.whatfor = meteor_desk_app
 	context = prepare_common_page_context(context, meteor_desk_app)
 
 	devmode = context.developer_mode
 
-	try:
-		making_production = frappe.local.making_production
-	except:
-		making_production = False
 
-
-	if devmode and not making_production:
+	if devmode and not is_making_production():
 		make_meteor_props(context, meteor_desk_app)
 		make_includes(context)
 

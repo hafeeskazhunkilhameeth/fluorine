@@ -6,8 +6,10 @@ import frappe
 
 meteor_config = None
 
-frappe.local("making_production")
-frappe.local.making_production = False
+
+making_production = False
+#frappe.local("making_production")
+#frappe.local.making_production = False
 #assets_public_path = "/assets/fluorine/js/react"
 meteor_runtime_config_path = ""
 
@@ -16,6 +18,13 @@ APPS = None
 meteor_web_app = "meteor_web"
 meteor_desk_app = "meteor_app"
 whatfor_all = (meteor_web_app, meteor_desk_app)
+
+def is_making_production():
+	return making_production
+
+def set_making_production(val):
+	global making_production
+	making_production = val
 
 def get_meteor_runtime_config_path(whatfor, real=False):
 	import os

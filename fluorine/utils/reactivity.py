@@ -36,7 +36,7 @@ def start_meteor():
 
 	frappesite = get_default_site()
 
-	#make_meteor_ignor_files()
+	make_meteor_ignor_files()
 	extras_context_methods.update(get_extras_context_method(frappesite))
 
 	global start_db
@@ -198,10 +198,10 @@ class ProcessFileSystem(object):
 			apps.insert(0, curr_app)
 	"""
 	def process_permission_apps(self, conf_file):
-		from fluorine.utils import meteor_config
+		from fluorine.utils import meteor_config, is_making_production
 
 		devmode = meteor_config.get("developer_mode")
-		prodmode = meteor_config.get("production_mode") or frappe.local.making_production
+		prodmode = meteor_config.get("production_mode") or is_making_production()
 
 		apps = conf_file.get("apps") or {}
 		if self.curr_dev_app in apps:
