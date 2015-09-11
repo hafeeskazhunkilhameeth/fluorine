@@ -13,28 +13,36 @@ STARTTEMPLATE_SUB_ALL = c(r"<\s*template\s+name\s*=\s*(['\"])(\w+)\1(.*?)\s*>(.*
 
 op_values = ["and", "or", "band"]
 
-def process_args(parser, blocktype):
+def process_args(parser, blocktype, meteor_token):
 	expression = []
 	stream = parser.stream
 
 	token = stream.current
 	last_token = token
 
+	mtoken = meteor_token
+	#print "meteor token {}".format(meteor_token)
 	def is_special_token(token):
 		return token.value in (".", "[", "]", "{", "}", "(", ")")
 
+	def is_meteor_token(mtoken):
+		return mtoken in ("#", "/", ">", "{")
 
 	while not token.type == blocktype:
-
 		if stream.current.test('string'):
 			special = is_special_token(last_token)
 			last_token = stream.next()
 			expression.append(("'%s'" if special else " '%s'") % last_token.value)
 			token = stream.current
 		elif stream.current.test('name') and stream.current.value not in op_values:
-			special = is_special_token(last_token)
+			special = is_meteor_token(mtoken)
+			if special:
+				mtoken = ""
+			else:
+				special = is_special_token(last_token)
+
 			last_token = stream.next()
-			expression.append(("" if special else " ") + last_token.value)
+			expression.append(("%s" if special else " %s") % last_token.value)
 			token = stream.current
 		elif stream.current.value == 'and':
 			expression.append(" && ")
@@ -125,7 +133,7 @@ class MeteorTemplate(Extension):
 		lineno = nodes.Const(tag.lineno)
 		stream.skip_if('colon')
 		stream.expect('block_end')
-		body = self._subparse(parser, ("gt", "dot", "mod", "div", "else", "lbrace"), end_tokens=['name:endmeteor'])
+		body = self._subparse(parser, ("gt", "dot", "mod", "div", "else", "lbrace", 'semicolon'), end_tokens=['name:endmeteor'])
 		next(parser.stream)
 
 		ctx_ref = nodes.ContextReference()
@@ -165,15 +173,17 @@ class MeteorTemplate(Extension):
 							next(parser.stream)
 							token = parser.stream.current
 							value = token.value
+						elif token.value == ";":
+							value = "!"
 						elif token.value == ".":
 							value = "#"
 						else:
 							value = token.value
 
-						add_data(nodes.TemplateData("{{" + value,
+						add_data(nodes.TemplateData("{{%s" % value,
 													lineno=token.lineno))
 						next(parser.stream)
-						expression = process_args(parser, 'variable_end')
+						expression = process_args(parser, 'variable_end', value)
 						token = parser.stream.current
 						add_data(nodes.TemplateData("".join([unicode(expr) for expr in expression]),
 								lineno=token.lineno))
@@ -215,7 +225,7 @@ class MeteorTemplate(Extension):
 		app = get_appname(template_real_path)
 		relpath = get_template_path(app, template_real_path)
 
-		frappe.local.context.current_xhtml_template = {"tname": tname, "template": template_real_path}
+		frappe.local.context.current_xhtml_template = {"tname": tname, "template": template_real_path, "relpath": relpath}
 
 		if tkeep and relpath:
 			ref = get_meteor_template_parent_path(tname, relpath)

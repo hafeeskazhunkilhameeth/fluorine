@@ -1,10 +1,11 @@
-{% extends 'templates/react/meteor_web/templates/teste3.xhtml' %}
+{% extends 'templates/react/meteor_web/teste1.xhtml' %}
 
-{% block teste30 %}
+{% block teste2 %}
 {%- meteor teste2 -%}
 <template name="teste2">
     <p>From Fluorine teste2 template!!!</p>
-    {{"teste log 2" | mlog}}
+    {% do "teste log 2" | mlog %}
+    {{ msuper(adeep=[1,2], rdeep=[1,2]) }}
 </template>
 {%- endmeteor -%}
 {% endblock %}
@@ -13,10 +14,10 @@
 {% block teste10 %}
 {%- meteor teste10 -%}
 <template name="teste10">
-    {{"teste log 10" | mlog}}
+    {% do "teste log 10" | mlog %}
     {% do mtkeep(patterns=["javascript/.*\.js$"]) %}
     <p>From Fluorine teste10 template!!!</p>
-
+    {{ msuper(adeep=2) }}
 </template>
 {%- endmeteor -%}
 {% endblock %}

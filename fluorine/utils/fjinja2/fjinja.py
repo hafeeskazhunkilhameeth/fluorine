@@ -118,7 +118,7 @@ class MyFileSystemLoader(FileSystemLoader):
 				contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
 				frappe.local.meteor_map_templates[template] = frappe._dict({"appname": app, "template":template, "relpath": relpath, "realpath": filepath, "file_temp_path": file_temp_path, "refs":[]})
 				self.process_references(template, contents)
-
+				#print "Template Found {}".format(template)
 				return contents, filename, uptodate
 				#here file template exists and is uptodate
 			except TemplateNotFound, e:

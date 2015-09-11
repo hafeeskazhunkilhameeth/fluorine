@@ -87,12 +87,13 @@ def get_page(refs, tname):
 
 	return None
 
-def mtlog(msg):
+@contextfilter
+def mtlog(ctx, msg):
 	from fluorine.commands import meteor_echo
 
 	obj = frappe.local.context.current_xhtml_template
 
-	msg = "fluorine template path: %s\n\nmeteor template:%s\n\n%s" % (obj.get("template"), obj.get("tname"), msg)
+	msg = "fluorine template path: %s\n\nmeteor template:%s\n\n%s" % (ctx.name, obj.get("tname"), msg)
 
 	meteor_echo(msg, 80)
 
@@ -106,6 +107,7 @@ def tkeep(ctx, patterns):
 	appname = get_appname(obj.get("template"))
 	tname = obj.get("tname")
 	template_path = get_template_path(appname, obj.get("template"))
+	#print "ctx.name {} blocks {}".format(ctx.name, obj.get("template"))
 	#obj = frappe.local.meteor_map_templates.get(template_path)
 	#refs = obj.get("refs")
 	#ref = check_refs(tname, refs)
@@ -204,28 +206,62 @@ def get_msuper_inner_content(ctx, source):
 	return source
 
 @contextfunction
-def msuper(ctx, tname, deep=1):
-	code = ""
-	page = ctx.name
+def msuper(ctx, adeep=1, rdeep=0, tkeep=None, tname=None):
+	ocode = ""
+	#page = ctx.name
+	tobj = frappe.local.context.current_xhtml_template
+	#print "ctx.name {}".format(ctx.name)
+	page = tobj.get("relpath")
+	if not tname:
+		tname = tobj.get("tname")
+
 	obj = frappe.local.meteor_map_templates.get(page)
 	refs = obj.get("refs")
 
-	if deep >= 1:
-		page = get_deep_refs(refs, tname, deep)
+	if not isinstance(rdeep, (list, tuple)):
+		rdeep = [rdeep]
 
-	if page:
-		sobj = frappe.local.meteor_map_templates.get(page)
-		template = sobj.get("template_obj")
-		render = template.blocks.get(tname)
-		code = concat(render(template.new_context(ctx)))
-		code = get_msuper_inner_content(ctx, code)
+	if not isinstance(adeep, (list, tuple)):
+		adeep = [adeep]
 
+	if tkeep in (False, True) and not isinstance(tkeep, (list, tuple)):
+		tkeep = [tkeep]
 
-	return code
+	for deep in adeep:
+		if deep >= 1:
+			page = get_deep_refs(refs, tname, deep)
+
+		if page:
+			sobj = frappe.local.meteor_map_templates.get(page)
+			template = sobj.get("template_obj")
+			render = template.blocks.get(tname)
+			code = concat(render(template.new_context(ctx)))
+			ocode = "%s\n%s" % (ocode, get_msuper_inner_content(ctx, code))
+			if not tkeep or deep in tkeep:
+				print "page {} and tname {} relpath {} tkeep {}\n".format(page, tname, tobj.get("relpath"), tkeep)
+				export_meteor_template_out(tname, page)
+			else:
+				appname = sobj.get("appname")
+				remove_meteor_template_from_out(appname, tname, page)
+		else:
+			frappe.throw("Fluorine do not found the page to add for meteor template %s" % tname)
+
+	for deep in rdeep:
+		if deep >= 1:
+			page = get_deep_refs(refs, tname, deep)
+
+			if page:
+				sobj = frappe.local.meteor_map_templates.get(page)
+				appname = sobj.get("appname")
+				remove_meteor_template_from_out(appname, tname, page)
+			else:
+				frappe.throw("Fluorine do not found the page to remove for meteor template %s" % tname)
+
+	return ocode
 
 @contextfunction
-def mself(ctx, tname):
-	return msuper(ctx, tname, deep=0)
+def mself(ctx):
+	return msuper(ctx, deep=0)
 
 def flat_refs(template_path):
 	flat = []
@@ -309,3 +345,20 @@ def get_meteor_template_parent_path(tname, template_path):
 	obj = frappe.local.meteor_map_templates.get(template_path)
 	refs = obj.get("refs")
 	return check_refs(tname, refs)
+
+
+def remove_meteor_template_from_out(appname, tname, template_path, is_ref=True):
+	toadd = frappe.local.context.files_to_add
+
+	tappname = toadd.get(appname) or {}
+	mtemplates = tappname.get(template_path) or []
+
+	found = False
+
+	for t in mtemplates:
+		if t == tname:
+			found = True
+			break
+
+	if found:
+		mtemplates.remove(tname)
