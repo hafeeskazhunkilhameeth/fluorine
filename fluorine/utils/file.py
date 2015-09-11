@@ -311,6 +311,7 @@ c = lambda t:re.compile(t, re.S|re.M)
 
 
 def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom_pattern=None):
+	from fluorine.utils.react_file_loader import get_default_custom_pattern
 	from fluorine.utils import meteor_desk_app, meteor_web_app
 	from fluorine.utils.apps import get_apps_path_order
 	from fluorine.utils.reactivity import get_read_file_patterns
@@ -328,8 +329,9 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 
 	exclude.extend(_whatfor)
 
-	custom_pattern = set(custom_pattern)
-	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", "*.xhtml", ".gitignore"])
+	custom_pattern = get_default_custom_pattern(custom_pattern)
+	#custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", "*.xhtml", ".gitignore"])
+	custom_pattern.update.update(custom_pattern or [])
 	pattern = ignore_patterns(*custom_pattern)
 
 	dst_public_assets_path = os.path.join(get_path_reactivity(), whatfor, "public", "assets")

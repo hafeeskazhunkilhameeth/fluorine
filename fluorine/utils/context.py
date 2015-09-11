@@ -52,9 +52,14 @@ class MeteorContext(object):
 
 
 def remove_output_files(whatfor):
+	from fluorine.utils.react_file_loader import get_default_custom_pattern
 	from fluorine.utils.apps import get_active_apps
 	from fluorine.utils.reactivity import get_read_file_patterns
+	from shutil import ignore_patterns
 
+
+	custom_pattern = get_default_custom_pattern()
+	pattern = ignore_patterns(*custom_pattern)
 
 	file_patterns = get_read_file_patterns()
 
@@ -63,16 +68,16 @@ def remove_output_files(whatfor):
 		app_path = frappe.get_app_path(app)
 		reactive_path = os.path.join(app_path, "templates", "react", whatfor)
 		for root, dirs, files in os.walk(reactive_path):
+			ign_names = pattern(root, files)
 			for in_ext, fp in file_patterns.iteritems():
 				out_ext = fp.get("ext")
-				#files = [f for f in files if f.endswith(".%s" % out_ext) and f.endswith(in_ext)]
 				for f in files:
+					if f in ign_names:
+						continue
 					f1 = "%s.%s" % (f.split(".",1)[0], in_ext.replace("*.", ""))
 					f2 = "%s.%s" % (f.split(".",1)[0], out_ext)
 					if f1 in files and f2 in files:
-						#print "removing ext_out {} ext_in {} f1 {} f2 {}".format(out_ext, in_ext, f1, f2)
 						if f.endswith(".%s" % out_ext):
-							#print "removing ext_out {} ext_in {} f {}".format(out_ext, in_ext, f)
 							os.unlink(os.path.join(root, f))
 
 

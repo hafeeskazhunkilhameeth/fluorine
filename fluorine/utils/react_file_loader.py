@@ -78,6 +78,15 @@ def get_dirs_from_list(appname, list_files):
 
 	return dirs
 
+
+def get_default_custom_pattern(custom_pattern=None):
+
+	custom_pattern = custom_pattern or []
+	custom_pattern = set(custom_pattern)
+	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", "*.xhtml", ".gitignore"])
+
+	return custom_pattern
+
 def get_custom_pattern(whatfor, custom_pattern=None):
 	from shutil import ignore_patterns
 
