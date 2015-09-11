@@ -57,9 +57,10 @@ def remove_output_files(whatfor):
 	from fluorine.utils.reactivity import get_read_file_patterns
 	from shutil import ignore_patterns
 
+	read_file_pattern = get_read_file_patterns()
 
-	#custom_pattern = get_default_custom_pattern()
-	#pattern = ignore_patterns(*custom_pattern)
+	custom_pattern = get_default_custom_pattern(read_file_pattern.keys())
+	pattern = ignore_patterns(*custom_pattern)
 
 	file_patterns = get_read_file_patterns()
 
@@ -68,12 +69,12 @@ def remove_output_files(whatfor):
 		app_path = frappe.get_app_path(app)
 		reactive_path = os.path.join(app_path, "templates", "react", whatfor)
 		for root, dirs, files in os.walk(reactive_path):
-			#ign_names = pattern(root, files)
+			ign_names = pattern(root, files)
 			for in_ext, fp in file_patterns.iteritems():
 				out_ext = fp.get("ext")
 				for f in files:
-			#		if f in ign_names:
-			#			continue
+					if f in ign_names:
+						continue
 					f1 = "%s.%s" % (f.split(".",1)[0], in_ext.replace("*.", ""))
 					f2 = "%s.%s" % (f.split(".",1)[0], out_ext)
 					if f1 in files and f2 in files:
@@ -85,7 +86,7 @@ def prepare_context_meteor_file(whatfor):
 	from fluorine.templates.pages.fluorine_home import get_context as fluorine_get_context
 	from fluorine.utils import meteor_desk_app, fluor_get_context as get_context
 
-	#remove_output_files(whatfor)
+	remove_output_files(whatfor)
 
 	if whatfor == meteor_desk_app:
 		frappe.local.path = "desk"
