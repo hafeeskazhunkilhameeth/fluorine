@@ -50,12 +50,24 @@ class MeteorContext(object):
 		make_meteor_props(context, meteor_desk_app, production=True)
 		make_includes(context)
 
+def clear_html(whatfor):
+	from fluorine.utils.apps import get_active_apps
+
+	apps = get_active_apps(whatfor)
+	for app in apps:
+		app_path = frappe.get_app_path(app)
+		reactive_path = os.path.join(app_path, "templates", "react", whatfor)
+		for root, dirs, files in os.walk(reactive_path):
+			files = [f for f in files if f.endswith(".html")]
+			for f in files:
+				os.unlink(os.path.join(root, f))
+
 
 def prepare_context_meteor_file(whatfor):
 	from fluorine.templates.pages.fluorine_home import get_context as fluorine_get_context
 	from fluorine.utils import meteor_desk_app, fluor_get_context as get_context
 
-
+	clear_html(whatfor)
 	if whatfor == meteor_desk_app:
 		frappe.local.path = "desk"
 		return get_context("desk")
