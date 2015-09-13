@@ -1,0 +1,29 @@
+<template name="debug">
+<ul>
+{% for rel in relations.rel %}
+        {%- for key, value in rel.iteritems() recursive %}
+            <li>{{ key.rsplit("/",1)[1] }}
+                {%- if value %}
+                {%- if value[0] %}
+                appname: {{value[0].appname}}
+                {% endif -%}
+                {% endif -%}
+                Path: {{key.rsplit("/",1)[0]}}
+
+                deep: {{loop.depth}}
+            {%- if value %}
+                {% if value[0]%}
+                    templates:
+                    {% for t in value[0].templates %}
+                        {{t}}
+                    {% endfor %}
+                {% endif %}
+                {% if value[0].childs%}
+                    <ul> {{ loop(value[0].childs.iteritems()) }}</ul>
+                {% endif %}
+            {%- endif %}
+          </li>
+        {% endfor %}
+{% endfor %}
+</ul>
+</template>

@@ -6,6 +6,13 @@ def get_data():
 			"color": "#336600",
 			"icon": "icon-beaker",
 			"type": "module",
-			"label": _("Fluorine")
+			"label": _("Fluorine"),
+
+		},
+		"Fluorine Admin":{
+			"color": "#E62E00",
+			"icon": "icon-medkit",
+			"type": "page",
+			"link": "fluorine-admin"
 		}
 	}

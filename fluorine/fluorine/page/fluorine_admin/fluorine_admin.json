@@ -1,0 +1,22 @@
+{
+ "content": null, 
+ "creation": "2015-09-13 13:48:36.594633", 
+ "docstatus": 0, 
+ "doctype": "Page", 
+ "icon": "icon-medkit",
+ "modified": "2015-09-13 15:03:44.102972", 
+ "modified_by": "Administrator", 
+ "module": "Fluorine", 
+ "name": "fluorine-admin", 
+ "owner": "Administrator", 
+ "page_name": "Fluorine Administrator", 
+ "roles": [
+  {
+   "role": "Administrator"
+  }
+ ], 
+ "script": null, 
+ "standard": "Yes", 
+ "style": null, 
+ "title": "Fluorine Administrator"
+}

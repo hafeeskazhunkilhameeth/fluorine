@@ -220,7 +220,7 @@ class MeteorTemplate(Extension):
 
 	def _template(self, ctx, tname, template_real_path, lineno, hightlight, tkeep, caller=None):
 		"""Helper callback."""
-		from fluorine.utils.fjinja2.utils import export_meteor_template_out, get_meteor_template_parent_path
+		from fluorine.utils.fjinja2.refs import export_meteor_template_out, get_meteor_template_parent_path
 		from fluorine.utils import is_making_production
 
 		app = get_appname(template_real_path)

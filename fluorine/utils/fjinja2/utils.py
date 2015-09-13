@@ -14,78 +14,12 @@ STARTTEMPLATE_SUB_ALL = c(r"<\s*template\s+name\s*=\s*(['\"])(\w+)\1(.*?)\s*>(.*
 STARTDIV_SUB_ALL = r"<\s*div\s+class\s*=\s*(['\"])%s\1\s*>(.*?)<\s*/\s*div\s*>"
 
 
-def is_in_extend_path(doc, template):
-	for d in doc.docs:
-		if d.template == template:
-			return d
-		found = is_in_extend_path(d, template)
-		if found:
-			return found
-	return None
-
-def get_template_from_doc(doc, tname, encoding="utf-8"):
-	from fluorine.utils.file import read
-
-	content = doc.content
-	if not content:
-		content = read(doc.file_temp_path).decode(encoding)
-	template = r"<\s*template\s+name\s*=\s*(['\"])%s\1(.*?)\s*>(.*?)<\s*/\s*template\s*>" % tname
-	g = re.search(template, content, re.S|re.I|re.M)
-	t = ""
-	if g:
-		t = g.group(3)
-
-	return t
-
-def get_doc_from_template(template):
-		doc = None
-		obj = frappe.local.meteor_map_path.get(template)
-		if obj:
-			doc = obj.get("doc")
-		return doc
-
-def get_doc_from_deep(template, deep=1):
-
-	obj = frappe.local.meteor_map_path.get(template)
-	if obj:
-		doc = obj.get("doc")
-		if doc.extends_found and deep > 0:
-			return get_doc_from_deep(doc.extends_path[0], deep-1)
-		return doc, deep
-	return None, 1
-
 """
 def get_pattern_path(name, path):
 	pattern = path + r"/(?:.+?/)?(?:(?:%s)/(?:.+)|(?:%s/?$))" % (name, name)
 	#pattern = path + r"(/.+?/%s/.*)?|(/.+/%s$)?" % (name, name)
 	return pattern
 """
-
-def get_deep_refs(refs, tname, deep):
-
-	if deep == 1:
-		return get_page(refs, tname)
-
-	page = None
-	#first is the extends so only this count for deep
-	if refs:
-		obj = frappe.local.meteor_map_templates.get(refs[0])
-		nrefs = obj.get("refs")
-		page = get_deep_refs(nrefs, tname, deep-1)
-
-	return page
-
-
-def get_page(refs, tname):
-
-	for ref in refs:
-		sobj = frappe.local.meteor_map_templates.get(ref)
-		template = sobj.get("template_obj")
-		for block in template.blocks.keys():
-			if block == tname.strip():
-				return ref
-
-	return None
 
 @contextfilter
 def mtlog(ctx, msg):
@@ -101,6 +35,7 @@ def mtlog(ctx, msg):
 def tkeep(ctx, patterns):
 	import os
 	from fluorine.utils.fjinja2.extension_template import get_appname, get_template_path
+	from fluorine.utils.fjinja2.refs import get_meteor_template_parent_path
 	#from fluorine.utils.spacebars_template import check_refs
 
 	obj = frappe.local.context.current_xhtml_template
@@ -207,6 +142,9 @@ def get_msuper_inner_content(ctx, source):
 
 @contextfunction
 def msuper(ctx, adeep=1, rdeep=0, tkeep=None, tname=None):
+	from fluorine.utils.fjinja2.refs import get_deep_refs, export_meteor_template_out, remove_meteor_template_from_out
+
+
 	ocode = ""
 	#page = ctx.name
 	tobj = frappe.local.context.current_xhtml_template
@@ -263,19 +201,11 @@ def msuper(ctx, adeep=1, rdeep=0, tkeep=None, tname=None):
 def mself(ctx):
 	return msuper(ctx, deep=0)
 
-def flat_refs(template_path):
-	flat = []
-	obj = frappe.local.meteor_map_templates.get(template_path)
-	refs = obj.get("refs") or []
-	flat.extend(refs)
-	for ref in refs:
-		flat.extend(flat_refs(ref))
-
-	return flat
-
 
 @contextfilter
 def mdom_filter(ctx, source, page, **keyargs):
+	from fluorine.utils.fjinja2.refs import flat_refs
+
 	template_path = ctx.name
 	code = None
 
@@ -299,66 +229,3 @@ def mdom_filter(ctx, source, page, **keyargs):
 def mecho(value, content=""):
 	return value + "  " + content
 
-
-def add_meteor_template_to_dict(appname, tname, template_path):
-	toadd = frappe.local.context.files_to_add
-
-	if not toadd.get(appname):
-		toadd[appname] = {}
-	tappname = toadd.get(appname)
-	if not tappname.get(template_path):
-		tappname[template_path] = set([])
-	tappname.get(template_path).add(tname)
-
-
-def add_fluroine_template_to_dict(appname, template_path, is_ref=True):
-
-	ctx = frappe.local.files_to_add
-
-	if not ctx.get(appname):
-		ctx[appname] = []
-
-	found = False
-	for obj in ctx.get(appname):
-		name = obj.get("tname")
-		if template_path == name:
-			found = True
-			break
-	if not found:
-		ctx.get(appname).append({"tname": template_path, "ref": is_ref})
-
-
-def add_meteor_template_to_out(appname, tname, template_path, is_ref=True):
-	add_fluroine_template_to_dict(appname, template_path, is_ref=is_ref)
-	add_meteor_template_to_dict(appname, tname, template_path)
-
-
-def export_meteor_template_out(tname, template_path):
-	obj = frappe.local.meteor_map_templates.get(template_path)
-	appname = obj.get("appname")
-	add_meteor_template_to_out(appname, tname, template_path)
-
-
-def get_meteor_template_parent_path(tname, template_path):
-	from fluorine.utils.spacebars_template import check_refs
-
-	obj = frappe.local.meteor_map_templates.get(template_path)
-	refs = obj.get("refs")
-	return check_refs(tname, refs)
-
-
-def remove_meteor_template_from_out(appname, tname, template_path, is_ref=True):
-	toadd = frappe.local.context.files_to_add
-
-	tappname = toadd.get(appname) or {}
-	mtemplates = tappname.get(template_path) or []
-
-	found = False
-
-	for t in mtemplates:
-		if t == tname:
-			found = True
-			break
-
-	if found:
-		mtemplates.remove(tname)

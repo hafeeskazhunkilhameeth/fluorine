@@ -315,7 +315,7 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 	from fluorine.utils import meteor_desk_app, meteor_web_app
 	from fluorine.utils.apps import get_apps_path_order
 	from fluorine.utils.reactivity import get_read_file_patterns
-	from fluorine.utils.spacebars_template import get_all_know_meteor_templates
+	from fluorine.utils.fjinja2.refs import get_all_know_meteor_templates
 
 	_whatfor = [meteor_desk_app, meteor_web_app]
 	#folders_path = []

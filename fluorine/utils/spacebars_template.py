@@ -10,6 +10,10 @@ import os
 from collections import OrderedDict
 
 
+xhtml_ignores = ["page_relations.xhtml"]
+
+
+
 def fluorine_get_fenv():
 	from fluorine.utils import get_encoding
 	from jinja2 import DebugUndefined
@@ -80,8 +84,8 @@ def compile_jinja_templates(context, whatfor):
 	from fluorine.utils import get_encoding
 	from fluorine.utils.reactivity import get_read_file_patterns
 	from fluorine.utils.file import save_file
-	from fluorine.utils.fjinja2.utils import STARTTEMPLATE_SUB_ALL, add_fluroine_template_to_dict
-
+	from fluorine.utils.fjinja2.refs import add_fluroine_template_to_dict, get_page_templates_and_refs, add_to_path
+	from fluorine.utils.fjinja2.utils import STARTTEMPLATE_SUB_ALL
 	#out = {}
 
 	keys = frappe.local.meteor_map_templates.keys()
@@ -91,6 +95,7 @@ def compile_jinja_templates(context, whatfor):
 	#if fadd == None:
 	#	ctx["files_to_add"] = {}
 	#fadd = ctx.get("files_to_add")
+	frappe.local.page_relations[whatfor] = page_relations = []
 
 	for template_path in keys:
 		obj = frappe.local.meteor_map_templates.get(template_path)
@@ -108,6 +113,8 @@ def compile_jinja_templates(context, whatfor):
 				dstPath = realpath[:-ext_len] + ".%s" % out_ext
 
 				if content and template:
+					if context.page_relations:
+						page_relations.append(get_page_templates_and_refs(template_path))
 					content = "\n\n".join([s for s in content.splitlines() if s])
 					#pattern = "%s.%s" % (template_path[:-ext_len], out_ext)
 					#context.files_to_add.append({"tname": "", "pattern":pattern, "page": template_path})
@@ -153,20 +160,6 @@ def compile_jinja_templates(context, whatfor):
 	return #toadd
 
 
-def get_all_know_meteor_templates():
-	mtemplates = frappe._dict()
-	for k, v in frappe.local.meteor_map_templates.iteritems():
-		template = v.get("template_obj")
-		if template:
-			for block in template.blocks.keys():
-				appname = v.get("appname")
-				if not mtemplates.get(appname):
-					mtemplates[appname] = []
-				mtemplates[appname].append(block)#append({"tname":block, "obj": v})
-				#print "all the known templates tname {} appname {}".format(block, appname)
-
-	return mtemplates
-
 """
 def remove_from_path(ctx, toadd):
 	for k, v in frappe.local.meteor_map_templates.iteritems():
@@ -182,51 +175,6 @@ def remove_from_path(ctx, toadd):
 				ext_len = len(in_ext) + 1
 				ctx.files_to_remove.append({"tname": k[:-ext_len], "pattern": "", "page": k})
 """
-
-def add_to_path(template, refs, tcont):
-	from fluorine.utils.fjinja2.utils import add_meteor_template_to_out
-
-	for tname in tcont.keys():
-
-		if template and tname not in template.blocks.keys():
-			ref = check_refs(tname, refs)
-		else:
-			ref = template.name
-
-		if ref:
-			obj = frappe.local.meteor_map_templates.get(ref)
-			appname = obj.get("appname")
-			#ctx.files_to_add.append({"tname": tname, "pattern": "", "page": ref})
-
-			add_meteor_template_to_out(appname, tname, ref)
-			"""
-			if not toadd.get(appname):
-				toadd[appname] = {}
-			tappname = toadd.get(appname)
-			if not tappname.get(ref):
-				tappname[ref] = []
-			tappname.get(ref).append(tname)
-
-			if not ctx.get(appname):
-				ctx[appname] = []
-				if ref not in ctx.get(appname):
-					ctx.get(appname).append({"tname": ref, "ref": True})
-			"""
-
-	return #toadd
-
-
-def check_refs(tname, refs):
-	for ref in refs:
-		obj = frappe.local.meteor_map_templates.get(ref)
-		template = obj.get("template_obj")
-		if template and tname in template.blocks.keys():
-			return ref
-		nrefs = obj.get("refs")
-		found = check_refs(tname, nrefs)
-		if found:
-			return found
-	return None
 
 
 def prepare_common_page_context(context, whatfor):
@@ -284,6 +232,7 @@ def get_web_pages(context):
 
 
 def fluorine_build_context(context, whatfor):
+	from fluorine.utils.debug import make_page_relations
 	from fluorine.utils.reactivity import get_read_file_patterns
 	from fluorine.utils.apps import get_active_apps
 	from fluorine.utils import meteor_web_app, meteor_config
@@ -317,11 +266,16 @@ def fluorine_build_context(context, whatfor):
 	frappe.local.files_to_add = frappe._dict()
 	frappe.local.files_to_remove = frappe._dict()
 
+	frappe.local.page_relations = frappe._dict()
+
 	frappe.local.module_registe = frappe._dict()
 
 	path_reactivity = get_path_reactivity()
 
 	frappe.local.meteor_ignores = list_ignores.get(whatfor)
+
+
+	context.page_relations = meteor_config.get("page_relations", True)
 
 	curr_app = meteor_config.get("current_dev_app", "").strip()
 	#apps current dev app is in last
@@ -364,6 +318,7 @@ def fluorine_build_context(context, whatfor):
 	custom_make_all_files_with_symlink(known_apps, fluorine_publicjs_dst_path, whatfor, pfs_out, custom_pattern=read_file_pattern.keys())
 	copy_project_translation(apps, whatfor, pfs_out, custom_pattern)
 
+	make_page_relations(context, whatfor)
 	#Only support for mibile in web app
 	if whatfor == meteor_web_app:
 		copy_mobile_config_file(known_apps, whatfor)
@@ -381,7 +336,7 @@ def process_react_templates(apps, custom_pattern, psf_in):
 		pathname = frappe.get_app_path(app)
 		path = os.path.join(pathname, "templates", "react")
 		if os.path.exists(path):
-			files = read_client_xhtml_files(path, app, psf_in, meteor_ignore=None, custom_pattern=custom_pattern)
+			files = read_client_xhtml_files(path, app, psf_in, meteor_ignore=xhtml_ignores, custom_pattern=custom_pattern)
 			for f in files:
 				for obj in reversed(f):
 					file_path = obj.get("path")

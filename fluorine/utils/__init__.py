@@ -204,7 +204,7 @@ def prepare_environment():
 	else:
 		print "error hooks"
 
-	if not meteor_config.get("stop") or frappe.local.making_production:
+	if not meteor_config.get("stop") or is_making_production():
 		#PATCH get_context
 		if frappe_get_context == None:
 			patch_frappe_get_context()

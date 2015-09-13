@@ -1,0 +1,7 @@
+{% block jsteste2 %}
+
+  {% if developer_mode %}
+    console.log("teste 3 in ekaiser 1235464578910 in deve mode")
+  {% endif %}
+
+{% endblock %}

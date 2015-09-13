@@ -1,13 +1,14 @@
 from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
-import frappe, os
+import os
 
-from fluorine.utils import whatfor_all, meteor_desk_app, meteor_web_app
+from fluorine.utils import meteor_desk_app, meteor_web_app
 from fluorine.utils import file
-#from fluorine.utils import assets_public_path
 from fluorine.utils.fjinja2.utils import c
 
+
+global_ignores = ['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", ".gitignore"]
 
 """
 client file loader
@@ -83,7 +84,7 @@ def get_default_custom_pattern(custom_pattern=None):
 
 	custom_pattern = custom_pattern or []
 	custom_pattern = set(custom_pattern)
-	custom_pattern.update(['*.pyc', '.DS_Store', '*.py', "*.tmp", "temp", ".gitignore"])
+	custom_pattern.update(global_ignores)
 
 	return custom_pattern
 
@@ -157,7 +158,7 @@ def read_client_xhtml_files(start_folder, appname, psf_in, meteor_ignore=None, c
 		files = [toinclude for toinclude in files if check_read_file_pattern(toinclude)]
 
 		for f in files:
-			if check_files_folders_patterns(f, relpath, all_files_folder_remove) or check_files_folders_patterns(f, relpath, appname_files_folder_remove):
+			if f in meteor_ignore or check_files_folders_patterns(f, relpath, all_files_folder_remove) or check_files_folders_patterns(f, relpath, appname_files_folder_remove):
 				continue
 			path = os.path.join(root, f)
 			obj = {"name": f, "path": path}

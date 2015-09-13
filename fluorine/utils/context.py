@@ -134,6 +134,7 @@ def get_xhtml_context(context):
 			if hasattr(module, "get_children"):
 				context.get_children = module.get_children
 
+
 #TODO - ver file.py function process_ignores_from_files
 def get_xhtml_module(appname, template_path, path):
 
