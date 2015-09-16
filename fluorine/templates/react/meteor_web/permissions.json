@@ -5,6 +5,9 @@
         "remove": 0,
   	  "constrains":"pm"
       }
+    },
+    "only_for_sites":[
+          {"site": "site2.local", "server_writes": true}
+        ]
     }
-  }
 }

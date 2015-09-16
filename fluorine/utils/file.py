@@ -314,10 +314,15 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 	from fluorine.utils.react_file_loader import get_default_custom_pattern
 	from fluorine.utils import meteor_desk_app, meteor_web_app
 	from fluorine.utils.apps import get_apps_path_order
-	from fluorine.utils.reactivity import get_read_file_patterns
+	from fluorine.utils.reactivity import get_read_file_patterns, is_app_for_site
 	from fluorine.utils.fjinja2.refs import get_all_know_meteor_templates
+	from fluorine.utils import get_attr_from_json
+
 
 	_whatfor = [meteor_desk_app, meteor_web_app]
+
+	list_only_for_sites = get_attr_from_json([whatfor, "remove", "only_for_sites"], frappe.local.meteor_ignores)
+
 	#folders_path = []
 	#exclude = ["private", "public"]
 	#custom_pattern = custom_pattern or []
@@ -367,6 +372,8 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 			make_private(meteorpath, dst_private_path, app, whatfor, custom_pattern=custom_pattern)
 			make_tests(meteorpath, dst_tests_path, app, whatfor, custom_pattern=custom_pattern)
 
+			server_writes = is_app_for_site(app, list_only_for_sites)
+
 			for obj in paths:
 				tpath = obj.get("tname")
 
@@ -407,13 +414,14 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 					#so dirs to exclude must have as base root dirs inside react folder. Ex. meteor_web/highlight as meteor_web is inside react folder.
 					relative_react = os.path.relpath(root, reactpath)
 					for dir in dirs[::]:
-						if dir not in used_templates and dir in known_templates.get(app):
+						if not server_writes and dir == "server" or (dir not in used_templates and dir in known_templates.get(app)):
 							dirs.remove(dir)
 							continue
 						if check_files_folders_patterns(dir, relative_react, all_files_folder_remove) or\
 								check_files_folders_patterns(dir, relative_react, appname_files_folder_remove):
 							dirs.remove(dir)
 							continue
+
 
 					ign_names = pattern(root, files)
 					relative_file = os.path.relpath(root, meteorpath)
@@ -422,6 +430,9 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 						if f in ign_names or check_files_folders_patterns(f, relative_react, all_files_folder_remove) or check_files_folders_patterns(f, relative_react, appname_files_folder_remove):
 							continue
 
+						#only write if it is in the client path
+						if not server_writes and not (f.endswith(".html") or "client" in root):
+							continue
 						#print "files root {} f {}".format(root, f)
 						#source = os.path.normpath(os.path.join("templates", "react", whatfor, relative_file, f))
 						#print "app {} tpath {} pattern {} source {}".format(app, tpath, obj.get("pattern"), source)
@@ -442,9 +453,10 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 
 
 def custom_make_all_files_with_symlink(apps, dst, whatfor, pfs_out, custom_pattern=None):
-	from fluorine.utils import meteor_desk_app, meteor_web_app
+	from fluorine.utils import meteor_desk_app, meteor_web_app, get_attr_from_json
 	from fluorine.utils.apps import get_apps_path_order
 	from fluorine.utils.react_file_loader import get_default_custom_pattern
+	from fluorine.utils.reactivity import is_app_for_site
 
 
 	_whatfor = [meteor_desk_app, meteor_web_app]
@@ -453,6 +465,8 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, pfs_out, custom_patte
 
 	#if isinstance(whatfor, basestring):
 	#	whatfor = [whatfor]
+
+	list_only_for_sites = get_attr_from_json([whatfor, "remove", "only_for_sites"], frappe.local.meteor_ignores)
 
 	_whatfor.remove(whatfor)
 
@@ -486,6 +500,8 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, pfs_out, custom_patte
 			app_folders = get_apps_path_order(app, apps)
 			#destpath = os.path.join(dst, app_folders)
 
+			server_writes = is_app_for_site(app, list_only_for_sites)
+
 			for root, dirs, files in os.walk(reactpath):
 
 				ign_dirs = pattern(root, dirs)
@@ -494,6 +510,9 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, pfs_out, custom_patte
 					topfolder = False
 				else:
 					ign_dirs.update(ignored_names_any)
+
+				if not server_writes and "server" in dirs:
+					ign_dirs.update(["server"])
 
 				for toexclude in ign_dirs:
 					if toexclude in dirs:
@@ -506,6 +525,10 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, pfs_out, custom_patte
 
 				for f in files:
 					if f in ign_names:
+						continue
+
+					#only write if it is in the client path
+					if not server_writes and not (f.endswith(".html") or "client" in root):
 						continue
 
 					intern_relative_react = relative_react

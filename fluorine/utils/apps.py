@@ -5,6 +5,9 @@ import frappe,os
 from fluorine.utils import whatfor_all
 
 
+active_apps = None
+
+
 def is_valid_fluorine_app(app, whatfor=None):
 
 	if not whatfor:
@@ -24,9 +27,19 @@ def get_active_apps(whatfor):
 	from fluorine.utils import APPS as apps, get_attr_from_json, meteor_config
 	from fluorine.utils.reactivity import make_meteor_ignor_files, list_ignores
 
+	global active_apps
+
+	if active_apps:
+		return active_apps
+	else:
+		active_apps = []
+
 	list_ignores = make_meteor_ignor_files()
 
 	ign_apps = get_attr_from_json([whatfor, "remove", "apps"], list_ignores)
+
+	current_site = frappe.local.site
+	only_for_sites = get_attr_from_json([whatfor, "remove", "only_for_sites"], list_ignores)
 
 	known_apps = apps[::]
 
@@ -43,13 +56,18 @@ def get_active_apps(whatfor):
 		known_apps.append(curr_app)
 
 	#current dev apps go in last
-	active_apps = []
 	for app in known_apps:
+		found = False
 		app_path = frappe.get_app_path(app)
 		meteor_app = os.path.join(app_path, "templates", "react", whatfor)
 		#meteor_web = os.path.join(app_path, "templates", "react", meteor_web_app)
 		#if (os.path.exists(meteor_app) or os.path.exists(meteor_web)) and app not in ign_apps:
-		if os.path.exists(meteor_app):
+		for obj in only_for_sites.get(app):
+			if obj.get("site") == current_site:
+				found = True
+				break
+
+		if found and os.path.exists(meteor_app):
 			active_apps.append(app)
 
 	return active_apps

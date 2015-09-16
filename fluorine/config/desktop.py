@@ -11,7 +11,7 @@ def get_data():
 		},
 		"Fluorine Admin":{
 			"color": "#E62E00",
-			"icon": "icon-medkit",
+			"icon": "icon-cogs",
 			"type": "page",
 			"link": "fluorine-admin"
 		}

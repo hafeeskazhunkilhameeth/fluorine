@@ -68,6 +68,17 @@ def get_extras_context_method(site):
 list_ignores = None
 
 
+def is_app_for_site(app, list_only_for_sites):
+
+	current_site = frappe.local.site
+
+	for obj in list_only_for_sites.get(app):
+		if obj.get("site") == current_site:
+			return obj.get("server_writes")
+
+	return False
+
+
 def make_meteor_ignor_files():
 	"""
 	This list of permissions is used only by read_client_xhtml_files function.
@@ -88,6 +99,8 @@ def make_meteor_ignor_files():
 
 	logger = logging.getLogger("frappe")
 
+	current_site = frappe.local.site
+
 	curr_app = meteor_config.get("current_dev_app", "").strip()
 	know_apps = apps[::]
 	if curr_app != know_apps[-1]:
@@ -97,6 +110,8 @@ def make_meteor_ignor_files():
 
 	for whatfor in whatfor_all:
 		pfs_in = ProcessFileSystem(whatfor, curr_app)
+		##keys are the sites and value is a list of dicts of apps and server_writes to use in the site
+		list_only_for_sites = {}
 		# Apps removed by current dev app does not remove anything.
 		# The same is true for first installed apps that do not removed anything if they are removed by last installed apps.
 		while know_apps:
@@ -105,14 +120,26 @@ def make_meteor_ignor_files():
 			perm_path = os.path.join(app_path, "templates", "react", whatfor, "permissions.json")
 			if os.path.exists(perm_path):
 				conf_file = frappe.get_file_json(perm_path)
-				conf_in = conf_file.get("IN") or conf_file.get("in")
-				pfs_in.feed_apps(conf_in)
-				apps_remove = pfs_in.get_apps_remove()
-				for r in apps_remove:
-					try:
-						know_apps.remove(r)
-					except:
-						pass
+				if conf_file:
+					conf_in = conf_file.get("IN") or conf_file.get("in")
+					if conf_in:
+						sites = conf_in.get("only_for_sites") or []
+						if not sites:
+							#if get nothing for app it is because this app is for all sites
+							list_only_for_sites[app] = [{"site": current_site, "server_writes": True}]
+						for site in sites:
+							if not list_only_for_sites.get(app):
+								list_only_for_sites[app] = []
+							list_only_for_sites.get(app).append(site)
+						pfs_in.feed_apps(conf_in)
+						apps_remove = pfs_in.get_apps_remove()
+						if not is_app_for_site(app, list_only_for_sites):
+							apps_remove.add(app)
+						for r in apps_remove:
+							try:
+								know_apps.remove(r)
+							except:
+								pass
 
 		list_apps_remove = pfs_in.get_apps_remove()#get_permission_files_json(whatfor)
 		#list_meteor_files_folders_add, list_meteor_files_folders_remove, list_apps_remove = get_permission_files_json(whatfor)
@@ -123,7 +150,8 @@ def make_meteor_ignor_files():
 			"remove":{
 				"apps": list_apps_remove,
 				#"files_folders": list_meteor_files_folders_remove
-			}#,
+			},
+			"only_for_sites": list_only_for_sites#,
 			#"add":{
 			#	"apps": [],
 				#"files_folders": list_meteor_files_folders_add

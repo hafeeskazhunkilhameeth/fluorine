@@ -14,6 +14,16 @@ def get_custom_packages_files():
 	return (file_add, file_remove)
 
 
+def get_frappe_config(bench='..'):
+	import json
+
+	config_path = os.path.join(bench, 'config.json')
+	if not os.path.exists(config_path):
+		return {}
+	with open(config_path) as f:
+		return json.load(f)
+
+
 def _generate_fluorine_nginx_conf(hosts_web=None, hosts_app=None, production=None, site=None):
 	from fluorine.utils.file import save_file, readlines
 	import re
@@ -32,6 +42,18 @@ def _generate_fluorine_nginx_conf(hosts_web=None, hosts_app=None, production=Non
 	config_path = os.path.join("..", "config")
 	config_file = os.path.join(config_path, "nginx.conf")
 
+
+	serve_default_site = get_frappe_config().get('serve_default_site')
+
+	if serve_default_site:
+		try:
+			with open("currentsite.txt") as f:
+				default_site_name = f.read().strip()
+		except IOError:
+			default_site_name = None
+	else:
+		default_site_name = None
+
 	frappe_nginx_file = readlines(config_file)
 	inside_server = False
 	inside_location = False
@@ -39,6 +61,9 @@ def _generate_fluorine_nginx_conf(hosts_web=None, hosts_app=None, production=Non
 	named_location = ""
 	open_brace = 0
 	new_frappe_nginx_file = []
+	is_default_site = False
+	server_name = ""
+
 	for line in frappe_nginx_file:
 		if re.search(r"{", line):
 			open_brace += 1
@@ -49,6 +74,12 @@ def _generate_fluorine_nginx_conf(hosts_web=None, hosts_app=None, production=Non
 		if re.match(r"server\s*\{", line.strip()):
 			inside_server = True
 			inside_location = False
+		elif re.match(r"listen\s+", line.strip()):
+			m = re.match(r"listen\s+([0-9]+)\s+(.*);", line.strip())
+			is_default_site = m.group(2).strip() == "default"
+		elif re.match(r"server_name\s+", line.strip()):
+			m = re.match(r"server_name\s+(.*);", line.strip())
+			server_name = m.group(1).strip().split()
 		elif re.match(r"location\s*/\s*{", line.strip()):
 			inside_location = True
 		elif inside_server and re.match(r"root", line.strip()):
@@ -66,13 +97,20 @@ def _generate_fluorine_nginx_conf(hosts_web=None, hosts_app=None, production=Non
 		elif inside_location_magic and open_brace == 1 and re.search(r"}$", line):
 			inside_location_magic = False
 			line = [line, "\n"]
-			nlocation_api = location_api % (named_location or "magic")
+			nlocation_api = location_api % (named_location or "magic", "meteor")
 			lapi = nlocation_api.split("\n")
 			loc_redirect = production_location_redirect.split("\n")
 			line.extend(loc_redirect)
 			line.extend(lapi)
-			line.extend(location_meteordesk)
-			line.extend(location_meteor)
+			if is_default_site:
+				line.extend((location_meteordesk % ("proxy_set_header X-Frappe-Site-Name %s;" % default_site_name, )).split("\n"))
+				line.extend((location_meteor % ("proxy_set_header X-Frappe-Site-Name %s;" % default_site_name, )).split("\n"))
+			elif len(server_name) == 1:
+				line.extend((location_meteordesk % ("proxy_set_header X-Frappe-Site-Name %s;" % server_name[0], )).split("\n"))
+				line.extend((location_meteor % ("proxy_set_header X-Frappe-Site-Name %s;" % server_name[0], )).split("\n"))
+			else:
+				line.extend((location_meteordesk % "").split("\n"))
+				line.extend((location_meteor % "").split("\n"))
 
 		if open_brace == 0:
 			inside_server = False
@@ -237,8 +275,15 @@ location_api = """
 		location ~* "^/api|^/desk|^/index.html$" {
 			#to support flowrouter while in development
 			#rewrite ^/mdesk/(.*)$ http://$remote_addr/mdesk?page=$1 last;
-			rewrite ^/desk/(.*)$ http://$remote_addr/desk?page=$1 last;
+			rewrite "^/desk/(.*)$" "http://$remote_addr/desk#$1" last;#a usar
+			#rewrite ^/desk/(.*)$ "http://$remote_addr/desk#$1" last;
 			try_files $uri @%s;
+		}
+
+		location /login {
+
+			try_files $uri @%s;
+
 		}
 """
 
@@ -254,8 +299,9 @@ location_meteordesk = """
 			proxy_set_header Connection $connection_upgrade;
 			proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 			proxy_redirect off;
+			%s
 		}
-""".split("\n")
+"""
 
 
 location_meteor = """
@@ -268,8 +314,9 @@ location_meteor = """
 			proxy_set_header Upgrade $http_upgrade;
 			proxy_set_header Connection $connection_upgrade;
 			proxy_redirect off;
+			%s
 		}
-""".split("\n")
+"""
 
 production_if_redirect = """
 		#fix the frappe POST to root url '/'

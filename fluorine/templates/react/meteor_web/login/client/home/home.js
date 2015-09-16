@@ -23,6 +23,16 @@ Template.meteor_menu.events({
     }
 });
 
+Template.meteor_menu.events({
+	'click .compile': function (event) {
+		event.preventDefault();
+		console.log("compile called...");
+		Meteor.call("frappe_compile", function(error, res){
+           console.log("compile callback res ", res);
+        });
+	}
+});
+
 Template.meteor_menu.helpers({
        fullLogin: function(){
             //return frappe.get_cookie("sid") !== ""  && frappe.get_cookie("sid") !== "Guest" && Meteor.user();
@@ -37,9 +47,38 @@ Template.meteor_menu.helpers({
        user_image: function(){
             return decodeURIComponent(frappe.get_cookie("user_image"));
        },
+       activate_dropdown: function(){
+            console.log("activete dropdown");
+            Session.set("login_dropdown", true);
+       }
 
 });
 
+Template.meteor_menu.onRendered(function(){
+
+    this.$('.masthead')
+            .visibility({
+              once: false,
+              onBottomPassed: function() {
+                $('.fixed.menu').transition('fade in');
+              },
+              onBottomPassedReverse: function() {
+                $('.fixed.menu').transition('fade out');
+              }
+            });
+          // create sidebar and attach to menu open
+    this.$('.ui.sidebar')
+        .sidebar('attach events', '.toc.item');
+
+});
+
+Template.dropdown_login.onRendered(function(){
+
+    this.$('.mydropdown').dropdown();
+    console.log("dropdown ready. ", this.$('.mydropdown'));
+});
+
+/*
 Template.meteor_show.onRendered(function(){
     this.$('.carousel').carousel();
     this.$('.carousel').carousel('next');
@@ -48,3 +87,4 @@ Template.meteor_show.onRendered(function(){
 Template.meteor_show.onDestroyed(function(){
     this.$('.carousel').carousel('pause');
 });
+*/

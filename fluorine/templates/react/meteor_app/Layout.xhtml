@@ -1,0 +1,38 @@
+
+{% block Layout %}
+{% meteor Layout %}
+    <template name="Layout">
+        <div class="panel panel-primary">
+            <div class="panel-heading">Fluorine Admin Panel</div>
+              <div class="panel-body">
+                <ul class="nav nav-pills">
+                    {% for menu in admin_menus %}
+                        <li role="presentation" class="{% raw %} {{#if {% endraw %} {{menu.name}} {% raw %} }} {% endraw %} active {% raw %}{{/if}}{% endraw %}"><a class="{{menu.name}}" href="#">{{menu.text}}</a></li>
+                    {% endfor %}
+                </ul>
+                  {{>Template.dynamic template=content}}
+              </div>
+        </div>
+
+    </template>
+{% endmeteor %}
+{% endblock %}
+
+
+
+{% block panel_home %}
+{% meteor panel_home %}
+    <template name="panel_home">
+        <p>Home, Raw denim you probably haven't heard of them jean shorts Austin. Nesciunt tofu stumptown aliqua, retro synth master cleanse. Mustache cliche tempor, williamsburg carles vegan helvetica. Reprehenderit butcher retro keffiyeh dreamcatcher synth. Cosby sweater eu banh mi, qui irure terry richardson ex squid. Aliquip placeat salvia cillum iphone. Seitan aliquip quis cardigan american apparel, butcher voluptate nisi qui.</p>
+    </template>
+{% endmeteor %}
+{% endblock %}
+
+
+{% block panel_profile %}
+{% meteor panel_profile %}
+    <template name="panel_profile">
+        <p>Profile, Raw denim you probably haven't heard of them jean shorts Austin. Nesciunt tofu stumptown aliqua, retro synth master cleanse. Mustache cliche tempor, williamsburg carles vegan helvetica. Reprehenderit butcher retro keffiyeh dreamcatcher synth. Cosby sweater eu banh mi, qui irure terry richardson ex squid. Aliquip placeat salvia cillum iphone. Seitan aliquip quis cardigan american apparel, butcher voluptate nisi qui.</p>
+    </template>
+{% endmeteor %}
+{% endblock %}

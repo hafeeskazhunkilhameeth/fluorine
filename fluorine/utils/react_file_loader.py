@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
-import os
+import os, frappe
 
 from fluorine.utils import meteor_desk_app, meteor_web_app
 from fluorine.utils import file
@@ -110,7 +110,6 @@ def get_custom_pattern(whatfor, custom_pattern=None):
 
 def read_client_xhtml_files(start_folder, appname, psf_in, meteor_ignore=None, custom_pattern=None):
 	from fluorine.utils.file import check_files_folders_patterns
-	#from fluorine.utils import get_attr_from_json
 
 	files_to_read = []
 	files_in_lib = []

@@ -10,7 +10,7 @@ import os
 from collections import OrderedDict
 
 
-xhtml_ignores = ["page_relations.xhtml"]
+xhtml_ignores = ["page_relations.xhtml", "AppLayout.xhtml"]
 
 
 
@@ -204,6 +204,8 @@ def get_app_pages(context):
 	from fluorine.utils import meteor_desk_app, is_making_production
 	from fluorine.utils.meteor.utils import make_meteor_props
 
+	context.admin_menus = [{"name":"panel_home", "text":"Home"}, {"name":"panel_profile", "text":"Profile"}]
+
 	context.whatfor = meteor_desk_app
 	context = prepare_common_page_context(context, meteor_desk_app)
 
@@ -325,18 +327,18 @@ def fluorine_build_context(context, whatfor):
 
 	return context
 
-def process_react_templates(apps, custom_pattern, psf_in):
+def process_react_templates(apps, custom_pattern, pfs_in):
 	from react_file_loader import read_client_xhtml_files
 
-	list_apps_remove = psf_in.get_apps_remove()
+	#list_apps_remove = psf_in.get_apps_remove()
 
 	for app in apps:
-		if app in list_apps_remove:
-			continue
+		#if app in list_apps_remove:
+		#	continue
 		pathname = frappe.get_app_path(app)
 		path = os.path.join(pathname, "templates", "react")
 		if os.path.exists(path):
-			files = read_client_xhtml_files(path, app, psf_in, meteor_ignore=xhtml_ignores, custom_pattern=custom_pattern)
+			files = read_client_xhtml_files(path, app, pfs_in, meteor_ignore=xhtml_ignores, custom_pattern=custom_pattern)
 			for f in files:
 				for obj in reversed(f):
 					file_path = obj.get("path")

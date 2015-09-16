@@ -34,7 +34,7 @@ def get_meteor_runtime_config_path(whatfor, real=False):
 		public_app_folder = os.path.join(app_path, "public", whatfor)
 		return os.path.join(public_app_folder, "meteor_runtime_config.js")
 	else:
-		return os.path.join("assets", "fluorine", whatfor, "meteor_runtime_config.js")
+		return os.path.join("/assets", "fluorine", whatfor, "meteor_runtime_config.js")
 
 
 def get_attr_from_json(attrs, _json_):

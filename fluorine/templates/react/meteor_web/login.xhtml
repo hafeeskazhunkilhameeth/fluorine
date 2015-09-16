@@ -35,9 +35,53 @@
 {% endmeteor %}
 {% endblock %}
 
+
 {% block login %}
 {% meteor login %}
 <template name="login">
+    <div class="ui middle aligned center aligned container grid">
+      <div class="column">
+        <h2 class="ui teal image header">
+          <img src="assets/images/logo.png" class="image">
+          <div class="content">
+            Log-in to your account
+          </div>
+        </h2>
+        <form class="login-form ui large form">
+          <div class="ui stacked segment">
+            <div class="field">
+              <div class="ui left icon input">
+                <i class="user icon"></i>
+                <input id="email" type="text" name="email" placeholder="E-mail address">
+              </div>
+            </div>
+            <div class="field">
+              <div class="ui left icon input">
+                <i class="lock icon"></i>
+                <input id="password" type="password" name="password" placeholder="Password">
+              </div>
+            </div>
+            <!--<div class="login-form ui fluid large teal submit button">Login</div>-->
+              <button type="submit" class="ui fluid large teal submit button">{{%_ "Login"}}</button>
+          </div>
+
+          <div class="ui error message"></div>
+
+        </form>
+
+        <div class="ui message">
+          New to us? <a href="#">Sign Up</a>
+        </div>
+      </div>
+    </div>
+</template>
+{% endmeteor %}
+{% endblock %}
+
+
+{% block login_old %}
+{% meteor login_old %}
+<template name="login_old">
     <div class="row">
         <div class="col-md-6 col-md-offset-3">
             <form class="login-form">
@@ -48,11 +92,11 @@
                     <div class="panel-body">
                         <div class="form-group col-lg-12">
                             <label>{{%_ "Email"}}</label>
-                            <input type="text"  class="form-control" id="email" value="">
+                            <input type="text"  class="form-control" id="emails" value="">
                         </div>
                         <div class="form-group col-lg-12">
                             <label>{{%_ "Password"}}</label>
-                            <input type="password" name="" class="form-control" id="password" value="">
+                            <input type="password" name="" class="form-control" id="passwords" value="">
                         </div>
                     </div>
                     <div class="panel-footer">

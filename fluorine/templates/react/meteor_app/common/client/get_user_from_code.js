@@ -28,6 +28,7 @@ var set_cookie = function(cookie, pos){
 }*/
 
 //Router.options.autoStart = false;
+FlowRouter.wait();
 
 var pathname = window.location.pathname;
 
@@ -51,20 +52,81 @@ var deskSection = FlowRouter.group({
     prefix: pathname
 });
 
+
 deskSection.route('/', {
+    action: function(params, queryParams) {
+    	//$(".offcanvas-container").show();
+    	console.log("Yeah! We are or were on the admin page: ", this, params, queryParams);
+    	/*if (FlowRouter.current().context.hash == "fluorine-admin"){
+    	    //FlowRouter.go(repl("/desk/%(page)s", {"page": "fluorine-admin#fluorine-admin"}));
+    	    console.log("do nothing");
+    	}*/
+    }
+});
+
+/*$(window).on('hashchange', function() {
+    console.log("route ", frappe.get_route());
+});*/
+
+/*deskSection.route('/', {
     action: function(params, queryParams) {
     	$(".offcanvas-container").show();
     	console.log("Yeah! We are or were on the admin page: ", params, queryParams);
     	if (queryParams.page){
-    	    FlowRouter.go(repl("/mdesk/%(page)s", {"page": queryParams.page}));
+    	    FlowRouter.go(repl("/desk/%(page)s", {"page": queryParams.page}));
     	}
+    }
+});*/
+
+
+/*Template.Layout.helpers({
+       status: function(){
+            //return frappe.get_cookie("sid") !== ""  && frappe.get_cookie("sid") !== "Guest" && Meteor.user();
+            var state = Session.get("pillState");
+            var obj = {};
+            obj[state] = true;
+            return obj;
+       }
+
+});*/
+
+Template.Layout.events({
+	'click a': function (event) {
+		event.preventDefault();
+		var className = event.target.className;
+		//Session.set("pillState", className);
+		console.log("FlowRouter.getParam('postId') ", FlowRouter.getParam('postId'));
+		FlowRouter.go(repl("/desk/%(page)s", {"page": repl("fluorine-admin/%(path)s", {"path": className})}));
+	}
+});
+
+
+deskSection.route('/fluorine-admin/panel_home', {
+    action: function(params, queryParams) {
+        BlazeLayout.render("Layout", {content: "panel_home", panel_home:true});
+        //$(".offcanvas-container").hide();
     }
 });
 
-deskSection.route('/admin', {
+deskSection.route('/fluorine-admin/panel_profile', {
+    action: function(params, queryParams) {
+        BlazeLayout.render("Layout", {content: "panel_profile", panel_profile:true});
+        //$(".offcanvas-container").hide();
+    }
+});
+
+/*deskSection.route('/fluorine-admin', {
     action: function(params, queryParams) {
         console.log("Yeah! We are on the post:", params);
-        $(".offcanvas-container").hide();
+        //$(".offcanvas-container").hide();
+    }
+});*/
+
+$(window).on('hashchange', function() {
+
+    if(window.location.pathname.indexOf("/desk/fluorine-admin") === 0 && window.location.hash === ""){
+    	console.log("flows current hash is ", FlowRouter.current().context.hash);
+    	history.pushState(history.state, "", "/desk#");
     }
 });
 
