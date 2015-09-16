@@ -271,7 +271,7 @@ class MeteorDevelop(object):
 		self.update_meteor_conf_file()
 		update_url_port(self.doc, self.meteor_config, self.server_port, self.ddp_port)
 		self.make_mongo()
-		self.doc.save()
+		#self.doc.save()
 		self.check_apps_updates()
 		self.update_list_packages()
 		self.make_apps_context()
@@ -290,6 +290,9 @@ class MeteorDevelop(object):
 		meteor_config["developer_mode"] = 1
 		meteor_config["production_mode"] = 0
 		meteor_config["stop"] = 0
+
+	def save_doc_and_meteor_config(self):
+		self.doc.save()
 
 	def check_meteor_apps(self):
 		from fluorine.utils.apps import check_meteor_apps_created
@@ -402,7 +405,7 @@ class MeteorProduction(object):
 		self.update_meteor_conf_file()
 		self.update_doctype()
 		update_url_port(self.doc, self.meteor_config, self.server_port, self.ddp_port)
-		self.doc.save()
+		#self.doc.save()
 		self.check_apps_updates()
 		self.check_hosts()
 
@@ -435,6 +438,9 @@ class MeteorProduction(object):
 
 		self.meteor_config["stop"] = 1
 		self.meteor_config["production_mode"] = 1
+
+	def save_doc_and_meteor_config(self):
+		self.doc.save()
 
 	def check_hosts(self):
 		from fluorine.commands_helpers import get_hosts, get_host_address

@@ -84,10 +84,21 @@ def get_ddp_address(doc):
 
 	return mtddp
 
+def stop_frappe_db():
+	if frappe.db:
+		frappe.db.commit()
+		frappe.destroy()
+
+
 def start_frappe_db(site):
 	if not frappe.db:
 		frappe.init(site=site)
 		frappe.connect()
+
+
+def change_frappe_db(site):
+	stop_frappe_db()
+	start_frappe_db(site)
 
 
 def get_doctype(name, site):
@@ -110,6 +121,21 @@ def get_default_site():
 			frappe.throw("There is no default site. Check if reactivity/common_site_config.json for site option or if sites/currentsite.txt exist or provide the site with --site option.")
 
 	return site
+
+
+def get_app_installed_site(site, app="fluorine", bench=".."):
+
+	fluorine_site = None
+
+	m = get_bench_module("utils", bench=bench)
+	sites = run_bench_module(m, "get_sites")
+	for site in sites:
+		change_frappe_db(site)
+		if app in frappe.get_installed_apps():
+			fluorine_site = site
+			break
+
+	return fluorine_site
 
 
 def get_current_dev_app():

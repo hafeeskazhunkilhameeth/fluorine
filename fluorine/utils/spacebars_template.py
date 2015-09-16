@@ -276,6 +276,7 @@ def fluorine_build_context(context, whatfor):
 
 	frappe.local.meteor_ignores = list_ignores.get(whatfor)
 
+	#print "whatfor {} list {}".format(whatfor, frappe.local.meteor_ignores)
 
 	context.page_relations = meteor_config.get("page_relations", True)
 

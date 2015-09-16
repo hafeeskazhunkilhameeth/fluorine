@@ -5,3 +5,4 @@ accounts-password@=1.1.1
 tap:i18n-ui@=0.7.0
 tap:i18n-db@=0.4.0
 tap:i18n@=1.5.1
+kadira:blaze-layout@=2.1.0

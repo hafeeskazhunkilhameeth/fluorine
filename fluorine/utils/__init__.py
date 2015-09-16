@@ -161,8 +161,9 @@ def jquery_include():
 	return True
 
 def get_Frappe_Version(version=None):
-	version = version or frappe.__version__
 	import semantic_version as sv
+
+	version = version or frappe.__version__
 	return sv.Version(version)
 
 

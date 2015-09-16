@@ -321,8 +321,8 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 
 	_whatfor = [meteor_desk_app, meteor_web_app]
 
-	list_only_for_sites = get_attr_from_json([whatfor, "remove", "only_for_sites"], frappe.local.meteor_ignores)
-
+	#list_only_for_sites = get_attr_from_json([whatfor, "only_for_sites"], frappe.local.meteor_ignores)
+	list_only_for_sites = frappe.local.meteor_ignores.get("only_for_sites")
 	#folders_path = []
 	#exclude = ["private", "public"]
 	#custom_pattern = custom_pattern or []
@@ -373,6 +373,7 @@ def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom
 			make_tests(meteorpath, dst_tests_path, app, whatfor, custom_pattern=custom_pattern)
 
 			server_writes = is_app_for_site(app, list_only_for_sites)
+			#print "app {} list {} server_writes {}".format(app, list_only_for_sites, server_writes)
 
 			for obj in paths:
 				tpath = obj.get("tname")
@@ -466,7 +467,8 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, pfs_out, custom_patte
 	#if isinstance(whatfor, basestring):
 	#	whatfor = [whatfor]
 
-	list_only_for_sites = get_attr_from_json([whatfor, "remove", "only_for_sites"], frappe.local.meteor_ignores)
+	#list_only_for_sites = get_attr_from_json([whatfor, "only_for_sites"], frappe.local.meteor_ignores)
+	list_only_for_sites = frappe.local.meteor_ignores.get("only_for_sites")
 
 	_whatfor.remove(whatfor)
 
@@ -512,6 +514,7 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, pfs_out, custom_patte
 					ign_dirs.update(ignored_names_any)
 
 				if not server_writes and "server" in dirs:
+					#print "if not server_writes and server in dirs app {} dirs {} server_writes {}".format(app, dirs, server_writes)
 					ign_dirs.update(["server"])
 
 				for toexclude in ign_dirs:
@@ -529,6 +532,7 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, pfs_out, custom_patte
 
 					#only write if it is in the client path
 					if not server_writes and not (f.endswith(".html") or "client" in root):
+						#print "if not server_writes and not (f.endswith(.html) or client in root) f {} app {} server_writes {}".format(f, app, server_writes)
 						continue
 
 					intern_relative_react = relative_react

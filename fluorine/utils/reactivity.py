@@ -43,7 +43,6 @@ def start_meteor():
 	global start_db
 
 	if frappe.db and start_db:
-		frappe.set_user("guest")
 		frappe.db.commit()
 		frappe.destroy()
 		start_db = False
@@ -69,10 +68,14 @@ list_ignores = None
 
 
 def is_app_for_site(app, list_only_for_sites):
+	from fluorine.commands_helpers import get_default_site
 
-	current_site = frappe.local.site
+	current_site = get_default_site()
 
-	for obj in list_only_for_sites.get(app):
+	logger = logging.getLogger("frappe")
+	logger.error("current site {} app {} list {}".format(current_site, app, list_only_for_sites))
+	#app_only_for = list_only_for_sites.get(app) or []
+	for obj in list_only_for_sites.get(app, []):
 		if obj.get("site") == current_site:
 			return obj.get("server_writes")
 
@@ -88,6 +91,7 @@ def make_meteor_ignor_files():
 	This regular expression will ignore everything inside folder highlight and also any file with name highlight and with any extension.
 	"""
 	from fluorine.utils import APPS as apps, whatfor_all, meteor_desk_app, meteor_web_app#, get_attr_from_json
+	from fluorine.commands_helpers import get_default_site
 	#from fluorine.utils.fjinja2.utils import c
 
 	global list_ignores
@@ -99,7 +103,7 @@ def make_meteor_ignor_files():
 
 	logger = logging.getLogger("frappe")
 
-	current_site = frappe.local.site
+	current_site = get_default_site()
 
 	curr_app = meteor_config.get("current_dev_app", "").strip()
 	know_apps = apps[::]
@@ -112,34 +116,45 @@ def make_meteor_ignor_files():
 		pfs_in = ProcessFileSystem(whatfor, curr_app)
 		##keys are the sites and value is a list of dicts of apps and server_writes to use in the site
 		list_only_for_sites = {}
+		list_know_apps = know_apps[::]
 		# Apps removed by current dev app does not remove anything.
 		# The same is true for first installed apps that do not removed anything if they are removed by last installed apps.
-		while know_apps:
-			app = know_apps.pop()
+		while list_know_apps:
+			app = list_know_apps.pop()
 			app_path = frappe.get_app_path(app)
+			meteor_app = os.path.join(app_path, "templates", "react", whatfor)
+
+			if not os.path.exists(meteor_app):
+				try:
+					list_know_apps.remove(app)
+				except:
+					pass
+				continue
+
 			perm_path = os.path.join(app_path, "templates", "react", whatfor, "permissions.json")
 			if os.path.exists(perm_path):
 				conf_file = frappe.get_file_json(perm_path)
-				if conf_file:
-					conf_in = conf_file.get("IN") or conf_file.get("in")
-					if conf_in:
-						sites = conf_in.get("only_for_sites") or []
-						if not sites:
-							#if get nothing for app it is because this app is for all sites
-							list_only_for_sites[app] = [{"site": current_site, "server_writes": True}]
-						for site in sites:
-							if not list_only_for_sites.get(app):
-								list_only_for_sites[app] = []
-							list_only_for_sites.get(app).append(site)
-						pfs_in.feed_apps(conf_in)
-						apps_remove = pfs_in.get_apps_remove()
-						if not is_app_for_site(app, list_only_for_sites):
-							apps_remove.add(app)
-						for r in apps_remove:
-							try:
-								know_apps.remove(r)
-							except:
-								pass
+				conf_in = conf_file.get("IN") or conf_file.get("in") or {}
+				sites = conf_in.get("only_for_sites") or []
+				if not sites:
+					#if get nothing for app it is because this app is for all sites
+					list_only_for_sites[app] = [{"site": current_site, "server_writes": True}]
+				for site in sites:
+					if not list_only_for_sites.get(app):
+						list_only_for_sites[app] = []
+					list_only_for_sites.get(app).append(site)
+				pfs_in.feed_apps(conf_in)
+				apps_remove = pfs_in.get_apps_remove()
+				if not is_app_for_site(app, list_only_for_sites):
+					apps_remove.add(app)
+				for r in apps_remove:
+					try:
+						list_know_apps.remove(r)
+					except:
+						pass
+			else:
+				#if there is no permission file this is because this app is for all sites
+				list_only_for_sites[app] = [{"site": current_site, "server_writes": True}]
 
 		list_apps_remove = pfs_in.get_apps_remove()#get_permission_files_json(whatfor)
 		#list_meteor_files_folders_add, list_meteor_files_folders_remove, list_apps_remove = get_permission_files_json(whatfor)
@@ -174,8 +189,7 @@ def make_meteor_ignor_files():
 			else:
 				lall.add(c(pattern))
 		"""
-		#logger.error("list_ignores inside highlight {}".format(list_meteor_files_folders_remove))
-
+		#logger.error("list_ignores inside highlight {} w {} apps {}".format(list_ignores.get(whatfor), whatfor, know_apps))
 
 	return list_ignores
 
@@ -377,7 +391,7 @@ class ProcessFileSystem(object):
 	#return list_ff_add, list_ff_remove, list_apps_remove
 
 
-
+#TODO to Remove!!!
 def _get_permission_files_json(whatfor):
 	from fluorine.utils.apps import get_active_apps
 

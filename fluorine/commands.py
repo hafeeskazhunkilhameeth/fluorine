@@ -268,7 +268,7 @@ def cmd_get_state():
 	click_format("*" * 35, color=color)
 
 
-@click.command('current-dev-app')
+@click.command('set-current-dev-app')
 @click.argument('app')
 def set_current_app(app):
 	"""Set the current app for develop."""
@@ -313,7 +313,7 @@ def cmd_restore_common_config(site=None):
 
 @click.command('set-state')
 @click.argument('state')
-@click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
+@click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite.')
 @click.option('--custom-mongo', help='Set False to use custom mongo. Set mongo custom options in folder reactivity/common_site_config.json. By default is True.', is_flag=True)
 @click.option('--user', default=None, help='Name of the user to use to start production mode. Default to the current user.')
 @click.option('--server-port', default=None, help='Nginx listen port. Supply the port number if it is different then 80.')
@@ -334,9 +334,14 @@ def setState(state, site=None, custom_mongo=None, user=None, server_port=None, d
 		`stop` to enter in original frappe web.
 	"""
 	import getpass
+	from fluorine.utils.meteor.utils import update_common_config
 
 	if site == None:
 		site = get_default_site()
+	else:
+		from fluorine.utils.reactivity import meteor_config
+		meteor_config["site"] = site
+		update_common_config(meteor_config)
 
 	if not user:
 		user = getpass.getuser()
@@ -353,11 +358,16 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 			server_port=None, ddp_port=None, mac_sup_prefix_path="/usr/local", file_to_add=None, file_to_remove=None, skip_package_check_updates=False):
 	from fluorine.utils.fcache import clear_frappe_caches
 	from fluorine.utils.context import MeteorContext
+	from fluorine.commands_helpers import stop_frappe_db, get_app_installed_site
 
-	doc = get_doctype("Fluorine Reactivity", site)
+
+	fluorine_site = get_app_installed_site(site, app="fluorine", bench=bench)
+
+	doc = get_doctype("Fluorine Reactivity", fluorine_site)
 
 	devmode = doc.fluor_dev_mode
 	fluor_state = doc.fluorine_state
+
 	what = state.lower()
 	if what == "init":
 		mctx = MeteorContext()
@@ -365,6 +375,7 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 	elif what == "develop":
 		from fluorine.commands_helpers import get_current_dev_app
 
+		change_frappe_db(site)
 		current_dev_app = get_current_dev_app()
 		start_meteor(doc, current_dev_app, site=site, mongo_custom=mongo_custom, bench=bench, server_port=server_port, ddp_port=ddp_port,
 					file_to_add=file_to_add, file_to_remove=file_to_remove, skip_package_check_updates=skip_package_check_updates)
@@ -374,6 +385,7 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 		from fluorine.commands_helpers import get_current_dev_app
 		from fluorine.utils.reactivity import meteor_config
 
+		change_frappe_db(site)
 		current_dev_app = get_current_dev_app()
 
 		if not update and not debug:
@@ -392,9 +404,7 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 
 	clear_frappe_caches()
 
-	if frappe.db:
-		frappe.db.commit()
-		frappe.destroy()
+	stop_frappe_db()
 
 
 def start_meteor(doc, current_dev_app, site=None, mongo_custom=False, server_port=None, ddp_port=None, bench="..", file_to_add=None, file_to_remove=None, skip_package_check_updates=False):
@@ -465,6 +475,9 @@ def start_meteor(doc, current_dev_app, site=None, mongo_custom=False, server_por
 	md = MeteorDevelop(doc, current_dev_app, site=site, mongo_custom=mongo_custom, server_port=server_port, ddp_port=ddp_port,
 					bench=bench, file_to_add=file_to_add, file_to_remove=file_to_remove, skip_package_check_updates=skip_package_check_updates)
 	md.start()
+	fluorine_site = get_app_installed_site(site, app="fluorine", bench=bench)
+	start_frappe_db(fluorine_site)
+	md.save_doc_and_meteor_config()
 
 
 def stop_meteor(doc, devmode, state, force=False, site=None, production=False, bench=".."):
@@ -576,6 +589,9 @@ def start_meteor_production_mode(doc, current_dev_app, server_port=None, ddp_por
 						ddp_port=ddp_port, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path, file_to_add=file_to_add, file_to_remove=file_to_remove)
 
 	mp.start()
+	fluorine_site = get_app_installed_site(site, app="fluorine", bench=bench)
+	start_frappe_db(fluorine_site)
+	mp.save_doc_and_meteor_config()
 
 	if debug:
 		click.echo("Please issue `bench start` and go to http://localhost or http://127.0.0.1.")

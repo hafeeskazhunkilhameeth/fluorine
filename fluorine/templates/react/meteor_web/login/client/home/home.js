@@ -56,6 +56,7 @@ Template.meteor_menu.helpers({
 
 Template.meteor_menu.onRendered(function(){
 
+    console.log("this in meteor_menu ", this.$('.masthead'));
     this.$('.masthead')
             .visibility({
               once: false,
