@@ -43,7 +43,6 @@ def get_active_apps(whatfor):
 	current_site = get_default_site()
 	only_for_sites = get_attr_from_json([whatfor, "only_for_sites"], list_ignores)
 
-	print "only_for_site {}".format(only_for_sites)
 
 	known_apps = apps[::]
 

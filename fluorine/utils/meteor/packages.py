@@ -27,7 +27,6 @@ def cmd_packages_from(curr_app, whatfor, package_file_name):
 	react_path = get_path_reactivity()
 
 	apps = get_active_apps(whatfor)
-	print "curr_app {} apps {} whatfor {}".format(curr_app, apps, whatfor)
 	apps.remove(curr_app)
 	installed_packages = get_packages_list_version(whatfor, path_reactivity=react_path)
 	packages_to_remove = set([])
