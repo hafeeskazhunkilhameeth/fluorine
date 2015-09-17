@@ -438,7 +438,7 @@ class MeteorProduction(object):
 		from fluorine.utils import update_file_map_site, get_meteor_final_name
 
 
-		fms = {"site": "%s" % self.site}
+		fms = {"%s" % self.site: "%s" % self.site.replace(".", "_")}
 		update_file_map_site(fms)
 
 	def update_doctype(self):
