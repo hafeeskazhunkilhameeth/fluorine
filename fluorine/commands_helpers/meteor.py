@@ -56,14 +56,12 @@ def make_start_meteor_script(doc, site):
 	from distutils.spawn import find_executable
 	import stat
 
-	#tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
-	#meteor_apps = tostart.get(doc.fluorine_reactivity)
 
 	react_path = get_path_reactivity()
 
 	node = find_executable("node") or find_executable("nodejs")
 
-	for app in whatfor_all:#("meteor_app", "meteor_web"):
+	for app in whatfor_all:
 		final_app_name = get_meteor_final_name(site, app)
 		meteor_final_path = os.path.join(react_path, final_app_name, "bundle/exec_meteor")
 		exp_mongo, mongo_default = get_mongo_exports(doc)
