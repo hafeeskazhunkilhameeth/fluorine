@@ -429,7 +429,7 @@ class MeteorProduction(object):
 
 		self.build_assets()
 		self.remove_public_link()
-		self.remove_build()
+		#self.remove_build()
 		self.update_file_map_site()
 		self.start_services()
 

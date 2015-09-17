@@ -108,7 +108,7 @@ def build_frappe_json_files(manifest, build_json, site, jquery=0):
 			if "jquery" in path and jquery == 0:
 				continue
 
-			pack_path = os.path.join(react_path, final_app_path, path)
+			pack_path = os.path.join(react_path, final_app_path, "bundle", "programs", "web.browser", path)
 			type = m.get("type") == "js"
 			if type:
 				build_json["js/%s.min.js" % sitename].append(pack_path)

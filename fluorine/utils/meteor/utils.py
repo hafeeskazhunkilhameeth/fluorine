@@ -318,11 +318,14 @@ def get_meteor_appId(path):
 	return appid
 
 
+#TODO PASSAR site
 def prepare_client_files(curr_app):
+	from fluorine.utils import get_meteor_final_name
 	from fluorine.utils.react_file_loader import remove_directory
 	from fluorine.utils.file import get_path_reactivity, save_file
 	from fluorine.utils.apps import get_active_apps
 
+	#final_app_name = get_meteor_final_name(site, meteor_desk_app)
 	react_path = get_path_reactivity()
 	curr_app_path = frappe.get_app_path(curr_app)
 

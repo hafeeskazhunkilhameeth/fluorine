@@ -156,7 +156,9 @@ def make_supervisor(doc, site):
 	from meteor import get_meteor_environment
 	from fluorine.utils.reactivity import meteor_config
 	from fluorine.utils import get_meteor_final_name
+	from distutils.spawn import find_executable
 
+	nodepath = find_executable('node') or find_executable('nodejs')
 	#sitename = site.replace(".","_")
 	conf = frappe._dict()
 	conf.user = getpass.getuser()
@@ -181,6 +183,7 @@ def make_supervisor(doc, site):
 			conf.meteorenv = get_meteor_environment(doc, app_name)
 			conf.progname = "meteor_%s" % final_app_name
 			conf.final_server_path = os.path.join(path_reactivity, final_app_name, "bundle")
+			conf.nodepath = nodepath
 			content.extend(supervisor_meteor_conf.format(**conf))
 
 	writelines(config_file, content)
@@ -189,6 +192,7 @@ def make_supervisor(doc, site):
 def generate_nginx_supervisor_conf(doc, site, user=None, debug=None, update=False, bench="..", mac_sup_prefix_path="/usr/local"):
 	from bench_helpers import bench_generate_nginx_config, bench_generate_supervisor_config,\
 						bench_setup_production
+
 	import platform, errno
 
 	supervisor_conf_filename = "frappe.conf"
@@ -230,7 +234,7 @@ def generate_nginx_supervisor_conf(doc, site, user=None, debug=None, update=Fals
 
 supervisor_meteor_conf = """
 [program: {progname}]
-command=node main.js
+command={nodepath} {final_server_path}/main.js
 autostart=true
 autorestart=true
 stopsignal=QUIT
