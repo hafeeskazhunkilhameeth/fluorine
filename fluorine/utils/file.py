@@ -40,7 +40,7 @@ def make_meteor_file(site, mtport=3070, mthost="http://127.0.0.1", architecture=
 	#sitename = site.replace(".", "_")
 	final_app_name = get_meteor_final_name(site, whatfor)
 	path = get_path_reactivity()
-	args = shlex.split("meteor build --directory %s --server %s --architecture %s %s" % (os.path.join(path, final_app_name), mthost + ':' + str(mtport), architecture,\
+	args = shlex.split("meteor build --directory %s --server %s --architecture %s %s" % (os.path.join(path, final_app_name), mthost + ':' + str(mtport), architecture,
 																						"--debug" if whatfor == "meteor_app" else ""))
 	print "start make meteor... {}".format(whatfor)
 	subprocess.call(args, cwd=os.path.join(path, whatfor), close_fds=True)

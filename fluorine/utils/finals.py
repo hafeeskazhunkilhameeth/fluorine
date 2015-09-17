@@ -68,7 +68,7 @@ def make_final_app_client(site, jquery=0):
 	sitename = site.replace(".", "_")
 	final_app_name = get_meteor_final_name(site, meteor_desk_app)
 	meteor_final_path = os.path.join(react_path, final_app_name)
-	progarm_path = os.path.join(meteor_final_path, "program.json")
+	progarm_path = os.path.join(meteor_final_path, "bundle", "programs", "web.browser", "program.json")
 
 	if os.path.exists(progarm_path):
 
