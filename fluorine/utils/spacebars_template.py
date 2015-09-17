@@ -238,8 +238,9 @@ def fluorine_build_context(context, whatfor):
 	from fluorine.utils.reactivity import get_read_file_patterns
 	from fluorine.utils.apps import get_active_apps
 	from fluorine.utils import meteor_web_app, meteor_config
-	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation, copy_mobile_config_file, custom_make_all_files_with_symlink
-	from reactivity import list_ignores, ProcessFileSystem
+	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation,\
+		copy_mobile_config_file, custom_make_all_files_with_symlink
+	from fluorine.utils.permission_file import ProcessFileSystem, list_ignores
 	from react_file_loader import get_custom_pattern
 
 

@@ -32,21 +32,27 @@ FlowRouter.wait();
 
 var pathname = window.location.pathname;
 
-$(document).on('app_ready', function(ev){
+/*$(document).on('app_ready', function(ev){
 	console.log("frappe is ready!!!!");
 	$("#toolbar-user").prepend(repl("<li><a href='%(pathname)s/admin'>Admin</a></li><li class='divider'></li>", {"pathname": pathname}));
 	//$(".offcanvas-container").hide();
 	var sid = frappe.get_cookie("sid");
     if (is_valid_sid(sid)){
-        /*Meteor.frappe_login(sid, function(result){
-            console.log("Result from login into meteor 2 ", result);
-        });*/
         Meteor.call("frappe_teste", function(error, res){
         	console.log("meteor call ", error, res);
         });
     }
-});
+});*/
 
+Meteor.startup(function(){
+    var sid = frappe.get_cookie("sid");
+
+    if (is_valid_sid(sid)){
+        Meteor.call("frappe_teste", function(error, res){
+            console.log("meteor call ", error, res);
+        });
+    }
+});
 
 var deskSection = FlowRouter.group({
     prefix: pathname

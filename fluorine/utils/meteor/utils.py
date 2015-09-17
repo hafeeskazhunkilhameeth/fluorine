@@ -238,7 +238,7 @@ def meteor_hash_version(manifest, runtimeCfg, whatfor):
 	return sh1.hexdigest(), sh2.hexdigest(), frappe_manifest_js, frappe_manifest_css
 """
 
-def make_meteor_props(context, whatfor, production=False):
+def make_meteor_props(context, whatfor, production=False, site=None):
 	from fluorine.utils import get_meteor_runtime_config_path
 	from fluorine.utils.file import get_path_reactivity
 
@@ -260,8 +260,10 @@ def make_meteor_props(context, whatfor, production=False):
 		config_path = os.path.join(path_reactivity, whatfor, ".meteor/local/build/programs/server/config.json")
 		appId = get_meteor_appId(os.path.join(path_reactivity, whatfor, ".meteor/.id"))
 	else:
-		progarm_path = os.path.join(path_reactivity, whatfor.replace("meteor", "final"), "bundle/programs/web.browser/program.json")
-		config_path = os.path.join(path_reactivity, whatfor.replace("meteor", "final"), "bundle/programs/server/config.json")
+		from fluorine.utils import get_meteor_final_name
+		meteor_final_name = get_meteor_final_name(site, whatfor)
+		progarm_path = os.path.join(path_reactivity, meteor_final_name, "bundle/programs/web.browser/program.json")
+		config_path = os.path.join(path_reactivity, meteor_final_name, "bundle/programs/server/config.json")
 
 	context.meteorRelease = get_meteor_release(config_path)
 	context.appId = appId.replace(" ","").replace("\n","")
@@ -349,14 +351,16 @@ def prepare_client_files(curr_app):
 		save_file(dst, "\n".join(installed_packages))
 
 
-def remove_old_final_folders():
-	from fluorine.utils.file import get_path_reactivity, save_file
+def remove_old_final_folders(site):
+	from fluorine.utils import get_meteor_final_name
+	from fluorine.utils.file import get_path_reactivity
 	from fluorine.utils.react_file_loader import remove_directory
 
 	react_path = get_path_reactivity()
 
 	for whatfor in whatfor_all:
-		meteor_final_path = os.path.join(react_path, whatfor.replace("meteor", "final"))
+		final_app_name = get_meteor_final_name(site, whatfor)
+		meteor_final_path = os.path.join(react_path, final_app_name)
 		if os.path.exists(meteor_final_path):
 			try:
 				remove_directory(os.path.join(meteor_final_path, "bundle"))
@@ -364,11 +368,11 @@ def remove_old_final_folders():
 				pass
 
 
-def make_meteor_files(mthost, mtport, architecture):
+def make_meteor_files(mthost, mtport, architecture, site):
 	from fluorine.utils.file import make_meteor_file
 
 	for w in whatfor_all:
-		make_meteor_file(whatfor=w, mtport=mtport, mthost=mthost, architecture=architecture)
+		make_meteor_file(site, whatfor=w, mtport=mtport, mthost=mthost, architecture=architecture)
 
 
 """

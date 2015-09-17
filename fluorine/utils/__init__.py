@@ -6,6 +6,7 @@ import frappe
 
 meteor_config = None
 
+file_map_site = None
 
 making_production = False
 #frappe.local("making_production")
@@ -25,6 +26,14 @@ def is_making_production():
 def set_making_production(val):
 	global making_production
 	making_production = val
+
+
+def get_meteor_final_name(site, whatfor):
+
+	sitename = site.replace(".", "_")
+	final = whatfor.replace("meteor", "final")
+
+	return "%s_%s" % (final, sitename)
 
 def get_meteor_runtime_config_path(whatfor, real=False):
 	import os
@@ -68,20 +77,20 @@ def get_frappe_apps_path():
 def remove_from_hooks(hooks, stop=False):
 
 	base_template = "templates/fluorine_base.html"
-	meteor_js = "/assets/js/meteor_app.min.js"
-	meteor_css = "/assets/css/meteor_app.css"
+	#meteor_js = "/assets/js/meteor_app.min.js"
+	#meteor_css = "/assets/css/meteor_app.css"
 	home_page = "fluorine_home"
 
 	if isinstance(hooks, dict):
 		base = hooks.get("base_template")
 		home = hooks.get("home_page")
-		hjs = hooks.get("app_include_js")
-		hcss = hooks.get("app_include_css")
+		#hjs = hooks.get("app_include_js")
+		#hcss = hooks.get("app_include_css")
 
-		if hjs and meteor_js in hjs:
-			hjs.remove(meteor_js)
-		if hcss and meteor_css in hcss:
-			hcss.remove(meteor_css)
+		#if hjs and meteor_js in hjs:
+		#	hjs.remove(meteor_js)
+		#if hcss and meteor_css in hcss:
+		#	hcss.remove(meteor_css)
 
 		if stop:
 			if base_template == base:
@@ -91,11 +100,10 @@ def remove_from_hooks(hooks, stop=False):
 				home.remove(home_page)
 
 	else:
-		if meteor_js in hooks:
-			hooks.remove(meteor_js)
-		if meteor_css in hooks:
-			hooks.remove(meteor_css)
-
+		#if meteor_js in hooks:
+		#	hooks.remove(meteor_js)
+		#if meteor_css in hooks:
+		#	hooks.remove(meteor_css)
 		if stop:
 			if base_template in hooks:
 				hooks.remove(base_template)
@@ -223,7 +231,47 @@ def is_open_port(ip="127.0.0.1", port=3070):
 	return is_open
 
 
+def update_file_map_site(fms):
+	import os
+	from fluorine.utils.file import get_path_reactivity, save_js_file
+	from fluorine.utils import get_file_map_site
+
+	if not file_map_site:
+		get_file_map_site()
+
+	global file_map_site
+
+	file_map_site.update(fms)
+	path_reactivity = get_path_reactivity()
+	config_file_path = os.path.join(path_reactivity, "file_map_site.json")
+
+	save_js_file(config_file_path, file_map_site)
+
+
+def get_file_map_site():
+	import os
+
+	if file_map_site:
+		return file_map_site
+
+	global file_map_site
+
+	frappe_module = os.path.dirname(frappe.__file__)
+	path_apps = os.path.realpath(os.path.join(frappe_module, "..", ".."))
+	path_reactivity = os.path.join(path_apps, "reactivity")
+
+	file_map_site_json = os.path.join(path_reactivity, "file_map_site.json")
+	if os.path.exists(file_map_site_json):
+		file_map_site = frappe.get_file_json(file_map_site_json)
+	else:
+		file_map_site = {}
+
+	return file_map_site
+
+
 if check_dev_mode():
 	#PATCH HOOKS
 	prepare_environment()
 	import reactivity
+else:
+	get_file_map_site()

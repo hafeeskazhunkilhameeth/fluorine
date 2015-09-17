@@ -4,21 +4,24 @@ __author__ = 'luissaguas'
 from fluorine.utils.mongodb.utils import get_mongo_exports
 import os
 
-def save_to_procfile(doc, production_debug=False):
+def save_to_procfile(doc, site, production_debug=False):
 	from fluorine.utils.file import writelines
+	from fluorine.commands_helpers.meteor import get_meteor_settings
+	from fluorine.utils import get_meteor_final_name
 
-	procfile, procfile_path = get_procfile()
+
+	procfile, procfile_path = get_procfile(site)
 	#tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
 	#meteor_apps = tostart.get(doc.fluorine_reactivity)
 
-	from fluorine.commands_helpers.meteor import get_meteor_settings
 
 	for app in ("meteor_app", "meteor_web"):
 		export_mongo, mongo_default = get_mongo_exports(doc)
 		mthost, mtport, forwarded_count = get_root_exports(app)
 
 		if production_debug:
-			final_app = app.replace("meteor", "final")
+			final_app = get_meteor_final_name(site, app)
+			#final_app = "%s_%s" % (app.replace("meteor", "final"), sitename)
 			procfile.insert(0, "%s: (cd apps/reactivity/%s/bundle && ./exec_meteor)\n" %
 							(final_app, final_app))
 		else:
@@ -34,11 +37,12 @@ def save_to_procfile(doc, production_debug=False):
 		writelines(procfile_path, procfile)
 
 
-def get_procfile():
+def get_procfile(site):
 	from fluorine.utils.file import readlines
 	from fluorine.utils.fjinja2.utils import c
 
-	re_meteor_procfile = c(r"^(meteor_app:|meteor_web:|final_app:|final_web:)")
+	sitename = site.replace(".", "_")
+	re_meteor_procfile = c(r"^(meteor_app:|meteor_web:|final_app_%s:|final_web_%s:)" % (sitename, sitename))
 	procfile_dir = os.path.normpath(os.path.join(os.getcwd(), ".."))
 	procfile_path = os.path.join(procfile_dir, "Procfile")
 
@@ -47,10 +51,10 @@ def get_procfile():
 
 	return procfile, procfile_path
 
-def remove_from_procfile():
+def remove_from_procfile(site):
 	from fluorine.utils.file import writelines
 
-	procfile, procfile_path = get_procfile()
+	procfile, procfile_path = get_procfile(site)
 	writelines(procfile_path, procfile)
 
 

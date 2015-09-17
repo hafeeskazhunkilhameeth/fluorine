@@ -6,8 +6,6 @@
   	  "constrains":"pm"
       }
     },
-    "only_for_sites":[
-          {"site": "site2.local", "server_writes": true}
-        ]
+    "only_for_sites":["site2.local"]
     }
 }

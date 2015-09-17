@@ -32,20 +32,24 @@ def get_meteor_app_files():
 
 
 #Run npm install for meteor server
-def run_npm():
+def run_npm(site):
+	from fluorine.utils import get_meteor_final_name
 	from fluorine.utils.file import get_path_reactivity
 	import subprocess
 
+	final_app_name_desk = get_meteor_final_name(site, meteor_desk_app)
+	final_app_name_web = get_meteor_final_name(site, meteor_web_app)
 	path_reactivity = get_path_reactivity()
-	final_app_path = os.path.join(path_reactivity, meteor_desk_app.replace("meteor", "final"), "bundle", "programs", "server")
-	final_web_path = os.path.join(path_reactivity, meteor_web_app.replace("meteor", "final"), "bundle", "programs", "server")
+	final_app_path = os.path.join(path_reactivity, final_app_name_desk, "bundle", "programs", "server")
+	final_web_path = os.path.join(path_reactivity, final_app_name_web, "bundle", "programs", "server")
 	click.echo("npm install meteor server Desk APP")
 	subprocess.call(["npm", "install"], cwd=final_app_path)
 	click.echo("npm install meteor server WEB")
 	subprocess.call(["npm", "install"], cwd=final_web_path)
 
 
-def make_start_meteor_script(doc):
+def make_start_meteor_script(doc, site):
+	from fluorine.utils import get_meteor_final_name
 	from fluorine.utils.procfile import get_root_exports
 	from fluorine.utils.mongodb.utils import get_mongo_exports
 	from fluorine.utils.file import get_path_reactivity, save_file
@@ -55,12 +59,13 @@ def make_start_meteor_script(doc):
 	#tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
 	#meteor_apps = tostart.get(doc.fluorine_reactivity)
 
+	final_app_name = get_meteor_final_name(site, meteor_desk_app)
 	react_path = get_path_reactivity()
 
 	node = find_executable("node") or find_executable("nodejs")
 
 	for app in whatfor_all:#("meteor_app", "meteor_web"):
-		meteor_final_path = os.path.join(react_path, app.replace("meteor", "final"), "bundle/exec_meteor")
+		meteor_final_path = os.path.join(react_path, final_app_name, "bundle/exec_meteor")
 		exp_mongo, mongo_default = get_mongo_exports(doc)
 		mthost, mtport, forwarded_count = get_root_exports(app)
 		msf = get_meteor_settings(app, production=True)
@@ -261,7 +266,7 @@ class MeteorDevelop(object):
 		from fluorine.utils import meteor_config
 		from fluorine.utils.context import MeteorContext
 
-		self.m_ctx = MeteorContext(production=False)
+		self.m_ctx = MeteorContext(self.site, production=False)
 		self.meteor_config = meteor_config
 
 		if not self.check_meteor_apps():
@@ -347,7 +352,7 @@ class MeteorDevelop(object):
 	def save_procfile(self):
 		from fluorine.utils.procfile import save_to_procfile
 
-		save_to_procfile(self.doc)
+		save_to_procfile(self.doc, self.site)
 
 	def generate_configs(self):
 		from fluorine.commands_helpers import config
@@ -396,7 +401,7 @@ class MeteorProduction(object):
 		from fluorine.utils import meteor_config
 		from fluorine.utils.context import MeteorContext
 
-		self.m_ctx = MeteorContext()
+		self.m_ctx = MeteorContext(self.site)
 		self.meteor_config = meteor_config
 
 		if not self.check_meteor_apps():
@@ -427,8 +432,16 @@ class MeteorProduction(object):
 		self.build_assets()
 		self.remove_public_link()
 		self.remove_build()
+		self.update_file_map_site()
 		self.start_services()
 
+
+	def update_file_map_site(self):
+		from fluorine.utils import update_file_map_site, get_meteor_final_name
+
+
+		fms = {"site": "%s" % self.site}
+		update_file_map_site(fms)
 
 	def update_doctype(self):
 		self.doc.fluorine_state = "off"
@@ -495,17 +508,17 @@ class MeteorProduction(object):
 	def remove_old_final_folders(self):
 		from fluorine.utils.meteor.utils import remove_old_final_folders
 
-		remove_old_final_folders()
+		remove_old_final_folders(self.site)
 
 	def make_meteor_bundle(self):
 		from fluorine.utils.meteor.utils import make_meteor_files
 		#If debug then do not run frappe setup production and test only meteor in production mode.
 		click.echo("Make meteor bundle for Desk APP")
-		make_meteor_files(self.doc.fluor_meteor_host, self.doc.fluor_meteor_port, self.doc.meteor_target_arch)
+		make_meteor_files(self.doc.fluor_meteor_host, self.doc.fluor_meteor_port, self.doc.meteor_target_arch, self.site)
 		#Patch: run twice for fix nemo64:bootstrap less problem
 		click.echo("Run twice to patch nemo64:bootstrap less problem")
 		click.echo("Make meteor bundle for WEB")
-		make_meteor_files(self.doc.fluor_meteor_host, self.doc.fluor_meteor_port, self.doc.meteor_target_arch)
+		make_meteor_files(self.doc.fluor_meteor_host, self.doc.fluor_meteor_port, self.doc.meteor_target_arch, self.site)
 
 	def make_meteor_properties(self):
 		click.echo("Make meteor properties.")
@@ -516,28 +529,29 @@ class MeteorProduction(object):
 		from fluorine.utils.finals import make_final_app_client
 
 		click.echo("Make build.json for meteor_app.")
-		make_final_app_client()
+		make_final_app_client(self.site)
 
 	def npm_install(self):
 		click.echo("Run npm install for meteor server:")
-		run_npm()
+		run_npm(self.site)
 
+	#Not called. To Remove
 	def make_production_link(self):
 		from fluorine.utils.finals import make_production_link
 
 		click.echo("Make production links.")
-		make_production_link()
+		make_production_link(self.site)
 
 	def remove_from_procfile(self):
 		#from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile
 		from fluorine.utils.procfile import remove_from_procfile
 
-		remove_from_procfile()
+		remove_from_procfile(self.site)
 
 	def generate_configs(self):
 		from fluorine.commands_helpers import config
 		#common_site_config.json must have meteor_dns for production mode or use default
-		config.generate_nginx_supervisor_conf(self.doc, user=self.user, debug=self.debug, update=self.update, bench=self.bench, mac_sup_prefix_path=self.mac_sup_prefix_path)
+		config.generate_nginx_supervisor_conf(self.doc, self.site, user=self.user, debug=self.debug, update=self.update, bench=self.bench, mac_sup_prefix_path=self.mac_sup_prefix_path)
 
 		config._generate_fluorine_nginx_conf(hosts_app=self.hosts_app, hosts_web=self.hosts_web, production=True, site=self.site)
 
@@ -545,8 +559,8 @@ class MeteorProduction(object):
 		if self.debug:
 			from fluorine.utils.procfile import save_to_procfile
 
-			make_start_meteor_script(self.doc)
-			save_to_procfile(self.doc, production_debug=True)
+			make_start_meteor_script(self.doc, self.site)
+			save_to_procfile(self.doc, self.site, production_debug=True)
 
 	def build_assets(self):
 		from fluorine.commands_helpers import services

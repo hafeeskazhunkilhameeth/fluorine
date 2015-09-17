@@ -150,12 +150,14 @@ def get_mac_supervisor_confdir(path=""):
 	raise Exception, 'No supervisor conf dir found.'
 
 
-def make_supervisor(doc):
+def make_supervisor(doc, site):
 	import getpass
 	from fluorine.utils.file import writelines, readlines, get_path_reactivity
 	from meteor import get_meteor_environment
 	from fluorine.utils.reactivity import meteor_config
+	from fluorine.utils import get_meteor_final_name
 
+	#sitename = site.replace(".","_")
 	conf = frappe._dict()
 	conf.user = getpass.getuser()
 	conf.bench_dir = os.path.abspath("..")
@@ -175,16 +177,17 @@ def make_supervisor(doc):
 		meteor = meteor_dev.get(app_name) or {}
 		#force meteor desk. Meteor desk must be local where frappe is installed
 		if meteor.get("production") or final == final_desk:
+			final_app_name = get_meteor_final_name(site, final)
 			conf.meteorenv = get_meteor_environment(doc, app_name)
-			conf.progname = "meteor_" + final
-			conf.final_server_path = os.path.join(path_reactivity, final, "bundle")
+			conf.progname = "meteor_%s" % final_app_name
+			conf.final_server_path = os.path.join(path_reactivity, final_app_name, "bundle")
 			content.extend(supervisor_meteor_conf.format(**conf))
 
 	writelines(config_file, content)
 
 
-def generate_nginx_supervisor_conf(doc, user=None, debug=None, update=False, bench="..", mac_sup_prefix_path="/usr/local"):
-	from bench_helpers import bench_generate_nginx_config, bench_generate_supervisor_config, fix_prod_setup_perms,\
+def generate_nginx_supervisor_conf(doc, site, user=None, debug=None, update=False, bench="..", mac_sup_prefix_path="/usr/local"):
+	from bench_helpers import bench_generate_nginx_config, bench_generate_supervisor_config,\
 						bench_setup_production
 	import platform, errno
 
@@ -198,7 +201,7 @@ def generate_nginx_supervisor_conf(doc, user=None, debug=None, update=False, ben
 		final_path = os.path.join(sup_conf_dir, supervisor_conf_filename)
 		if not os.path.exists(final_path):
 			os.symlink(os.path.abspath(os.path.join("..", 'config', 'supervisor.conf')), final_path)
-		make_supervisor(doc)
+		make_supervisor(doc, site)
 	elif platform.system() != "Darwin" and not debug:
 
 		if not update:
@@ -220,7 +223,7 @@ def generate_nginx_supervisor_conf(doc, user=None, debug=None, update=False, ben
 			bench_generate_supervisor_config(bench=bench, user=user)
 			bench_generate_nginx_config(bench=bench)
 
-		make_supervisor(doc)
+		make_supervisor(doc, site)
 	else:
 		bench_generate_nginx_config(bench=bench)
 

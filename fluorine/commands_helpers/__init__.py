@@ -123,7 +123,7 @@ def get_default_site():
 	return site
 
 
-def get_app_installed_site(site, app="fluorine", bench=".."):
+def get_app_installed_site(app="fluorine", bench=".."):
 
 	fluorine_site = None
 
