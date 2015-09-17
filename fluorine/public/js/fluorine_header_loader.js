@@ -17,8 +17,8 @@ $(document).on('app_ready', function(ev){
 	console.log("frappe is ready!!!!");
     $('.case-wrapper[data-name="Fluorine Admin"]').hide();
     if(frappe.boot['Fluorine'] && frappe.boot['Fluorine'].site){
-	    frappe.require("/assets/css/meteor_app.css");
-        frappe.require("/assets/js/meteor_app.min.js");
+	    frappe.require(repl("/assets/css/%(sitename)s.css", {"sitename": frappe.boot['Fluorine'].site});
+        frappe.require(repl("/assets/js/%(sitename)s.min.js", {"sitename": frappe.boot['Fluorine'].site});
     }
 	//$("#toolbar-user").prepend(repl("<li><a href='%(pathname)s/admin'>Admin</a></li><li class='divider'></li>", {"pathname": pathname}));
 	//$(".offcanvas-container").hide();
