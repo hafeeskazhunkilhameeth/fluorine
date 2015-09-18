@@ -65,7 +65,7 @@ def make_final_app_client(site, jquery=0):
 
 	react_path = get_path_reactivity()
 
-	sitename = site.replace(".", "_")
+	#sitename = site.replace(".", "_")
 	final_app_name = get_meteor_final_name(site, meteor_desk_app)
 	meteor_final_path = os.path.join(react_path, final_app_name)
 	progarm_path = os.path.join(meteor_final_path, "bundle", "programs", "web.browser", "program.json")
@@ -81,8 +81,8 @@ def make_final_app_client(site, jquery=0):
 		else:
 			build_json = frappe._dict()
 
-		build_json["js/%s.min.js" % sitename] = ["public/%s/meteor_runtime_config.js" % meteor_desk_app]
-		build_json["css/%s.css" % sitename] = []
+		build_json["js/%s.min.js" % site] = ["public/%s/meteor_runtime_config.js" % meteor_desk_app]
+		build_json["css/%s.css" % site] = []
 
 		manifest = read(progarm_path)
 
@@ -99,7 +99,7 @@ def build_frappe_json_files(manifest, build_json, site, jquery=0):
 
 
 	react_path = get_path_reactivity()
-	sitename = site.replace(".", "_")
+	#sitename = site.replace(".", "_")
 	final_app_path = get_meteor_final_name(site, meteor_desk_app)
 
 	for m in manifest:
@@ -111,6 +111,6 @@ def build_frappe_json_files(manifest, build_json, site, jquery=0):
 			pack_path = os.path.join(react_path, final_app_path, "bundle", "programs", "web.browser", path)
 			type = m.get("type") == "js"
 			if type:
-				build_json["js/%s.min.js" % sitename].append(pack_path)
+				build_json["js/%s.min.js" % site].append(pack_path)
 			elif type == "css":
-				build_json["css/%s.css" % sitename].append(pack_path)
+				build_json["css/%s.css" % site].append(pack_path)

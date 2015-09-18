@@ -429,7 +429,7 @@ class MeteorProduction(object):
 
 		self.build_assets()
 		self.remove_public_link()
-		#self.remove_build()
+		self.remove_build()
 		self.update_file_map_site()
 		self.start_services()
 
@@ -438,7 +438,7 @@ class MeteorProduction(object):
 		from fluorine.utils import update_file_map_site, get_meteor_final_name
 
 
-		fms = {"%s" % self.site: "%s" % self.site.replace(".", "_")}
+		fms = {"%s" % self.site: "%s" % self.site}
 		update_file_map_site(fms)
 
 	def update_doctype(self):

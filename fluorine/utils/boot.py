@@ -19,6 +19,10 @@ def get_meteor_init():
 def get_meteor_init_file_names():
 	from fluorine.utils import file_map_site
 
+	if not file_map_site:
+		return
+
 	current_site = frappe.local.site
+
 	sitename = file_map_site.get(current_site)
 	return sitename

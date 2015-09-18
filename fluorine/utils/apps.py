@@ -23,6 +23,17 @@ def is_valid_fluorine_app(app, whatfor=None):
 	return False
 
 
+def get_list_all_sites(bench=None):
+	from fluorine.commands_helpers.bench_helpers import execute_bench_func
+
+	if not bench:
+		bench = "../../bench-repo/"
+
+	sites = execute_bench_func("utils", "get_sites", bench)
+
+	return sites
+
+
 def get_active_apps(whatfor):
 	from fluorine.utils import APPS as apps, get_attr_from_json, meteor_config
 	from fluorine.utils.permission_file import make_meteor_ignor_files, list_ignores, is_app_for_site

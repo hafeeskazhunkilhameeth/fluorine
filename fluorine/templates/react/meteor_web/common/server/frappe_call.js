@@ -2,12 +2,32 @@
 if (typeof frappe === 'undefined')
 	frappe = {};
 
-frappe.call = function(options){
 
+frappe.sites_map = {};
+
+WebApp.connectHandlers.use(function(req, res, next) {
+
+	var token = new Date().getTime() + Math.random();
+	var host = req.headers["host"];
+	frappe.sites_map[token] = host.split(":")[0];
+    console.log("WebApp.connectHandlers ", host);
+    res.setHeader('Set-Cookie', 'token=' + token);
+	next();
+});
+
+
+frappe.call = function(options, token_site){
+
+	//console.log("Meteor log headers ", this);
+	var userid = Meteor.userId();
+
+	var current_site = Meteor.user() && Meteor.user().current_site;
+	var frappe_site = current_site || frappe.sites_map[token_site];
+	console.log("going to site ", frappe_site, current_site);
 	var frappe_url = frappe.url;//+ ":8020";
 	var args = options.args || {};
-	var cookie = frappe.get_frappe_cookie(Meteor.userId(), ["sid"]);
-	var headers = options.headers || {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Accept":"application/json"};
+	var cookie = frappe.get_frappe_cookie(userid, ["sid"]);
+	var headers = options.headers || {"host": frappe_site, "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Accept":"application/json"};
 	if (cookie !== "")
 		_.extend(headers, {"Cookie": cookie});
 
@@ -27,12 +47,12 @@ frappe.call = function(options){
 	}
 }
 
-frappe.login = function(username, password){
+frappe.login = function(username, password, token_site){
 	var args = {usr: username, pwd: password};
 	//var headers = {"Accept":"application/json"};
 	var cmd = "login";
 	var options = {cmd: cmd, args: args/*, headers: headers*/};
-	return frappe.call(options);
+	return frappe.call(options, token_site);
 }
 
 frappe.register = function(email, full_name){

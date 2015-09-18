@@ -40,7 +40,7 @@ Meteor.methods({
 			res = result;
 		}
 		else{
-			Meteor.users.update(this.userId, {$set: {"profile.frappe_logout": true, "profile.sid": "Guest"}});
+			Meteor.users.update(this.userId, {$set: {"current_site": null, "profile.frappe_logout": true, "profile.sid": "Guest"}});
 			res = {cookies: result.headers["set-cookie"]};
 		}
 		return res;

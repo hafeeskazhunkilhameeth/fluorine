@@ -28,6 +28,7 @@ def is_app_for_site(app, list_only_for_sites, site=None):
 
 def get_list_only_apps_for_site(app, whatfor, conf_in=None):
 	from fluorine.commands_helpers import get_default_site
+	from fluorine.utils import is_valid_site
 
 	list_only_for_sites = {}
 	current_site = get_default_site()
@@ -50,6 +51,9 @@ def get_list_only_apps_for_site(app, whatfor, conf_in=None):
 		list_only_for_sites.get(current_site).append(app)
 
 	for site in sites:
+		if not is_valid_site(site):
+			continue
+
 		if not list_only_for_sites.get(site):
 			#list_only_for_sites[app] = []
 			list_only_for_sites[site] = []

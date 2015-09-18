@@ -23,7 +23,7 @@ $(document).on('app_ready', function(ev){
 	//$("#toolbar-user").prepend(repl("<li><a href='%(pathname)s/admin'>Admin</a></li><li class='divider'></li>", {"pathname": pathname}));
 	//$(".offcanvas-container").hide();
 	var sid = frappe.get_cookie("sid");
-    if (is_valid_sid(sid)){
+    if (typeof(Meteor) !== "undefined" && is_valid_sid(sid)){
         /*Meteor.frappe_login(sid, function(result){
             console.log("Result from login into meteor 2 ", result);
         });*/

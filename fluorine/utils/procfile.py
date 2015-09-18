@@ -23,7 +23,7 @@ def save_to_procfile(doc, site, production_debug=False):
 			final_app = get_meteor_final_name(site, app)
 			#final_app = "%s_%s" % (app.replace("meteor", "final"), sitename)
 			procfile.insert(0, "%s: (cd apps/reactivity/%s/bundle && ./exec_meteor)\n" %
-							(final_app, final_app))
+							(final_app.replace(".","_"), final_app.replace(".","_")))
 		else:
 			if app == "meteor_web" and mongo_default:
 				exp_mongo = ""

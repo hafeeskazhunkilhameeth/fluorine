@@ -124,11 +124,10 @@ def get_default_site():
 
 
 def get_app_installed_site(app="fluorine", bench=".."):
-
+	from fluorine.utils import get_list_sites
 	fluorine_site = None
 
-	m = get_bench_module("utils", bench=bench)
-	sites = run_bench_module(m, "get_sites")
+	sites = get_list_sites(bench=bench)
 	for site in sites:
 		change_frappe_db(site)
 		if app in frappe.get_installed_apps():

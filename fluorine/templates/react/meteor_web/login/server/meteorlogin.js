@@ -54,8 +54,8 @@ Accounts.registerLoginHandler(function(loginRequest) {
 	  //var args = {usr:loginRequest.username, pwd:loginRequest.mypassword};
 	  //var headers = {"Accept":"application/json"};
 	  //var options = {cmd: "login", args: args, headers: headers};
-
-	  var result = frappe.login(loginRequest.username, loginRequest.mypassword);
+	  var token_site = loginRequest.token;
+	  var result = frappe.login(loginRequest.username, loginRequest.mypassword, token_site);
 
 	  if (result.error)
 			return;
@@ -97,9 +97,10 @@ Accounts.registerLoginHandler(function(loginRequest) {
 	  });
 
 	  var sid = frappe.get_cookie("sid", fcookie.join(";"));
-	  console.log("login cookies sid: ", sid);
-	  Meteor.users.update(userId, {$set: {"profile.cookies": fcookie, "profile.frappe_logout": false, "profile.sid": sid, "stampedLoginToken": stampedToken}});
+	  Meteor.users.update(userId, {$set: {"current_site": frappe.sites_map[token_site], "profile.cookies": fcookie, "profile.frappe_logout": false, "profile.sid": sid, "stampedLoginToken": stampedToken}});
 
+	  console.log("login cookies sid: ", sid, frappe.sites_map);
+	  delete frappe.sites_map[token_site];
 	  //var lang = frappe.get_translation_dict("pt", userId);
 	  //console.log("language ", lang);
 

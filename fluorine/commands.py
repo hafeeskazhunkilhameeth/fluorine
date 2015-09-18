@@ -340,6 +340,10 @@ def setState(state, site=None, custom_mongo=None, user=None, server_port=None, d
 		site = get_default_site()
 	else:
 		from fluorine.utils.reactivity import meteor_config
+		from fluorine.utils import is_valid_site
+		if not is_valid_site(site):
+			meteor_echo("Sorry, but the site %s is not a valid site." % site)
+			return
 		meteor_config["site"] = site
 		update_common_config(meteor_config)
 
@@ -370,7 +374,7 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 
 	what = state.lower()
 	if what == "init":
-		mctx = MeteorContext()
+		mctx = MeteorContext(site)
 		mctx.meteor_init(mongo_custom=mongo_custom)
 	elif what == "develop":
 		from fluorine.commands_helpers import get_current_dev_app
@@ -496,7 +500,7 @@ def stop_meteor(doc, devmode, state, force=False, site=None, production=False, b
 	#also save meteor_config to file
 	doc.save()
 
-	remove_from_procfile()
+	remove_from_procfile(site)
 	click.echo("Please issue `bench start` go to http://localhost:8000 or http://127.0.0.1:8000.")
 
 

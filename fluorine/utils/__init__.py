@@ -269,6 +269,29 @@ def get_file_map_site():
 	return file_map_site
 
 
+list_sites = None
+
+
+def is_valid_site(site):
+	return site in get_list_sites()
+
+
+def get_list_sites(bench=None):
+	from fluorine.utils.apps import get_list_all_sites
+
+	if list_sites:
+		return list_sites
+
+	global list_sites
+
+	list_sites = get_list_all_sites(bench=bench)
+
+	return list_sites
+
+
+get_list_sites()
+
+
 if check_dev_mode():
 	#PATCH HOOKS
 	prepare_environment()

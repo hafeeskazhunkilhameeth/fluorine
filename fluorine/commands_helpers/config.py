@@ -89,7 +89,8 @@ def _generate_fluorine_nginx_conf(hosts_web=None, hosts_app=None, production=Non
 		elif inside_location and line.strip().startswith("try_files"):
 			named_location_group = re.search(r"@(.*);$", line)
 			named_location = named_location_group.group(1)
-			line = re.sub(r"@(.*);$", "/assets/js/meteor_web/$uri $uri @meteor;", line)
+			#line = re.sub(r"@(.*);$", "/assets/js/meteor_web/$uri $uri @meteor;", line)
+			line = re.sub(r"@(.*);$", "$uri @meteor;", line)
 
 			inside_location = False
 		elif re.match(r"location\s*@%s\s*{" % (named_location or "magic"), line.strip()):

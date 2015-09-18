@@ -43,6 +43,12 @@ def run_frappe_cmd(bench_path, *args, **kwargs):
 	return
 
 
+def execute_bench_func(module, func, bench_path, *args, **kwargs):
+	m = get_bench_module(module, bench=bench_path)
+	res = run_bench_module(m, func, *args, **kwargs)
+	return res
+
+
 def get_password():
 	import subprocess, getpass
 

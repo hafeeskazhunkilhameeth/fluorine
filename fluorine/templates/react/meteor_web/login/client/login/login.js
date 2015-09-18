@@ -42,14 +42,19 @@ Template.login.events({
 
 Meteor.frappe_login = function(username, password, validate_callback) {
   //create a login request with admin: true, so our loginHandler can handle this request
-  var loginRequest = {username: username, mypassword: password};
+  if (!Meteor.userId()){
+        var token = frappe.get_cookie("token", document.cookie);
+        var loginRequest = {username: username, mypassword: password, token: token};
 
-  //send the login request methodName:
-  Accounts.callLoginMethod({
-    /*methodName: "login",*/
-    methodArguments: [loginRequest],
-    validateResult: validate_callback
-  });
+        //send the login request methodName:
+        Accounts.callLoginMethod({
+        /*methodName: "login",*/
+        methodArguments: [loginRequest],
+        validateResult: validate_callback
+        });
+  }else{
+    console.log("already login!!!");
+  }
 };
 
 Accounts.onLoginFailure(function(){
