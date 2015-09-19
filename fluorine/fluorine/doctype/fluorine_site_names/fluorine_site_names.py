@@ -39,16 +39,16 @@ class FluorineSiteNames(Document):
 			len_table_site_dependents = len(self.fluorine_table_site_dependents)
 			if len_table_site_dependents > 0:
 				for site in self.fluorine_table_site_dependents:
-					if site.fluorine_sites == self.name:
+					if site.fluorine_site_name == self.name:
 						frappe.throw("It is not permited to have itself as depend.")
 
 		else:
-			if not self.fluorine_site_depends_of or self.fluorine_site_depends_of.strip() == "":
+			if not self.fluorine_site_depends_of_name or self.fluorine_site_depends_of_name.strip() == "":
 				return frappe.throw("For integrated site you must provide a valid depend of site.")
-			elif self.fluorine_site_depends_of.strip() == self.name:
+			elif self.fluorine_site_depends_of_name.strip() == self.name:
 				return frappe.throw("For integrated site you must provide a valid depend of site. It is not permited to depend of itself.")
 			else:
-				depend_of = self.fluorine_site_depends_of.strip()
+				depend_of = self.fluorine_site_depends_of_name.strip()
 				doc = frappe.get_doc("Fluorine Site Names", depend_of)
 				if doc.fluorine_site_type == "Integrated":
 					return frappe.throw("Sorry, but you must depend only of Dedicated sites.")

@@ -287,3 +287,163 @@ def print_meteor_packages_list(whatfor, pckg_add, pckg_remove, i_pckgs):
 	from fluorine.commands import meteor_echo
 
 	meteor_echo("%s:\n packages to add = %s\n packages to remove = %s\n\n installed_packages %s\n" % (whatfor, list(pckg_add), list(pckg_remove), i_pckgs), 80)
+
+
+#used with directives api.use and api.addFile and api.add_file
+def get_list_package_directive(directive, content):
+	import re
+
+	use = re.findall("%s\([\"'](.+?)[\"']" % directive.strip(), content, re.S|re.M)
+	return use
+
+
+def get_package_name_from_content(content):
+	import re
+
+	name = None
+	for line in content.split("\n"):
+		line_search = re.search("name:\s*[\"'](.*?)[\"']", line, re.S)
+		if line_search:
+			name = line_search.group(1)
+			break
+	#use = re.findall("%s\([\"'](.+?)[\"']" % directive.strip(), content, re.S|re.M)
+	return name
+
+
+def get_list_diff(original_list, new_list):
+	return set(original_list).difference(set(new_list))
+
+def make_list_installed_packages():
+	from fluorine.utils import get_meteor_path, fluorine_common_data
+	import os
+
+	for whatfor in whatfor_all:
+		meteor_path = get_meteor_path(whatfor)
+
+		packages_path = os.path.join(meteor_path, ".meteor", "packages")
+		packages_list = frappe.get_file_items(packages_path)
+
+		fluorine_common_data.meteor_packages_list[whatfor] = packages_list
+
+	return
+
+
+def get_list_installed_packages(whatfor):
+	from fluorine.utils import fluorine_common_data
+
+	packages_list = fluorine_common_data.meteor_packages_list.get(whatfor)
+
+	return packages_list
+
+
+def is_meteor_package_installed(pckg, whatfor):
+	installed_packg = get_list_installed_packages(whatfor)
+
+	pckg_strip_version = pckg.split("@")[0]
+	if pckg_strip_version in installed_packg:
+		return True
+
+	return False
+
+
+def get_read_order_apps():
+	ordered_apps = []
+
+	for v in frappe.local.meteor_map_templates.values():
+		appname = v.get("appname")
+		if appname not in ordered_apps:
+			ordered_apps.append(appname)
+
+	return ordered_apps
+
+
+def get_valid_dir_packages_from_path(packagespath, whatfor):
+	dirs = os.listdir(packagespath)
+
+	for dir in dirs[:]:
+		if not is_meteor_package_installed(dir, whatfor):
+			dirs.remove(dir)
+
+	return dirs
+
+def get_appname_from_package_addFile_directive(filepath, use_default=None):
+	from fluorine.utils import APPS as system_apps
+
+	appname = filepath.split("/",1)[0]
+
+	if appname in system_apps:
+		return appname
+
+	return use_default
+
+
+def process_meteor_packages_from_apps(whatfor):
+
+	API_ADDFILES = "api.addFiles"
+	API_ADD_FILES = "api.add_files"
+	processed_packages = []
+	#readed_apps = frappe.local.files_to_add.keys()
+	ordered_apps = get_read_order_apps()
+
+	for app in ordered_apps:
+		pathname = frappe.get_app_path(app)
+		reactpath = os.path.join(pathname, "templates", "react")
+		app_packages_path = os.path.join(reactpath, whatfor, "packages")
+		if os.path.exists(app_packages_path):
+			dirs = os.listdir(app_packages_path)
+			for dir in dirs:
+				package_start_path = os.path.join(app_packages_path, dir)
+				packagejs_file_path = os.path.join(package_start_path, "package.js")
+				if os.path.exists(packagejs_file_path):
+					packagejs_file_content = frappe.read_file(packagejs_file_path)
+					name_package = get_package_name_from_content(packagejs_file_content)
+					if name_package in processed_packages or not is_meteor_package_installed(name_package, whatfor):
+						continue
+
+					processed_packages.append(name_package)
+					list_api_addFile = get_list_package_directive(API_ADDFILES, packagejs_file_content)
+					list_api_add_file = get_list_package_directive(API_ADD_FILES, packagejs_file_content)
+					list_api_addFile.extend(list_api_add_file)
+					print "list addFile {}".format(list_api_addFile)
+					copy_file_package_to_meteor_packages(app, dir, whatfor, list_api_addFile)
+
+
+
+def copy_file_package_to_meteor_packages(app, dir, whatfor, list_api_addFile):
+	from fluorine.utils.file import get_path_reactivity
+
+	reactivity_path = get_path_reactivity()
+	dest_meteor_packages_path = os.path.join(reactivity_path, whatfor, "packages")
+
+	print "copying... whatfor {} app {} list {}".format(whatfor, app, list_api_addFile)
+	for filepath in list_api_addFile:
+		appname = get_appname_from_package_addFile_directive(filepath, use_default=app)
+		#for root, packg_dirs, files in os.walk(package_start_path):
+		if appname == app:
+			filepath = filepath.replace("%s/" % appname, "", 1)
+
+		pathname = frappe.get_app_path(appname)
+		reactpath = os.path.join(pathname, "templates", "react")
+		app_packages_path = os.path.join(reactpath, whatfor, "packages")
+
+		source_path = os.path.join(app_packages_path, dir, filepath.replace("%s/" % appname, "", 1))
+
+		filepathlist = filepath.rsplit("/", 1)
+		if len(filepathlist) > 1:
+			filename = filepathlist[1]
+		else:
+			filename = filepathlist[0]
+
+		file_path_dir = os.path.dirname(filepath)
+		dest_package_path_dir = os.path.join(dest_meteor_packages_path, dir, file_path_dir)
+		frappe.create_folder(dest_package_path_dir)
+		os.symlink(source_path, os.path.join(dest_package_path_dir, filename))
+
+	#copy package.js from processed app
+	pathname = frappe.get_app_path(app)
+	reactpath = os.path.join(pathname, "templates", "react")
+	app_packages_path = os.path.join(reactpath, whatfor, "packages")
+	dest_package_path = os.path.join(dest_meteor_packages_path, dir, "package.js")
+	frappe.create_folder(os.path.dirname(dest_package_path))
+	os.symlink(os.path.join(app_packages_path, dir, "package.js"), os.path.join(dest_meteor_packages_path, dir, "package.js"))
+

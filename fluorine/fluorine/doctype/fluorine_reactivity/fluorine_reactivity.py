@@ -29,6 +29,11 @@ class FluorineReactivity(Document):
 				return frappe.throw("App %s is not a valid meteor app. To be a valid meteor app it must exist as installed app and must exist templates/react/meteor_app and/or\
 				 					templates/react/meteor_web folder" % self.current_dev_app)
 
+		for site in self.fluorine_link_sites:
+			docsite = frappe.get_doc("Fluorine Site Names", site.fluorine_site_name)
+			if docsite.fluorine_site_type != "Dedicated":
+				return frappe.throw("Sorry, but you must enter only Dedicated sites.")
+
 
 def save_to_common_site_config(doc, meteor_config=None):
 	from fluorine.utils.meteor.utils import default_path_prefix, PORT, update_common_config

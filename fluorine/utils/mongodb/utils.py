@@ -52,17 +52,23 @@ def make_mongodb_default(conf, port=3070):
 		path_reactivity = file.get_path_reactivity()
 		meteor_web = os.path.join(path_reactivity, meteor_web_app)
 		print "getting mongo config please wait..."
-		meteor = subprocess.Popen(["meteor", "--port", str(port)], cwd=meteor_web, shell=False, stdout=subprocess.PIPE)
+
 		mongodb = None
+
+		meteor = subprocess.Popen(["meteor", "--port", str(port)], cwd=meteor_web, shell=False, stdout=subprocess.PIPE)
 		while True:
 			line = meteor.stdout.readline()
 			if "App running at" in line:
 				mongodb = subprocess.check_output(["meteor", "mongo", "-U"], cwd=meteor_web, shell=False)
 				meteor.terminate()
 				break
-			print line
+			elif "Error" in line:
+				mongodb = subprocess.check_output(["meteor", "mongo", "-U"], cwd=meteor_web, shell=False)
+				meteor.terminate()
+				break
+				#print line
 
-		print "result meteor mongo -U {}".format(mongodb)
+		print "meteor mongo -U {}".format(mongodb)
 		if mongodb:
 			fs = mongodb.rsplit("/",1)
 			hp = fs[0].split("mongodb://")[1].split(":")

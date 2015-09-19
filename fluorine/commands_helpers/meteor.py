@@ -477,7 +477,10 @@ class MeteorProduction(object):
 		return check_meteor_apps_created(self.doc)
 
 	def check_apps_updates(self):
+		#from fluorine.utils import make_list_installed_packages, get_list_installed_packages
 
+		#if not get_list_installed_packages(whatfor):
+			#make_list_installed_packages()
 		click.echo("Checking for fluorine apps updates. Please wait.")
 		for whatfor in whatfor_all:
 			if check_updates(whatfor, bench=self.bench):

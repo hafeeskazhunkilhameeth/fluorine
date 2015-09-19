@@ -4,9 +4,22 @@ __author__ = 'luissaguas'
 
 import frappe
 
+
+meteor_web_app = "meteor_web"
+meteor_desk_app = "meteor_app"
+
+whatfor_all = (meteor_web_app, meteor_desk_app)
+
+APPS = None
+
 meteor_config = None
 
-file_map_site = None
+
+meteor_packages_list = frappe._dict({meteor_web_app: None, meteor_desk_app: None})
+
+
+fluorine_common_data = frappe._dict({"meteor_config": None, "file_map_site": None, "meteor_packages_list": meteor_packages_list, "list_sites": None})
+
 
 making_production = False
 #frappe.local("making_production")
@@ -14,11 +27,6 @@ making_production = False
 #assets_public_path = "/assets/fluorine/js/react"
 meteor_runtime_config_path = ""
 
-APPS = None
-
-meteor_web_app = "meteor_web"
-meteor_desk_app = "meteor_app"
-whatfor_all = (meteor_web_app, meteor_desk_app)
 
 def is_making_production():
 	return making_production
@@ -181,6 +189,7 @@ def get_meteor_configuration_file():
 	global meteor_config
 
 	meteor_config = get_common_config_file_json()
+	fluorine_common_data.meteor_config = meteor_config
 
 	return meteor_config
 
@@ -234,27 +243,21 @@ def is_open_port(ip="127.0.0.1", port=3070):
 def update_file_map_site(fms):
 	import os
 	from fluorine.utils.file import get_path_reactivity, save_js_file
-	from fluorine.utils import get_file_map_site
+
+	file_map_site = fluorine_common_data.file_map_site
 
 	if not file_map_site:
-		get_file_map_site()
+		make_file_map_site()
 
-	global file_map_site
-
-	file_map_site.update(fms)
+	fluorine_common_data.file_map_site.update(fms)
 	path_reactivity = get_path_reactivity()
 	config_file_path = os.path.join(path_reactivity, "file_map_site.json")
 
-	save_js_file(config_file_path, file_map_site)
+	save_js_file(config_file_path, fluorine_common_data.file_map_site)
 
 
-def get_file_map_site():
+def make_file_map_site():
 	import os
-
-	if file_map_site:
-		return file_map_site
-
-	global file_map_site
 
 	frappe_module = os.path.dirname(frappe.__file__)
 	path_apps = os.path.realpath(os.path.join(frappe_module, "..", ".."))
@@ -266,35 +269,54 @@ def get_file_map_site():
 	else:
 		file_map_site = {}
 
-	return file_map_site
+	fluorine_common_data.file_map_site = file_map_site
+
+	return
 
 
-list_sites = None
+def get_file_map_site():
+	return fluorine_common_data.file_mape_site
+
+
+def get_meteor_path(whatfor):
+	import os
+	from fluorine.utils.file import get_path_reactivity
+
+	path_reactivity = get_path_reactivity()
+	return os.path.join(path_reactivity, whatfor)
 
 
 def is_valid_site(site):
 	return site in get_list_sites()
 
 
-def get_list_sites(bench=None):
+def make_list_sites(bench=None):
 	from fluorine.utils.apps import get_list_all_sites
 
-	if list_sites:
-		return list_sites
-
-	global list_sites
-
 	list_sites = get_list_all_sites(bench=bench)
+
+	fluorine_common_data.list_sites = list_sites
+
+	return
+
+
+def get_list_sites():
+	list_sites = fluorine_common_data.list_sites
 
 	return list_sites
 
 
-get_list_sites()
+bench = "../../bench-repo/"
+make_list_sites(bench=bench)
 
 
 if check_dev_mode():
 	#PATCH HOOKS
+	from fluorine.utils.meteor.packages import make_list_installed_packages
+
+	make_list_installed_packages()
 	prepare_environment()
 	import reactivity
 else:
 	get_file_map_site()
+

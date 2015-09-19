@@ -242,6 +242,7 @@ def fluorine_build_context(context, whatfor):
 		copy_mobile_config_file, custom_make_all_files_with_symlink
 	from fluorine.utils.permission_file import ProcessFileSystem, list_ignores
 	from react_file_loader import get_custom_pattern
+	from fluorine.utils.meteor.packages import process_meteor_packages_from_apps
 
 
 	frappe.local.context = context
@@ -319,6 +320,7 @@ def fluorine_build_context(context, whatfor):
 	read_file_pattern = get_read_file_patterns()
 	make_all_files_with_symlink(known_apps, fluorine_publicjs_dst_path, whatfor, pfs_out, frappe.local.context.files_to_add, custom_pattern=read_file_pattern.keys())
 
+	process_meteor_packages_from_apps(whatfor)
 	custom_make_all_files_with_symlink(known_apps, fluorine_publicjs_dst_path, whatfor, pfs_out, custom_pattern=read_file_pattern.keys())
 	copy_project_translation(apps, whatfor, pfs_out, custom_pattern)
 

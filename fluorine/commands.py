@@ -363,11 +363,15 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 	from fluorine.utils.fcache import clear_frappe_caches
 	from fluorine.utils.context import MeteorContext
 	from fluorine.commands_helpers import stop_frappe_db, get_app_installed_site
+	from fluorine.utils import make_list_sites
 
-
-	fluorine_site = get_app_installed_site(app="fluorine", bench=bench)
+	make_list_sites(bench=bench)
+	fluorine_site = get_app_installed_site(app="fluorine")
 
 	doc = get_doctype("Fluorine Reactivity", fluorine_site)
+
+	#sitesDoc = doc.fluorine_link_sites
+	#print "doc sites {}".format(sitesDoc[0].fluorine_site_name)
 
 	devmode = doc.fluor_dev_mode
 	fluor_state = doc.fluorine_state
@@ -479,7 +483,7 @@ def start_meteor(doc, current_dev_app, site=None, mongo_custom=False, server_por
 	md = MeteorDevelop(doc, current_dev_app, site=site, mongo_custom=mongo_custom, server_port=server_port, ddp_port=ddp_port,
 					bench=bench, file_to_add=file_to_add, file_to_remove=file_to_remove, skip_package_check_updates=skip_package_check_updates)
 	md.start()
-	fluorine_site = get_app_installed_site(app="fluorine", bench=bench)
+	fluorine_site = get_app_installed_site(app="fluorine")
 	start_frappe_db(fluorine_site)
 	md.save_doc_and_meteor_config()
 
@@ -593,7 +597,7 @@ def start_meteor_production_mode(doc, current_dev_app, server_port=None, ddp_por
 						ddp_port=ddp_port, bench=bench, mac_sup_prefix_path=mac_sup_prefix_path, file_to_add=file_to_add, file_to_remove=file_to_remove)
 
 	mp.start()
-	fluorine_site = get_app_installed_site(app="fluorine", bench=bench)
+	fluorine_site = get_app_installed_site(app="fluorine")
 	start_frappe_db(fluorine_site)
 	mp.save_doc_and_meteor_config()
 

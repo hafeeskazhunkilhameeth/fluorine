@@ -17,8 +17,9 @@ def get_meteor_init():
 
 
 def get_meteor_init_file_names():
-	from fluorine.utils import file_map_site
+	from fluorine.utils import fluorine_common_data
 
+	file_map_site = fluorine_common_data.file_map_site
 	if not file_map_site:
 		return
 
