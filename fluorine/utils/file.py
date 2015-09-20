@@ -312,7 +312,67 @@ c = lambda t:re.compile(t, re.S|re.M)
 #common_pattern = c(r"templates/(.*)/?common/(.*)")
 
 
-def make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom_pattern=None):
+def remove_templates_react_path_from_source_path(whatfor, source_relative_path):
+
+	if source_relative_path.startswith("templates/react/%s/" % whatfor):
+		source_relative_path = source_relative_path.replace("templates/react/%s/" % whatfor, "", 1)
+	elif source_relative_path.startswith("templates/react/"):
+		source_relative_path = source_relative_path.replace("templates/react/", "", 1)
+	elif source_relative_path.startswith("templates/"):
+		source_relative_path = source_relative_path.replace("templates/", "", 1)
+
+	return source_relative_path
+
+
+def make_all_files_with_symlink(known_apps, dst, whatfor):
+	from fluorine.utils.apps import get_apps_path_order
+
+	list_apis = frappe.local.list_files_apis
+	for api in list_apis:
+		for add_file_path_obj in api.get_list_final_files_add():
+			add_file_path = add_file_path_obj.get("source_final_path")
+			file_appname = add_file_path_obj.get("app")
+			source_relative_path = add_file_path_obj.get("relative_path")
+			source_relative_path = remove_templates_react_path_from_source_path(whatfor, source_relative_path)
+			apps_path_order = get_apps_path_order(file_appname, known_apps)
+			destpath = os.path.join(dst, apps_path_order)
+			app_path = frappe.get_app_path(file_appname)
+			#frappe_apps_path = os.path.join(os.path.normpath(os.path.join(os.path.join(os.getcwd(), ".."), "apps")), app_path, app_path)
+			#final_add_path = add_file_path.replace("templates/react/%s/" % whatfor, "").replace("templates/react/", "").replace("templates/", "")
+			#relative_path = os.path.normpath(os.path.relpath(final_add_path, frappe_apps_path))
+			dest = os.path.join(destpath, source_relative_path)
+			#print "source {} dest {} relative {} source_relative {} frappe_apps {} final_path {}".format(add_file_path, dest, relative_path, source_relative_path, frappe_apps_path, final_add_path)
+			if os.path.exists(add_file_path):
+				frappe.create_folder(os.path.dirname(dest))
+				os.symlink(add_file_path, dest)
+
+
+"""
+def make_all_files_with_symlink(known_apps, dst, whatfor):
+	from fluorine.utils.apps import get_apps_path_order
+
+	list_apis = frappe.local.list_files_apis
+	for api in list_apis:
+		appname = api.getApp()
+		#apps_path_order = get_apps_path_order(appname, known_apps)
+		#destpath = os.path.join(dst, apps_path_order)
+		for add_file_path_obj in api.get_list_final_files_add():
+			add_file_path = add_file_path_obj.get("final_path")
+			file_appname = add_file_path_obj.get("app")
+			apps_path_order = get_apps_path_order(file_appname, known_apps)
+			destpath = os.path.join(dst, apps_path_order)
+			app_path = frappe.get_app_path(file_appname)
+			frappe_apps_path = os.path.join(os.path.normpath(os.path.join(os.path.join(os.getcwd(), ".."), "apps")), app_path, app_path)
+			final_add_path = add_file_path.replace("templates/react/%s/" % whatfor, "").replace("templates/react/", "").replace("templates/", "")
+			relative_path = os.path.normpath(os.path.relpath(final_add_path, frappe_apps_path))
+			dest = os.path.join(destpath, relative_path)
+			#print "source {} dest {} relative {} frappe_apps {} final_path {}".format(add_file_path, dest, relative_path, frappe_apps_path, final_add_path)
+			if os.path.exists(add_file_path):
+				frappe.create_folder(os.path.dirname(dest))
+				os.symlink(add_file_path, dest)
+"""
+
+def _make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom_pattern=None):
 	from fluorine.utils.react_file_loader import get_default_custom_pattern
 	from fluorine.utils import meteor_desk_app, meteor_web_app
 	from fluorine.utils.apps import get_apps_path_order

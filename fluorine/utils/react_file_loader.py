@@ -108,7 +108,13 @@ def get_custom_pattern(whatfor, custom_pattern=None):
 	return pattern, ignored_names_any, ignored_names_top
 
 
-def read_client_xhtml_files(start_folder, appname, psf_in, meteor_ignore=None, custom_pattern=None):
+def read_client_jinja_files(appname, pfs_in, list_jinja_files_to_read, meteor_ignore=None, custom_pattern=None):
+	from fluorine.utils.file import check_files_folders_patterns
+
+	for file in list_jinja_files_to_read:
+		pass
+
+def _read_client_jinja_files(start_folder, appname, pfs_in, list_jinja_files_to_read, meteor_ignore=None, custom_pattern=None):
 	from fluorine.utils.file import check_files_folders_patterns
 
 	files_to_read = []
@@ -121,7 +127,7 @@ def read_client_xhtml_files(start_folder, appname, psf_in, meteor_ignore=None, c
 	topfolder = True
 
 	#list_meteor_files_folders_remove = get_attr_from_json(["remove", "files_folders"], meteor_ignore)
-	list_meteor_files_folders_remove = psf_in.get_remove_files_folders()
+	list_meteor_files_folders_remove = pfs_in.get_remove_files_folders()
 	all_files_folder_remove = list_meteor_files_folders_remove.get("all")
 	appname_files_folder_remove = list_meteor_files_folders_remove.get(appname)
 

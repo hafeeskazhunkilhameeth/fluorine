@@ -98,7 +98,31 @@ class MyFileSystemLoader(FileSystemLoader):
 		template = super(MyFileSystemLoader, self).load(environment, name, globals=globals)
 		return template
 
+	def get_source(self, environment, template):
 
+		for app in self.apps:
+
+			if app in self.list_apps_remove:
+				continue
+
+			app_path = frappe.get_app_path(app)
+			filepath = os.path.join(app_path, template)
+			relpath = os.path.relpath(filepath, os.path.normpath(os.path.join(os.path.join(os.getcwd(), ".."), "apps")))
+			try:
+				contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
+				frappe.local.meteor_map_templates[template] = frappe._dict({"appname": app, "template":template, "relpath": relpath, "realpath": filepath, "refs":[]})
+				self.process_references(template, contents)
+				#print "Template Found {}".format(template)
+				return contents, filename, uptodate
+				#here file template exists and is uptodate
+			except TemplateNotFound, e:
+				print "Not Found {}".format(e)
+				continue
+
+		raise TemplateNotFound(template)
+
+
+	"""
 	def get_source(self, environment, template):
 		basename = os.path.basename(template)
 		dirname = os.path.dirname(template)
@@ -126,7 +150,7 @@ class MyFileSystemLoader(FileSystemLoader):
 				continue
 
 		raise TemplateNotFound(template)
-
+	"""
 
 	def process_references(self, template, source):
 		from jinja2 import meta

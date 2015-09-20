@@ -82,14 +82,18 @@ def fluorine_get_floader(encoding="utf-8"):
 def compile_jinja_templates(context, whatfor):
 	#from fluorine.utils import meteor_desk_app
 	from fluorine.utils import get_encoding
-	from fluorine.utils.reactivity import get_read_file_patterns
+	#from fluorine.utils.reactivity import get_read_file_patterns
 	from fluorine.utils.file import save_file
 	from fluorine.utils.fjinja2.refs import add_fluroine_template_to_dict, get_page_templates_and_refs, add_to_path
 	from fluorine.utils.fjinja2.utils import STARTTEMPLATE_SUB_ALL
+	from fluorine.utils.api import Api, validate_update_api_list_members
+	from fluorine.utils.context import get_app_meteor_template_files_to_process
 	#out = {}
 
 	keys = frappe.local.meteor_map_templates.keys()
-	file_patterns = get_read_file_patterns()
+	#file_patterns = get_read_file_patterns()
+	list_apis = frappe.local.list_files_apis
+
 	#ctx = frappe.local.files_to_add
 	#fadd = ctx.get("files_to_add")
 	#if fadd == None:
@@ -107,10 +111,11 @@ def compile_jinja_templates(context, whatfor):
 				realpath = obj.get("realpath")
 
 				in_ext = realpath.rsplit(".", 1)[1]
-				fp = file_patterns.get("*.%s" % in_ext)
-				out_ext = fp.get("ext")
+				#fp = file_patterns.get("*.%s" % in_ext)
+				#out_ext = fp.get("ext")
+				ext_out = obj.get("ext_out")
 				ext_len = len(in_ext) + 1
-				dstPath = realpath[:-ext_len] + ".%s" % out_ext
+				dstPath = realpath[:-ext_len] + ".%s" % ext_out
 
 				if content and template:
 					if context.page_relations:
@@ -119,9 +124,10 @@ def compile_jinja_templates(context, whatfor):
 					#pattern = "%s.%s" % (template_path[:-ext_len], out_ext)
 					#context.files_to_add.append({"tname": "", "pattern":pattern, "page": template_path})
 					#context.files_to_add.append({"tname": template_path, "file":pattern})
-					auto_out = fp.get("out", True)
+					#auto_out = fp.get("out", True)
+					auto_out = obj.get("export", True)
+					appname = obj.get("appname")
 					if auto_out:
-						appname = obj.get("appname")
 						add_fluroine_template_to_dict(appname, template_path, is_ref=False)
 					#if not ctx.get(appname):
 					#	ctx[appname] = []
@@ -137,6 +143,11 @@ def compile_jinja_templates(context, whatfor):
 						tcont[name] = m.group(0)
 					if auto_out:
 						add_to_path(template, refs, tcont)
+
+					api = Api(appname, whatfor, devmode=context.developer_mode)
+					get_app_meteor_template_files_to_process(appname, whatfor, template_path, api, context)
+					validate_update_api_list_members(api, list_apis)
+					list_apis.append(api)
 					#toadd.update(add)
 					#if whatfor in (meteor_desk_app, "meteor_frappe"):
 					#	out.update(tcont)
@@ -274,6 +285,9 @@ def fluorine_build_context(context, whatfor):
 
 	frappe.local.module_registe = frappe._dict()
 
+	#frappe.local.list_jinja_apis = []
+	frappe.local.list_files_apis = []
+
 	path_reactivity = get_path_reactivity()
 
 	frappe.local.meteor_ignores = list_ignores.get(whatfor)
@@ -304,7 +318,7 @@ def fluorine_build_context(context, whatfor):
 	#default_pattern = get_default_custom_pattern()
 	custom_pattern = get_custom_pattern(whatfor, custom_pattern=None)
 
-	process_react_templates(known_apps, custom_pattern, pfs_in)
+	process_react_templates(known_apps, whatfor, context)
 
 	#do not revert apps. Use from first installed app to current dev app
 	#This way we can use context from the first installed to the last installed
@@ -317,11 +331,12 @@ def fluorine_build_context(context, whatfor):
 	fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
 	empty_directory(fluorine_publicjs_dst_path, ignore=(".meteor",))
 
-	read_file_pattern = get_read_file_patterns()
-	make_all_files_with_symlink(known_apps, fluorine_publicjs_dst_path, whatfor, pfs_out, frappe.local.context.files_to_add, custom_pattern=read_file_pattern.keys())
+	#read_file_pattern = get_read_file_patterns()
+	#make_all_files_with_symlink(known_apps, fluorine_publicjs_dst_path, whatfor, pfs_out, frappe.local.context.files_to_add, custom_pattern=read_file_pattern.keys())
+	make_all_files_with_symlink(known_apps, fluorine_publicjs_dst_path, whatfor)
 
 	process_meteor_packages_from_apps(whatfor)
-	custom_make_all_files_with_symlink(known_apps, fluorine_publicjs_dst_path, whatfor, pfs_out, custom_pattern=read_file_pattern.keys())
+	#custom_make_all_files_with_symlink(known_apps, fluorine_publicjs_dst_path, whatfor, pfs_out, custom_pattern=read_file_pattern.keys())
 	copy_project_translation(apps, whatfor, pfs_out, custom_pattern)
 
 	make_page_relations(context, whatfor)
@@ -331,35 +346,25 @@ def fluorine_build_context(context, whatfor):
 
 	return context
 
-def process_react_templates(apps, custom_pattern, pfs_in):
-	from react_file_loader import read_client_xhtml_files
+def process_react_templates(apps, whatfor, context):
+	from fluorine.utils.context import get_app_jinja_files_to_process
+	from fluorine.utils.api import Api
 
-	#list_apps_remove = psf_in.get_apps_remove()
+	list_apis = frappe.local.list_files_apis
 
 	for app in apps:
-		#if app in list_apps_remove:
-		#	continue
 		pathname = frappe.get_app_path(app)
 		path = os.path.join(pathname, "templates", "react")
 		if os.path.exists(path):
-			files = read_client_xhtml_files(path, app, pfs_in, meteor_ignore=xhtml_ignores, custom_pattern=custom_pattern)
-			for f in files:
-				for obj in reversed(f):
-					file_path = obj.get("path")
-					file_name = obj.get("name")
-					root = file_path[:-len(file_name)]
-					spacebars_template_path = os.path.join(os.path.relpath(root, pathname), file_name)
-					addto_meteor_templates_list(spacebars_template_path)
+			api = Api(app, whatfor, devmode=context.developer_mode)
+			get_app_jinja_files_to_process(app, whatfor, api)
+			list_apis.append(api)
+			#files = read_client_jinja_files(path, app, pfs_in, api.get_list_jinja_files(), meteor_ignore=xhtml_ignores, custom_pattern=custom_pattern)
+			files = api.get_list_jinja_files()
+			for fobj in files:
+				jinja_template_path = fobj.get("relative_path")
+				addto_meteor_templates_list(jinja_template_path, fobj.get("ext_out"))
 
-	#only compile if meteor_app or meteor_frappe
-	"""
-	if spacebars_templates:
-		compiled_spacebars_js = compile_spacebars_templates(spacebars_templates)
-		arr = compiled_spacebars_js.split("__templates__\n")
-		arr.insert(0, "(function(){\n")
-		arr.append("})();\n")
-		context.compiled_spacebars_js = arr
-	"""
 
 
 def process_xhtml_context(context):
@@ -388,12 +393,12 @@ def process_common_context(apps, whatfor, context, pfs_in, pfs_out):
 	#get extra context from meteor_general_context.py file. Here we put files to exclude from meteor app.
 	get_common_context(context, apps, whatfor, pfs_in, pfs_out)
 
-def addto_meteor_templates_list(template_path):
+def addto_meteor_templates_list(template_path, ext_out="html", export=True):
 	from fluorine.utils.context import get_xhtml_files_to_add_remove
 
 	if not frappe.local.meteor_map_templates.get(template_path, None):# and template_path not in frappe.local.templates_referenced:
 		template = fluorine_get_fenv().get_template(template_path)
-		frappe.local.meteor_map_templates.get(template_path).update({"template_obj": template})
+		frappe.local.meteor_map_templates.get(template_path).update({"template_obj": template, "ext_out": ext_out, "export": export})
 		#TODO get the context from file of the template...pass the context, the template object and template_path
 		#TODO with template_path and frappe.local.meteor_map_templates.get(template_path) get refs if needed to pass macro template object
 		#TODO get the context from frappe.local.context!

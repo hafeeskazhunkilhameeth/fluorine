@@ -291,3 +291,31 @@ def get_extra_context_func(context, apps, extras):
 			if hasattr(module, extra):
 				extra_func = getattr(module, extra)
 				extra_func(context, app, template_path)
+
+
+def get_app_jinja_files_to_process(app, whatfor, api):
+	from fluorine.utils.module import get_app_module
+
+	app_path = frappe.get_app_path(app)
+	path = os.path.join(app_path, "templates", "react")
+	module = get_app_module(path, app, app_path, "meteor_files.py")
+
+	api.set_startpath("templates/react/%s" % whatfor)
+
+	if module:
+		if hasattr(module, "get_files"):
+			module.get_files(api, whatfor)
+
+def get_app_meteor_template_files_to_process(app, whatfor, template_path, api, context):
+	from fluorine.utils.module import get_app_module
+
+	app_path = frappe.get_app_path(app)
+
+	template_path = os.path.join(app_path, os.path.dirname(template_path), os.path.basename(template_path).rsplit(".",1)[0])
+	module = get_app_module(template_path, app, app_path, "meteor_files.py")
+	print "controller module {} rel {}".format(template_path, os.path.relpath(template_path, app_path))
+	if module:
+		if hasattr(module, "get_files"):
+			api.set_startpath(os.path.relpath(template_path, app_path))
+			#os.path.relpath(template_path, app_path)
+			module.get_files(api, whatfor, context)
