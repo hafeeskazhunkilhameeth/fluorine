@@ -136,6 +136,7 @@ def get_doc_from_deep(template, deep=1):
 	return None, 1
 
 
+"""
 def add_meteor_template_to_dict(appname, tname, template_path):
 	toadd = frappe.local.context.files_to_add
 
@@ -173,7 +174,7 @@ def export_meteor_template_out(tname, template_path):
 	obj = frappe.local.meteor_map_templates.get(template_path)
 	appname = obj.get("appname")
 	add_meteor_template_to_out(appname, tname, template_path)
-
+"""
 
 def get_meteor_template_parent_path(tname, template_path):
 
@@ -181,7 +182,7 @@ def get_meteor_template_parent_path(tname, template_path):
 	refs = obj.get("refs")
 	return check_refs(tname, refs)
 
-
+"""
 def remove_meteor_template_from_out(appname, tname, template_path, is_ref=True):
 	toadd = frappe.local.context.files_to_add
 
@@ -197,12 +198,11 @@ def remove_meteor_template_from_out(appname, tname, template_path, is_ref=True):
 
 	if found:
 		mtemplates.remove(tname)
+"""
 
-
-def add_to_path(template, refs, tcont):
+def add_to_path(template, refs, tcont, whatfor, context):
 
 	for tname in tcont.keys():
-
 		if template and tname not in template.blocks.keys():
 			ref = check_refs(tname, refs)
 		else:
@@ -211,7 +211,28 @@ def add_to_path(template, refs, tcont):
 		if ref:
 			obj = frappe.local.meteor_map_templates.get(ref)
 			appname = obj.get("appname")
-
-			add_meteor_template_to_out(appname, tname, ref)
+			export_meteor_template(appname, whatfor, ref, tname, context)
 
 	return
+
+
+def export_meteor_template(appname, whatfor, template_path, tname, context):
+	from fluorine.utils.api import Api, filter_api_list_members
+	from fluorine.utils.context import get_app_meteor_template_files_to_process
+
+
+	list_apis = frappe.local.list_files_apis
+	api = Api(appname, whatfor, devmode=context.developer_mode)
+	get_app_meteor_template_files_to_process(appname, whatfor, template_path, tname, api, context)
+	filter_api_list_members(api, list_apis)
+	list_apis.append(api)
+
+def export_fluorine_template(appname, whatfor, template_path, context):
+	from fluorine.utils.api import Api, filter_api_list_members
+	from fluorine.utils.context import get_app_fluorine_template_files_to_process
+
+	list_apis = frappe.local.list_files_apis
+	api = Api(appname, whatfor, devmode=context.developer_mode)
+	get_app_fluorine_template_files_to_process(appname, whatfor, template_path, api, context)
+	filter_api_list_members(api, list_apis)
+	list_apis.append(api)

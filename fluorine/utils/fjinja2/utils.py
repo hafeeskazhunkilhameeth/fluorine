@@ -142,7 +142,8 @@ def get_msuper_inner_content(ctx, source):
 
 @contextfunction
 def msuper(ctx, adeep=1, rdeep=0, tkeep=None, tname=None):
-	from fluorine.utils.fjinja2.refs import get_deep_refs, export_meteor_template_out, remove_meteor_template_from_out
+	from fluorine.utils.fjinja2.refs import get_deep_refs, export_meteor_template
+
 
 
 	ocode = ""
@@ -177,10 +178,13 @@ def msuper(ctx, adeep=1, rdeep=0, tkeep=None, tname=None):
 			ocode = "%s\n%s" % (ocode, get_msuper_inner_content(ctx, code))
 			if not tkeep or deep in tkeep:
 				print "page {} and tname {} relpath {} tkeep {}\n".format(page, tname, tobj.get("relpath"), tkeep)
-				export_meteor_template_out(tname, page)
+				#export_meteor_template(tname, page)
+				appname = sobj.get("appname")
+				export_meteor_template(appname, ctx.get("whatfor"), page, tname, frappe._dict(ctx))
 			else:
 				appname = sobj.get("appname")
-				remove_meteor_template_from_out(appname, tname, page)
+				#TODO ver remove list
+				#remove_meteor_template_from_out(appname, tname, page)
 		else:
 			frappe.throw("Fluorine do not found the page to add for meteor template %s" % tname)
 
@@ -191,7 +195,8 @@ def msuper(ctx, adeep=1, rdeep=0, tkeep=None, tname=None):
 			if page:
 				sobj = frappe.local.meteor_map_templates.get(page)
 				appname = sobj.get("appname")
-				remove_meteor_template_from_out(appname, tname, page)
+				#TODO ver remove
+				#remove_meteor_template_from_out(appname, tname, page)
 			else:
 				frappe.throw("Fluorine do not found the page to remove for meteor template %s" % tname)
 

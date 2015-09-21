@@ -329,8 +329,8 @@ def make_all_files_with_symlink(known_apps, dst, whatfor):
 
 	list_apis = frappe.local.list_files_apis
 	for api in list_apis:
-		for add_file_path_obj in api.get_list_final_files_add():
-			add_file_path = add_file_path_obj.get("source_final_path")
+		for add_file_path, add_file_path_obj in api.get_dict_final_files_add().iteritems():
+			#add_file_path = add_file_path_obj.get("source_final_path")
 			file_appname = add_file_path_obj.get("app")
 			source_relative_path = add_file_path_obj.get("relative_path")
 			source_relative_path = remove_templates_react_path_from_source_path(whatfor, source_relative_path)

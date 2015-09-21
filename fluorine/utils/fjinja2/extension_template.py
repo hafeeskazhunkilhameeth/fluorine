@@ -220,7 +220,7 @@ class MeteorTemplate(Extension):
 
 	def _template(self, ctx, tname, template_real_path, lineno, hightlight, tkeep, caller=None):
 		"""Helper callback."""
-		from fluorine.utils.fjinja2.refs import export_meteor_template_out, get_meteor_template_parent_path
+		from fluorine.utils.fjinja2.refs import get_meteor_template_parent_path, export_meteor_template
 		from fluorine.utils import is_making_production
 
 		app = get_appname(template_real_path)
@@ -232,7 +232,8 @@ class MeteorTemplate(Extension):
 			ref = get_meteor_template_parent_path(tname, relpath)
 			if not ref:
 				frappe.throw("mtkeep command only can be used inside meteor templates and only with fluorine templates (Ex. xhtml files) that extends another fluorine template.")
-			export_meteor_template_out(tname, ref)
+			#export_meteor_template_out(tname, ref)
+			export_meteor_template(app, ctx.whatfor, ref, tname, frappe._dict(ctx))
 
 		devmod = ctx.get("developer_mode")
 		hightlight_all = ctx.get("highlight_all")

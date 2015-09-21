@@ -1,4 +1,4 @@
-__author__ = 'luissaguas'
+__author__ = 'fluorine'
 
 from fluorine.utils import meteor_web_app
 
@@ -25,12 +25,16 @@ def get_meteor_template_files(api, whatfor, template_name, context):
 	if hasattr(module, template_name):
 		getattr(module, template_name)(api, whatfor, context)
 
+def teste1(api, whatfor, context):
+	pass
 
-def highlight(api, whatfor, context):
-	for add_file in ("highlight.js",):
-		prefix = "highlight/client"
-		api.addFiles("%s/%s" % (prefix, add_file))
 
-	for add_file in ("highlight.css",):
-		prefix = "highlight/client/css"
-		api.addFiles("%s/%s" % (prefix, add_file))
+def  teste2(api, whatfor, context):
+	pass
+
+
+def  teste3(api, whatfor, context):
+	pass
+
+
+

@@ -608,15 +608,55 @@ def start_meteor_production_mode(doc, current_dev_app, server_port=None, ddp_por
 
 	return True
 
-	#else:
-	#	click.echo("You must set state to off in fluorine doctype and remove developer mode.")
-	#	return False
 
-def _check_updates(bench="."):
+@click.command('make-addfiles-template')
+@click.option('--app', default=None, help='Name of app where to add the template file. Default to current app.')
+@click.option('--author', default="fluorine", help='Name of the author.')
+@click.option('--templates', default=None, help='A string with a comma separated names of meteor templates with files to add. Used with option --fluorine-template-name')
+@click.option('--fluorine-template-path', default=None, help='If this is for addFiles of meteor templates you must indicate the path to fluorine template.')
+def make_addfiles_template(app=None, templates=None, fluorine_template_path=None, author=None):
+	from fluorine.utils.reactivity import meteor_config
+	from jinja2 import Environment, PackageLoader
+	from fluorine.utils.file import save_file
+
+	if not app:
+		app = meteor_config.get("current_dev_app")
+
+	#fluorine_app_path = frappe.get_app_path("fluorine")
+	#source_path_template = os.path.join(fluorine_app_path, "templates", "meteor_files.template")
+	app_path = frappe.get_app_path(app)
+
+	if fluorine_template_path:
+		dest_path = os.path.join(app_path, "templates", "react", fluorine_template_path, "meteor_files.py")
+	else:
+		dest_path = os.path.join(app_path, "templates", "react", "meteor_files.py")
+
+
+	is_meteor_template = fluorine_template_path != None
+
+	env = Environment(loader=PackageLoader('fluorine', 'templates'), trim_blocks=True)
+	jinja_template = env.get_template('meteor_files.template')
+
+	template_content = jinja_template.render(**{
+		"is_meteor_template": is_meteor_template,
+		"meteor_templates": templates.split(",") if templates else [],
+		"author": author or "fluorine"
+	})
+
+	rel_path = os.path.relpath(dest_path, app_path)
+	if os.path.exists(dest_path):
+		if not click.confirm('There is one file in %s for app %s. Do you want to continue?' % (rel_path, app)):
+			meteor_echo("Did not save.")
+			return
+	save_file(dest_path, template_content)
+	meteor_echo("Saved to %s for app %s." % (rel_path, app))
+
+
+def _check_updates(whatfor, bench="."):
 	from fluorine.commands_helpers.meteor import check_updates
 
 	click.echo("Checking for updates...")
-	return check_updates(bench=bench)
+	return check_updates(whatfor, bench=bench)
 
 @click.command('mongodb-conf')
 @click.argument('site')
@@ -664,5 +704,6 @@ commands = [
 	#setup_production,
 	cmd_update_version,
 	cmd_check_updates,
-	setState
+	setState,
+	make_addfiles_template
 ]

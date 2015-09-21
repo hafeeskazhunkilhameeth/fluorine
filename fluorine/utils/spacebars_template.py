@@ -84,10 +84,11 @@ def compile_jinja_templates(context, whatfor):
 	from fluorine.utils import get_encoding
 	#from fluorine.utils.reactivity import get_read_file_patterns
 	from fluorine.utils.file import save_file
-	from fluorine.utils.fjinja2.refs import add_fluroine_template_to_dict, get_page_templates_and_refs, add_to_path
+	#from fluorine.utils.fjinja2.refs import add_fluroine_template_to_dict, get_page_templates_and_refs, add_to_path
+	from fluorine.utils.fjinja2.refs import get_page_templates_and_refs, add_to_path, export_meteor_template, export_fluorine_template
 	from fluorine.utils.fjinja2.utils import STARTTEMPLATE_SUB_ALL
-	from fluorine.utils.api import Api, validate_update_api_list_members
-	from fluorine.utils.context import get_app_meteor_template_files_to_process
+	from fluorine.utils.api import Api, filter_api_list_members
+	from fluorine.utils.context import get_app_fluorine_template_files_to_process
 	#out = {}
 
 	keys = frappe.local.meteor_map_templates.keys()
@@ -105,56 +106,63 @@ def compile_jinja_templates(context, whatfor):
 		obj = frappe.local.meteor_map_templates.get(template_path)
 		template = obj.get("template_obj")
 
-		try:
-			if template_path not in frappe.local.templates_referenced:
-				content = concat(template.render(template.new_context(context)))
-				realpath = obj.get("realpath")
+		#try:
+		if template_path not in frappe.local.templates_referenced:
+			content = concat(template.render(template.new_context(context)))
+			realpath = obj.get("realpath")
 
-				in_ext = realpath.rsplit(".", 1)[1]
-				#fp = file_patterns.get("*.%s" % in_ext)
-				#out_ext = fp.get("ext")
-				ext_out = obj.get("ext_out")
-				ext_len = len(in_ext) + 1
-				dstPath = realpath[:-ext_len] + ".%s" % ext_out
+			in_ext = realpath.rsplit(".", 1)[1]
+			#fp = file_patterns.get("*.%s" % in_ext)
+			#out_ext = fp.get("ext")
+			ext_out = obj.get("ext_out")
+			ext_len = len(in_ext) + 1
+			dstPath = realpath[:-ext_len] + ".%s" % ext_out
 
-				if content and template:
-					if context.page_relations:
-						page_relations.append(get_page_templates_and_refs(template_path))
-					content = "\n\n".join([s for s in content.splitlines() if s])
-					#pattern = "%s.%s" % (template_path[:-ext_len], out_ext)
-					#context.files_to_add.append({"tname": "", "pattern":pattern, "page": template_path})
-					#context.files_to_add.append({"tname": template_path, "file":pattern})
-					#auto_out = fp.get("out", True)
-					auto_out = obj.get("export", True)
-					appname = obj.get("appname")
-					if auto_out:
-						add_fluroine_template_to_dict(appname, template_path, is_ref=False)
-					#if not ctx.get(appname):
-					#	ctx[appname] = []
-					#ctx.get(appname).append({"tname": template_path, "ref":False})
+			if content and template:
+				if context.page_relations:
+					page_relations.append(get_page_templates_and_refs(template_path))
+				content = "\n\n".join([s for s in content.splitlines() if s])
+				#pattern = "%s.%s" % (template_path[:-ext_len], out_ext)
+				#context.files_to_add.append({"tname": "", "pattern":pattern, "page": template_path})
+				#context.files_to_add.append({"tname": template_path, "file":pattern})
+				#auto_out = fp.get("out", True)
+				auto_out = obj.get("export", True)
+				appname = obj.get("appname")
+				#if auto_out:
+				#	add_fluroine_template_to_dict(appname, template_path, is_ref=False)
 
-					save_file(dstPath, content.encode(get_encoding()))
-					refs = obj.get("refs")
-					tcont = {}
-					for m in STARTTEMPLATE_SUB_ALL.finditer(content):
-						name = m.group(2)
-						#if template.name == "templates/react/meteor_web/extend_teste3.xhtml":
-						#print "template {} meteor templates {}".format(template.name, name)
-						tcont[name] = m.group(0)
-					if auto_out:
-						add_to_path(template, refs, tcont)
+				#if not ctx.get(appname):
+				#	ctx[appname] = []
+				#ctx.get(appname).append({"tname": template_path, "ref":False})
 
-					api = Api(appname, whatfor, devmode=context.developer_mode)
-					get_app_meteor_template_files_to_process(appname, whatfor, template_path, api, context)
-					validate_update_api_list_members(api, list_apis)
-					list_apis.append(api)
-					#toadd.update(add)
-					#if whatfor in (meteor_desk_app, "meteor_frappe"):
-					#	out.update(tcont)
-		except Exception as e:
-			from fluorine.commands import meteor_echo
-			file_temp_path = obj.get("file_temp_path")
-			meteor_echo("template: {}.\n\nError is: {}".format(file_temp_path, e), 80)
+				save_file(dstPath, content.encode(get_encoding()))
+				refs = obj.get("refs")
+				tcont = {}
+				for m in STARTTEMPLATE_SUB_ALL.finditer(content):
+					name = m.group(2).strip()
+					#if template.name == "templates/react/meteor_web/extend_teste3.xhtml":
+					#print "template {} meteor templates {}".format(template.name, name)
+					tcont[name] = m.group(0)
+				else:
+					if not tcont:
+						export_meteor_template(appname, whatfor, template.name, None, context)
+					#print "called if in add_to_path for name {} appname {} template_path {}".format(name, appname, template_path)
+				if auto_out:
+					add_to_path(template, refs, tcont, whatfor, context)
+
+				export_fluorine_template(appname, whatfor, template_path, context)
+				#api = Api(appname, whatfor, devmode=context.developer_mode)
+				#get_app_fluorine_template_files_to_process(appname, whatfor, template_path, api, context)
+				#validate_update_api_list_members(api, list_apis)
+				#list_apis.append(api)
+				#toadd.update(add)
+				#if whatfor in (meteor_desk_app, "meteor_frappe"):
+				#	out.update(tcont)
+		#except Exception as e:
+			#from fluorine.commands import meteor_echo
+			#file_temp_path = obj.get("file_temp_path")
+			#meteor_echo("template: {}.\n\nError is: {}".format(file_temp_path, e), 80)
+
 			#print "an error occurr removing file {} error {}".format(file_temp_path, e)
 
 	#remove_from_path(context, toadd)
@@ -246,7 +254,7 @@ def get_web_pages(context):
 
 def fluorine_build_context(context, whatfor):
 	from fluorine.utils.debug import make_page_relations
-	from fluorine.utils.reactivity import get_read_file_patterns
+	#from fluorine.utils.reactivity import get_read_file_patterns
 	from fluorine.utils.apps import get_active_apps
 	from fluorine.utils import meteor_web_app, meteor_config
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation,\
@@ -360,8 +368,8 @@ def process_react_templates(apps, whatfor, context):
 			get_app_jinja_files_to_process(app, whatfor, api)
 			list_apis.append(api)
 			#files = read_client_jinja_files(path, app, pfs_in, api.get_list_jinja_files(), meteor_ignore=xhtml_ignores, custom_pattern=custom_pattern)
-			files = api.get_list_jinja_files()
-			for fobj in files:
+			files_dict = api.get_dict_jinja_files()
+			for file_path, fobj in files_dict.iteritems():
 				jinja_template_path = fobj.get("relative_path")
 				addto_meteor_templates_list(jinja_template_path, fobj.get("ext_out"))
 

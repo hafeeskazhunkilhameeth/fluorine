@@ -300,13 +300,12 @@ def get_app_jinja_files_to_process(app, whatfor, api):
 	path = os.path.join(app_path, "templates", "react")
 	module = get_app_module(path, app, app_path, "meteor_files.py")
 
-	api.set_startpath("templates/react/%s" % whatfor)
-
 	if module:
 		if hasattr(module, "get_files"):
+			api.set_startpath("templates/react/%s" % whatfor)
 			module.get_files(api, whatfor)
 
-def get_app_meteor_template_files_to_process(app, whatfor, template_path, api, context):
+def get_app_fluorine_template_files_to_process(app, whatfor, template_path, api, context):
 	from fluorine.utils.module import get_app_module
 
 	app_path = frappe.get_app_path(app)
@@ -317,5 +316,27 @@ def get_app_meteor_template_files_to_process(app, whatfor, template_path, api, c
 	if module:
 		if hasattr(module, "get_files"):
 			api.set_startpath(os.path.relpath(template_path, app_path))
+			api.set_template_path(template_path)
 			#os.path.relpath(template_path, app_path)
 			module.get_files(api, whatfor, context)
+
+
+def get_app_meteor_template_files_to_process(app, whatfor, template_path, template_name, api, context):
+	from fluorine.utils.module import get_app_module
+
+	app_path = frappe.get_app_path(app)
+
+	template_path = os.path.join(app_path, os.path.dirname(template_path), os.path.basename(template_path).rsplit(".",1)[0])
+	module = get_app_module(template_path, app, app_path, "meteor_files.py")
+	if module:
+		if template_name:
+			if hasattr(module, "get_meteor_template_files"):
+				api.set_startpath(os.path.relpath(template_path, app_path))
+				api.set_template_path(template_path)
+				api.set_template_name(template_name)
+				module.get_meteor_template_files(api, whatfor, template_name, context)
+		else:
+			if hasattr(module, "get_template_files"):
+				api.set_template_path(template_path)
+				api.set_startpath(os.path.relpath(template_path, app_path))
+				module.get_template_files(api, whatfor, context)
