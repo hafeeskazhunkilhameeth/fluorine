@@ -648,8 +648,16 @@ def make_addfiles_template(app=None, templates=None, fluorine_template_path=None
 		if not click.confirm('There is one file in %s for app %s. Do you want to continue?' % (rel_path, app)):
 			meteor_echo("Did not save.")
 			return
-	save_file(dest_path, template_content)
-	meteor_echo("Saved to %s for app %s." % (rel_path, app))
+	if os.path.exists(os.path.dirname(dest_path)):
+		save_file(dest_path, template_content)
+		__init__file = os.path.join(os.path.dirname(dest_path), "__init__.py")
+		print "init file {}".format(__init__file)
+		if not os.path.exists(__init__file):
+			from frappe.utils import touch_file
+			touch_file(os.path.join(os.path.dirname(dest_path), "__init__.py"))
+		meteor_echo("Saved to %s for app %s." % (rel_path, app))
+	else:
+		meteor_echo("Did not saved, path %s for app %s does not exist." % (os.path.dirname(rel_path), app))
 
 
 def _check_updates(whatfor, bench="."):
