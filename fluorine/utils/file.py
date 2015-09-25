@@ -350,6 +350,7 @@ def make_all_files_with_symlink(known_apps, dst, whatfor):
 
 	pckg_config = frappe._dict({
 		"describe": None,
+		"versionsFrom": None,
 		"api": frappe._dict({"use": [], "imply": [], "export": [], "addFiles": []}),
 		"Npm": frappe._dict({}),
 		"Cordova": frappe._dict({}),
@@ -375,6 +376,8 @@ def make_all_files_with_symlink(known_apps, dst, whatfor):
 					pckg_config.describe = api._describe
 				if not pckg_config.registerBuildPlugin:
 					pckg_config.registerBuildPlugin = api.registerBuildPlugin
+				if not pckg_config.versionsFrom and api._versionsFrom:
+					pckg_config.versionsFrom = api._versionsFrom
 				pckg_config.api.use.extend(api.api_use)
 				pckg_config.api.imply.extend(api.api_imply)
 				pckg_config.api.export.extend(api.api_export)

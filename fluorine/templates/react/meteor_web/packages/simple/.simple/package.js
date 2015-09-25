@@ -12,6 +12,8 @@ Package.describe({
 
 
 Package.onUse(function(api) {
+    api.versionsFrom('1.1.0.3');
+  api.use(['templating'], ['client']);
         api.addFiles('aTemplate.html');
     api.addFiles('simple.js');
   });
@@ -21,8 +23,4 @@ Package.onUse(function(api) {
 
 
 
-Npm.depends({
-  'faker':'3.0.1',
-  'node-geocoder':'3.0.0',
-  });
 

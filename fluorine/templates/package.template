@@ -14,8 +14,8 @@ Package.describe({
 
 
 Package.onUse(function(api) {
-  {% if api.versionsFrom %}
-  api.versionsFrom('{{api.versionsFrom}}');
+  {% if versionsFrom %}
+  api.versionsFrom('{{versionsFrom}}');
   {% endif %}
   {%- for use in api.use -%}
   api.use({{use.packageNames}}{% if use.architecture %}, {{use.architecture}}{% endif %}{% if use.options %}, {{use.options}}{% endif %});

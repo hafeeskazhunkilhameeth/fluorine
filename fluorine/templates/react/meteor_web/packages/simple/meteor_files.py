@@ -12,11 +12,12 @@ def get_files(api, whatfor):
 		"documentation": 'README.md'
 	}
 
-	api.Npm({
-	  'faker': "3.0.1",
-	  'node-geocoder': "3.0.0"
-	})
-
+	#api.Npm({
+	#  'faker': "3.0.1",
+	#  'node-geocoder': "3.0.0"
+	#})
+	api.versionsFrom('1.1.0.3')
+	api.use("templating", "client")
 	api.describe(describe)
 	if whatfor == meteor_web_app:
 		get_web_files(api)

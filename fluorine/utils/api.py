@@ -68,7 +68,7 @@ class Api(object):
 		self.template_path = None
 		self.template_name = None
 		self._describe = None
-		self.versionsFrom = ""
+		self._versionsFrom = None
 		self.api_use = []
 		self.api_imply = []
 		self.api_export = []
@@ -80,7 +80,7 @@ class Api(object):
 
 
 	def versionsFrom(self, version):
-		self.versionsFrom = version
+		self._versionsFrom = version
 
 	def Npm(self, options):
 		if not self._Npm:
