@@ -54,7 +54,7 @@ def make_mongodb_default(conf, port=3070, guess_mongodb_port=None):
 		print "getting mongo config please wait..."
 
 		mongodb = None
-		msg = msg = "meteor mongo -U"
+		msg = "meteor mongo -U"
 
 		if not guess_mongodb_port:
 			meteor = subprocess.Popen(["meteor", "--port", str(port)], cwd=meteor_web, shell=False, stdout=subprocess.PIPE)
@@ -71,7 +71,7 @@ def make_mongodb_default(conf, port=3070, guess_mongodb_port=None):
 					#print line
 		else:
 			msg = "meteor mongodb port guessed: "
-			mongodb = "mongodb://localhost:%s/meteor" % str(port + 1)
+			mongodb = "mongodb://127.0.0.1:%s/meteor" % str(port + 1)
 
 		print "{} {}".format(msg, mongodb)
 		if mongodb:
