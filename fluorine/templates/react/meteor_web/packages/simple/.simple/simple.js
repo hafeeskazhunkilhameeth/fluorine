@@ -1,0 +1,1 @@
+/Users/saguas/erpnext4/erpnext/frappe_v5/frappe-bench/apps/fluorine/fluorine/templates/react/meteor_web/packages/simple/simple.js

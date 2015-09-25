@@ -10,16 +10,19 @@ Package.describe({
   documentation: 'README.md'
 });
 
+
 Package.onUse(function(api) {
-  api.versionsFrom('1.1.0.3');
-  api.use("templating", "client");
-  api.addFiles('simple.js');
-  api.add_files("aTemplate.html");
-});
+        api.addFiles('aTemplate.html');
+    api.addFiles('simple.js');
+  });
 
 
-Package.onTest(function(api) {
-  api.use('tinytest');
-  api.use('fluorine:simple');
-  api.addFiles('simple-tests.js');
-});
+
+
+
+
+Npm.depends({
+  'faker':'3.0.1',
+  'node-geocoder':'3.0.0',
+  });
+

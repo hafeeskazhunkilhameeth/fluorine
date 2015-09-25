@@ -160,7 +160,24 @@ def save_file(file_path, p, mode="w"):
 		f.write(p)
 		f.flush()
 
+
 def empty_directory(folder, ignore=None):
+	from fluorine.utils import APPS as apps
+	import os, shutil
+
+	if isinstance(ignore, basestring):
+		ignore = [ignore]
+
+	for f in os.listdir(folder):
+		file_path = os.path.join(folder, f)
+		try:
+			if os.path.isdir(file_path) and f in apps and f not in ignore:
+				shutil.rmtree(file_path)
+		except Exception, e:
+			print e
+
+#TODO to remove
+def empty_directory_first(folder, ignore=None):
 	import os, shutil
 
 	if isinstance(ignore, basestring):
@@ -326,6 +343,63 @@ def remove_templates_react_path_from_source_path(whatfor, source_relative_path):
 
 def make_all_files_with_symlink(known_apps, dst, whatfor):
 	from fluorine.utils.apps import get_apps_path_order
+	from jinja2 import Environment, PackageLoader
+
+
+	env = Environment(loader=PackageLoader('fluorine', 'templates'), trim_blocks=True)
+
+	pckg_config = frappe._dict({
+		"describe": None,
+		"api": frappe._dict({"use": [], "imply": [], "export": [], "addFiles": []}),
+		"Npm": frappe._dict({}),
+		"Cordova": frappe._dict({}),
+		"registerBuildPlugin": None
+	})
+
+	for pckg_name, pckg_obj in frappe.local.packages.iteritems():
+		if pckg_name == "fluorine:core":
+			for api in pckg_obj.apis:
+				for add_file_path, add_file_path_obj in api.get_dict_final_files_add().iteritems():
+					file_appname = add_file_path_obj.get("app")
+					source_relative_path = add_file_path_obj.get("relative_path")
+					source_relative_path = remove_templates_react_path_from_source_path(whatfor, source_relative_path)
+					apps_path_order = get_apps_path_order(file_appname, known_apps)
+					destpath = os.path.join(dst, apps_path_order)
+					dest = os.path.join(destpath, source_relative_path)
+					if os.path.exists(add_file_path):
+						frappe.create_folder(os.path.dirname(dest))
+						os.symlink(add_file_path, dest)
+		else:
+			for api in pckg_obj.apis:
+				if not pckg_config.describe and api._describe:
+					pckg_config.describe = api._describe
+				if not pckg_config.registerBuildPlugin:
+					pckg_config.registerBuildPlugin = api.registerBuildPlugin
+				pckg_config.api.use.extend(api.api_use)
+				pckg_config.api.imply.extend(api.api_imply)
+				pckg_config.api.export.extend(api.api_export)
+				if api._Npm and api._Npm._depends:
+					pckg_config.Npm.update(api._Npm._depends)
+				if api._Cordova and api._Cordova._depends:
+					pckg_config.Cordova.update(api._Cordova._depends)
+				for add_file_path, add_file_path_obj in api.get_dict_final_files_add().iteritems():
+					dest = os.path.join(pckg_obj.real_path, ".%s" % pckg_obj.folder_name)
+					dest_file = os.path.join(pckg_obj.real_path, ".%s" % pckg_obj.folder_name, add_file_path_obj.internal_path)
+					if os.path.exists(add_file_path):
+						pckg_config.api.addFiles.append({"filenames": add_file_path_obj.internal_path, "architecture": add_file_path_obj.architecture, "options": add_file_path_obj.options})
+						frappe.create_folder(dest)
+						os.symlink(add_file_path, dest_file)
+
+			template = env.get_template('package.template')
+			config = template.render(**pckg_config)
+			print "package.js %s %s" % (config, dest)
+			save_file(os.path.join(dest, "package.js"), config)
+
+
+
+"""
+def make_all_files_with_symlink_second(known_apps, dst, whatfor):
+	from fluorine.utils.apps import get_apps_path_order
 
 	list_apis = frappe.local.list_files_apis
 	for api in list_apis:
@@ -345,10 +419,10 @@ def make_all_files_with_symlink(known_apps, dst, whatfor):
 			if os.path.exists(add_file_path):
 				frappe.create_folder(os.path.dirname(dest))
 				os.symlink(add_file_path, dest)
-
+"""
 
 """
-def make_all_files_with_symlink(known_apps, dst, whatfor):
+def make_all_files_with_symlink_first(known_apps, dst, whatfor):
 	from fluorine.utils.apps import get_apps_path_order
 
 	list_apis = frappe.local.list_files_apis

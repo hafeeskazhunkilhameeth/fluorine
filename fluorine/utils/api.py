@@ -4,6 +4,52 @@ __author__ = 'luissaguas'
 import frappe, os
 
 
+
+class OnTest(object):
+
+	def __init__(self):
+		self.api_use = []
+		self.api_imply = []
+		self.api_export = []
+		self.api_assets = []
+		self.api_addFiles = []
+
+
+	def use(self, pckgnames, architecture=None, options=None):
+		self.api_use.append({"packageNames": pckgnames, "architecture": architecture, "options":options})
+
+	def imply(self, pckgnames, architecture=None):
+		self.api_imply.append({"packageNames": pckgnames, "architecture": architecture})
+
+	def export(self, exportedObjects, architecture=None, options=None):
+		self.api_export.append({"exportedObjects": exportedObjects, "architecture": architecture, "options":options})
+
+	def addAssets(self, filenames, architecture=None):
+		self.api_assets.append({"filenames": filenames, "architecture": architecture})
+
+
+	def addFiles(self, filenames, architecture=None, options=None):
+		self.api_addFiles.append({"filenames": filenames, "architecture": architecture, "options": options})
+
+
+
+class Cordova(object):
+	def __init__(self):
+		self._depends = frappe._dict({})
+
+	def depends(self, depends):
+		self._depends.update(depends)
+
+
+class Npm(object):
+	def __init__(self):
+		self._depends = frappe._dict({})
+
+	def depends(self, depends):
+		self._depends.update(depends)
+
+
+
 class Api(object):
 
 	def __init__(self, app, whatfor, devmode=True):
@@ -13,15 +59,66 @@ class Api(object):
 		#self.list_final_files_add = []
 		self.dict_final_files_add = frappe._dict()
 		#self.list_final_files_remove = []
-		self.dict_final_files_remove = {}
-		self.list_packages = []
+		self.dict_final_files_remove = frappe._dict()
+		self.dict_packages = frappe._dict()
 		#self.list_packages = {}
 		self.app = app
 		self.whatfor = whatfor
 		self.startpath = "templates/react"
 		self.template_path = None
 		self.template_name = None
+		self._describe = None
+		self.versionsFrom = ""
+		self.api_use = []
+		self.api_imply = []
+		self.api_export = []
+		self.api_assets = []
+		self._Npm = None
+		self._Cordova = None
+		self.onTest = OnTest()
+		self.registerBuildPlugin = {}
 
+
+	def versionsFrom(self, version):
+		self.versionsFrom = version
+
+	def Npm(self, options):
+		if not self._Npm:
+			self._Npm = Npm()
+		self._Npm.depends(frappe._dict(options))
+
+	def Cordova(self, options):
+		if not self._Cordova:
+			self._Cordova = Cordova()
+		self._Cordova.depends(frappe._dict(options))
+
+	def describe(self, options):
+		print "in describe %s" % options
+		self._describe = frappe._dict(options)
+
+	def use(self, pckgnames, architecture=None, options=None):
+		if isinstance(architecture, basestring):
+			architecture = [architecture]
+		if isinstance(pckgnames, basestring):
+			pckgnames = [pckgnames]
+		self.api_use.append({"packageNames": pckgnames, "architecture": architecture, "options":options})
+
+	def imply(self, pckgnames, architecture=None):
+		if isinstance(architecture, basestring):
+			architecture = [architecture]
+		if isinstance(pckgnames, basestring):
+			pckgnames = [pckgnames]
+		self.api_imply.append({"packageNames": pckgnames, "architecture": architecture})
+
+	def export(self, exportedObjects, architecture=None, options=None):
+		if isinstance(architecture, basestring):
+			architecture = [architecture]
+		if isinstance(exportedObjects, basestring):
+			exportedObjects = [exportedObjects]
+		self.api_export.append({"exportedObjects": exportedObjects, "architecture": architecture, "options":options})
+
+	def registerBuildPlugin(self, options):
+		self.registerBuildPlugin.update(options)
 
 	def getApp(self):
 		return self.app
@@ -43,46 +140,57 @@ class Api(object):
 
 	def change_file_path_if_not_relative(self, file_to_add):
 
-		if file_to_add.startswith("../"):
-			new_prefix = os.path.normpath(os.path.join(self.startpath, "../"))
-			file_to_add = file_to_add.replace("../", "", 1)
-		elif file_to_add.startswith("/"):
-			new_prefix = ""
-			file_to_add = file_to_add.replace("/", "", 1)
+		if file_to_add.startswith("/"):
+			new_prefix = file_to_add
 		else:
-			new_prefix = self.startpath
+			new_prefix = os.path.normpath(os.path.join(self.startpath, file_to_add))
 
-		return file_to_add, new_prefix
+		return new_prefix
 
-	def addFiles(self, files, app=None, prefix=None):
+	def addAssets(self, filenames, architecture=None):
+		if isinstance(architecture, basestring):
+			architecture = [architecture]
+		if isinstance(filenames, basestring):
+			filenames = [filenames]
+		self.api_assets.append({"filenames": filenames, "architecture": architecture})
+
+
+	def addFiles(self, files, app=None, architecture=None, options=None):
 		app, files = self.get_processed_input_data(app, files)
+		if isinstance(architecture, basestring):
+			architecture = [architecture]
 		for file in files:
-			file, new_prefix = self.change_file_path_if_not_relative(file)
-			final_path = self.get_final_path(app, new_prefix, file)
+			new_prefix = self.change_file_path_if_not_relative(file)
+			real_path = self.get_real_path(app, new_prefix, file)
+			#print "real_path {} new prefix {}".format(real_path, new_prefix)
 			#self.list_final_files_add.append({"source_final_path": final_path, "relative_path": os.path.join(new_prefix, file), "app": app})
-			self.dict_final_files_add[final_path] = {"relative_path": os.path.join(new_prefix, file), "app": app}
+			#self.dict_final_files_add[real_path] = {"relative_path": os.path.join(new_prefix, file), "app": app}
+			self.dict_final_files_add[real_path] = frappe._dict({"relative_path": new_prefix, "internal_path": file,"app": app, "architecture": architecture, "options": options})
 
-	def addJinjaFiles(self, files, app=None, prefix=None, out_ext="html", export=True):
+	def addJinjaFiles(self, files, app=None, out_ext="html", export=True):
 		app, files = self.get_processed_input_data(app, files)
 		for file in files:
-			file, new_prefix = self.change_file_path_if_not_relative(file)
-			final_path = self.get_final_path(app, new_prefix, file)
-			self.dict_jinja_files[final_path] = {"relative_path": os.path.join(new_prefix, file), "ext_out": out_ext, "export": export, "prefix": new_prefix}
+			new_prefix = self.change_file_path_if_not_relative(file)
+			real_path = self.get_real_path(app, new_prefix, file)
+			#self.dict_jinja_files[real_path] = {"relative_path": os.path.join(new_prefix, file), "ext_out": out_ext, "export": export, "prefix": new_prefix}
+			self.dict_jinja_files[real_path] = frappe._dict({"relative_path": new_prefix, "internal_path": file, "ext_out": out_ext, "export": export, "prefix": new_prefix})
 
-	def addPackages(self, files, prefix=None):
+	def addPackages(self, files):
 		app, files = self.get_processed_input_data(self.app, files)
 		for file in files:
-			file, new_prefix = self.change_file_path_if_not_relative(file)
-			final_path = self.get_final_path(app, new_prefix, file)
-			self.list_packages.append(final_path)
+			new_prefix = self.change_file_path_if_not_relative(file)
+			real_path = self.get_real_path(app, new_prefix, file)
+			package_folder_name = file.rsplit("/", 1)[1]
+			self.dict_packages[real_path] = frappe._dict({"relative_path": new_prefix, "internal_path": file, "folder_name": package_folder_name})
 
-	def removeFiles(self, files, app=None, prefix=None):
+	def removeFiles(self, files, app=None):
 		app, files = self.get_processed_input_data(app, files)
 		for file in files:
-			file, new_prefix = self.change_file_path_if_not_relative(file)
-			final_path = self.get_final_path(app, new_prefix, file)
+			new_prefix = self.change_file_path_if_not_relative(file)
+			real_path = self.get_real_path(app, new_prefix, file)
 			#self.list_final_files_remove.append(final_path)
-			self.dict_final_files_add[final_path] = {"relative_path": os.path.join(new_prefix, file), "app": app}
+			#self.dict_final_files_add[real_path] = {"relative_path": os.path.join(new_prefix, file), "app": app}
+			self.dict_final_files_add[real_path] = frappe._dict({"relative_path": new_prefix, "internal_path": file, "app": app})
 
 
 	def is_developer_mode(self):
@@ -97,31 +205,21 @@ class Api(object):
 
 		return app, files
 
-	"""
-	def remove_final_file_from_add_list(self, final_file):
-		for obj in self.list_final_files_add[:]:
-			if final_file == obj.get("source_final_path"):
-				self.list_final_files_add.remove(obj)
-				break
-	"""
 	def remove_final_file_from_add_list(self, final_file):
 		self.dict_final_files_add.pop(final_file, None)
 
 	def remove_final_file_from_remove_list(self, final_file):
 		self.dict_final_files_remove.pop(final_file, None)
 
-	"""
-	def remove_final_file_from_remove_list(self, final_file):
-		for obj in self.list_final_files_add[:]:
-			if final_file == obj.get("source_final_path"):
-				self.list_final_files_add.remove(obj)
-				break
-	"""
+	def get_real_path(self, app, path_prefix, file):
+		if file.startswith("/"):
+			#real_path = os.path.join(path_prefix, file)
+			real_path = path_prefix
+		else:
+			app_path = frappe.get_app_path(app)
+			real_path = os.path.join(app_path, path_prefix)
 
-	def get_final_path(self, app, relative_path_prefix, file):
-		app_path = frappe.get_app_path(app)
-		file_path = os.path.join(app_path, relative_path_prefix, file)
-		return file_path
+		return real_path
 
 	def get_dict_jinja_files(self):
 		return self.dict_jinja_files
@@ -132,25 +230,11 @@ class Api(object):
 	def get_dict_final_files_remove(self):
 		return self.dict_final_files_remove
 
-	def get_list_packages(self):
-		return self.list_packages
-
 	def filter_add_new_dict_members(self, original_dict_files_to_remove):
 		list_original_files_to_remove = original_dict_files_to_remove.keys()
 		for new_file in self.dict_final_files_add.keys():
 			if new_file in list_original_files_to_remove:
 				self.dict_final_files_add.pop(new_file, None)
-
-	"""
-	def validate_add_list_members(self, original_list_files_to_remove):
-		for original_check_file_obj in original_list_files_to_remove:
-			original_check_file_path = original_check_file_obj.get("source_final_path")
-			for check_file_obj in self.list_final_files_add[:]:
-				check_file_path = check_file_obj.get("source_final_path")
-				if original_check_file_path == check_file_path:
-					self.list_final_files_add.remove(check_file_obj)
-					break
-	"""
 
 	def filter_remove_new_dict_members(self, original_dict_files_to_add):
 		list_original_files_to_add = original_dict_files_to_add.keys()
@@ -159,17 +243,6 @@ class Api(object):
 				if new_file_folder == orig_file or orig_file.startswith(new_file_folder):
 					self.dict_final_files_remove.pop(file, None)
 					break
-
-	"""
-	def validate_remove_list_members(self, original_list_files_to_add):
-		for original_check_file_obj in original_list_files_to_add:
-			original_check_file_path = original_check_file_obj.get("source_final_path")
-			for check_file_obj in self.dict_final_files_remove[:]:
-				check_file_path = check_file_obj.get("source_final_path")
-				if original_check_file_path == check_file_path:
-					self.dict_final_files_remove.remove(check_file_obj)
-					break
-	"""
 
 	def check_can_remove_final_files(self, file_to_remove):
 		return file_to_remove not in self.dict_final_files_add.keys()
@@ -181,22 +254,6 @@ class Api(object):
 
 		return False
 
-	"""
-	def check_can_remove_final_files(self, file_to_remove_path):
-		for obj in self.dict_final_files_add:
-			check_file_path = obj.get("source_final_path")
-			if check_file_path == file_to_remove_path:
-				return False
-		return True
-
-	def check_can_add_final_files(self, file_to_add_path):
-		for obj in self.dict_final_files_remove:
-			check_file_path = obj.get("source_final_path")
-			if check_file_path == file_to_add_path:
-				return False
-		return True
-	"""
-
 	def check_can_remove_jinja_files(self, list_files_remove):
 		pass
 
@@ -205,6 +262,27 @@ class Api(object):
 
 	def check_can_add_packages(self, list_files_add):
 		pass
+
+	def get_packages_list(self):
+		return self.dict_packages
+
+	def get_packagejs_file(self):
+		from jinja2 import Environment, PackageLoader
+
+		addFiles = []
+		env = Environment(loader=PackageLoader('fluorine', 'templates'), trim_blocks=True)
+		template = env.get_template('package.template')
+		for k,v in self.dict_final_files_add.iteritems():
+			addFiles.append({"filenames": k, "architecture": v.get("architecture"), "options": v.get("options")})
+		config = template.render(**{
+			"describe": self._describe,
+			"api": {"use": self.api_use, "imply": self.api_imply, "export": self.api_export, "addFiles": addFiles},
+			"Npm": self._Npm,
+			"Cordova": self._Cordova,
+			"registerBuildPlugin": self.registerBuildPlugin
+		})
+
+		print "package.js %s" % config
 
 
 def filter_api_list_members(api, original_list_apis):

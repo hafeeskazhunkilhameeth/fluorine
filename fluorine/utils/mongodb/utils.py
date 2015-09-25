@@ -39,7 +39,7 @@ def save_mongodb_config(common_config):
 	save_js_file(common_config_file, common_config)
 
 
-def make_mongodb_default(conf, port=3070):
+def make_mongodb_default(conf, port=3070, guess_mongodb_port=None):
 	from fluorine.utils import meteor_web_app, is_open_port
 
 	if is_open_port(port=port):
@@ -54,21 +54,26 @@ def make_mongodb_default(conf, port=3070):
 		print "getting mongo config please wait..."
 
 		mongodb = None
+		msg = msg = "meteor mongo -U"
 
-		meteor = subprocess.Popen(["meteor", "--port", str(port)], cwd=meteor_web, shell=False, stdout=subprocess.PIPE)
-		while True:
-			line = meteor.stdout.readline()
-			if "App running at" in line:
-				mongodb = subprocess.check_output(["meteor", "mongo", "-U"], cwd=meteor_web, shell=False)
-				meteor.terminate()
-				break
-			elif "Error" in line:
-				mongodb = subprocess.check_output(["meteor", "mongo", "-U"], cwd=meteor_web, shell=False)
-				meteor.terminate()
-				break
-				#print line
+		if not guess_mongodb_port:
+			meteor = subprocess.Popen(["meteor", "--port", str(port)], cwd=meteor_web, shell=False, stdout=subprocess.PIPE)
+			while True:
+				line = meteor.stdout.readline()
+				if "App running at" in line:
+					mongodb = subprocess.check_output(["meteor", "mongo", "-U"], cwd=meteor_web, shell=False)
+					meteor.terminate()
+					break
+				elif "Error" in line:
+					mongodb = subprocess.check_output(["meteor", "mongo", "-U"], cwd=meteor_web, shell=False)
+					meteor.terminate()
+					break
+					#print line
+		else:
+			msg = "meteor mongodb port guessed: "
+			mongodb = "mongodb://localhost:%s/meteor" % str(port + 1)
 
-		print "meteor mongo -U {}".format(mongodb)
+		print "{} {}".format(msg, mongodb)
 		if mongodb:
 			fs = mongodb.rsplit("/",1)
 			hp = fs[0].split("mongodb://")[1].split(":")

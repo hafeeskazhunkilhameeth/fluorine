@@ -54,10 +54,10 @@ def get_extras_context_method(site):
 	from fluorine.utils.fhooks import get_extras_context
 
 	if not frappe.db:
-		user = "Administrator"
+		#user = "Administrator"
 		frappe.init(site=site)
 		frappe.connect()
-		frappe.set_user(user)
+		#frappe.set_user(user)
 		global start_db
 		start_db = True
 

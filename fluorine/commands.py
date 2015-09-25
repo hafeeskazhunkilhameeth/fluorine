@@ -325,8 +325,9 @@ def cmd_restore_common_config(site=None):
 @click.option('--skip-package-check-updates', is_flag=True)
 @click.option('--custom-file-to-add', default=None, help='Name of the custom file with packages to add.')
 @click.option('--custom-file-to-remove', default=None, help='Name of the custom file with packages to remove.')
+@click.option('--guess-mongodb-port', help='Try to guess the mongodb port.', is_flag=True)
 def setState(state, site=None, custom_mongo=None, user=None, server_port=None, ddp_port=None, mac_sup_prefix_path=None, debug=None,
-			update=None, force=None, custom_file_to_add=None, custom_file_to_remove=None, skip_package_check_updates=False):
+			update=None, force=None, custom_file_to_add=None, custom_file_to_remove=None, skip_package_check_updates=False, guess_mongodb_port=None):
 	"""Prepare Frappe for meteor.\n
 		STATE: \n
 		`develop` to enter in developer mode;\n
@@ -354,12 +355,13 @@ def setState(state, site=None, custom_mongo=None, user=None, server_port=None, d
 
 	color = click_format("*" * 80)
 	_setState(site=site, state=state, debug=debug, update= update, force=force, mongo_custom=custom_mongo, user=user, bench=bench,
-		server_port=server_port, ddp_port=ddp_port, mac_sup_prefix_path=mac_sup_prefix_path, file_to_add=custom_file_to_add, file_to_remove=custom_file_to_remove, skip_package_check_updates=skip_package_check_updates)
+		server_port=server_port, ddp_port=ddp_port, mac_sup_prefix_path=mac_sup_prefix_path, file_to_add=custom_file_to_add,
+			file_to_remove=custom_file_to_remove, skip_package_check_updates=skip_package_check_updates, guess_mongodb_port=guess_mongodb_port)
 	click_format("*" * 80, color)
 
 
 def _setState(site=None, state=None, debug=False, update=False, force=False, mongo_custom=False, user=None, bench="..",
-			server_port=None, ddp_port=None, mac_sup_prefix_path="/usr/local", file_to_add=None, file_to_remove=None, skip_package_check_updates=False):
+			server_port=None, ddp_port=None, mac_sup_prefix_path="/usr/local", file_to_add=None, file_to_remove=None, skip_package_check_updates=False, guess_mongodb_port=None):
 	from fluorine.utils.fcache import clear_frappe_caches
 	from fluorine.utils.context import MeteorContext
 	from fluorine.commands_helpers import stop_frappe_db, get_app_installed_site
@@ -386,7 +388,7 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 		change_frappe_db(site)
 		current_dev_app = get_current_dev_app()
 		start_meteor(doc, current_dev_app, site=site, mongo_custom=mongo_custom, bench=bench, server_port=server_port, ddp_port=ddp_port,
-					file_to_add=file_to_add, file_to_remove=file_to_remove, skip_package_check_updates=skip_package_check_updates)
+					file_to_add=file_to_add, file_to_remove=file_to_remove, skip_package_check_updates=skip_package_check_updates, guess_mongodb_port=guess_mongodb_port)
 	elif what == "stop":
 		stop_meteor(doc, devmode, fluor_state, force=force, site=site, bench=bench)
 	elif what == "production":
@@ -415,7 +417,7 @@ def _setState(site=None, state=None, debug=False, update=False, force=False, mon
 	stop_frappe_db()
 
 
-def start_meteor(doc, current_dev_app, site=None, mongo_custom=False, server_port=None, ddp_port=None, bench="..", file_to_add=None, file_to_remove=None, skip_package_check_updates=False):
+def start_meteor(doc, current_dev_app, site=None, mongo_custom=False, server_port=None, ddp_port=None, bench="..", file_to_add=None, file_to_remove=None, skip_package_check_updates=False, guess_mongodb_port=None):
 	"""
 	from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import save_to_procfile, make_mongodb_default, check_meteor_apps_created
 	from fluorine.utils.meteor.utils import PORT
@@ -481,7 +483,7 @@ def start_meteor(doc, current_dev_app, site=None, mongo_custom=False, server_por
 	"""
 	from fluorine.commands_helpers.meteor import MeteorDevelop
 	md = MeteorDevelop(doc, current_dev_app, site=site, mongo_custom=mongo_custom, server_port=server_port, ddp_port=ddp_port,
-					bench=bench, file_to_add=file_to_add, file_to_remove=file_to_remove, skip_package_check_updates=skip_package_check_updates)
+					bench=bench, file_to_add=file_to_add, file_to_remove=file_to_remove, skip_package_check_updates=skip_package_check_updates, guess_mongodb_port=guess_mongodb_port)
 	md.start()
 	fluorine_site = get_app_installed_site(app="fluorine")
 	start_frappe_db(fluorine_site)

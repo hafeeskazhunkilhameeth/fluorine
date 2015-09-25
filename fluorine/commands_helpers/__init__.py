@@ -129,8 +129,13 @@ def get_app_installed_site(app="fluorine"):
 
 	sites = get_list_sites()
 
+	#import logging
+	#logger = logging.getLogger("frappe")
+
+	#logger.error("founded sites %s" % sites)
 	for site in sites:
 		change_frappe_db(site)
+		#logger.error("going for site %s" % site)
 		if app in frappe.get_installed_apps():
 			fluorine_site = site
 			break

@@ -1,1 +1,1 @@
-// Write your package code here!
+/Users/saguas/erpnext4/erpnext/frappe_v5/frappe-bench/apps/fluorine/fluorine/templates/react/meteor_web/simple.js

@@ -200,7 +200,7 @@ def remove_meteor_template_from_out(appname, tname, template_path, is_ref=True):
 		mtemplates.remove(tname)
 """
 
-def add_to_path(template, refs, tcont, whatfor, context):
+def add_to_path(template, refs, tcont, whatfor, context, parent_package):
 
 	for tname in tcont.keys():
 		if template and tname not in template.blocks.keys():
@@ -211,28 +211,34 @@ def add_to_path(template, refs, tcont, whatfor, context):
 		if ref:
 			obj = frappe.local.meteor_map_templates.get(ref)
 			appname = obj.get("appname")
-			export_meteor_template(appname, whatfor, ref, tname, context)
+			package_name = obj.get("package_name")
+			if not package_name:
+				package = parent_package
+			else:
+				package = frappe.local.packages.get(package_name)
+
+			export_meteor_template(appname, whatfor, ref, tname, context, package.apis)
 
 	return
 
 
-def export_meteor_template(appname, whatfor, template_path, tname, context):
+def export_meteor_template(appname, whatfor, template_path, tname, context, package_apis):
 	from fluorine.utils.api import Api, filter_api_list_members
 	from fluorine.utils.context import get_app_meteor_template_files_to_process
 
 
-	list_apis = frappe.local.list_files_apis
+	#list_apis = frappe.local.list_files_apis
 	api = Api(appname, whatfor, devmode=context.developer_mode)
 	get_app_meteor_template_files_to_process(appname, whatfor, template_path, tname, api, context)
-	filter_api_list_members(api, list_apis)
-	list_apis.append(api)
+	#filter_api_list_members(api, package_apis)
+	package_apis.append(api)
 
-def export_fluorine_template(appname, whatfor, template_path, context):
+def export_fluorine_template(appname, whatfor, template_path, context, package_apis):
 	from fluorine.utils.api import Api, filter_api_list_members
 	from fluorine.utils.context import get_app_fluorine_template_files_to_process
 
-	list_apis = frappe.local.list_files_apis
+	#list_apis = frappe.local.list_files_apis
 	api = Api(appname, whatfor, devmode=context.developer_mode)
 	get_app_fluorine_template_files_to_process(appname, whatfor, template_path, api, context)
-	filter_api_list_members(api, list_apis)
-	list_apis.append(api)
+	#filter_api_list_members(api, package_apis)
+	package_apis.append(api)

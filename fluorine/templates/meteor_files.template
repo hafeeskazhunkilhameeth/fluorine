@@ -1,6 +1,6 @@
 __author__ = '{{author}}'
 
-from fluorine.utils import meteor_web_app
+from fluorine.utils import meteor_web_app, meteor_desk_app
 
 
 def get_files(api, whatfor, context):
@@ -11,11 +11,11 @@ def get_files(api, whatfor, context):
 
 
 def get_web_files(api, context):
-	pass
+	app_path_prefix = meteor_web_app
 
 
 def get_desk_files(api, context):
-	pass
+	app_path_prefix = meteor_desk_app
 
 
 {% if is_meteor_template %}

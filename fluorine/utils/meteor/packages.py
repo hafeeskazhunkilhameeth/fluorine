@@ -377,7 +377,7 @@ def get_appname_from_package_addFile_directive(filepath, use_default=None):
 	return use_default
 
 
-def process_meteor_packages_from_apps(whatfor):
+def process_meteor_packages_from_apps_first(whatfor):
 
 	API_ADDFILES = "api.addFiles"
 	API_ADD_FILES = "api.add_files"
@@ -407,6 +407,10 @@ def process_meteor_packages_from_apps(whatfor):
 					print "list addFile {}".format(list_api_addFile)
 					copy_file_package_to_meteor_packages(app, dir, whatfor, list_api_addFile)
 
+
+def process_meteor_packages_from_apps(whatfor):
+
+	copy_file_package_to_meteor_packages(app, dir, whatfor, list_api_addFile)
 
 
 def copy_file_package_to_meteor_packages(app, dir, whatfor, list_api_addFile):

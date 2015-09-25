@@ -15,7 +15,7 @@ def is_app_for_site(app, list_only_for_sites, site=None):
 		current_site = get_default_site()
 
 	logger = logging.getLogger("frappe")
-	logger.error("current site {} app {} list {}".format(current_site, app, list_only_for_sites))
+	#logger.error("current site {} app {} list {}".format(current_site, app, list_only_for_sites))
 	if app in list_only_for_sites.get(current_site):
 		return True
 	#app_only_for = list_only_for_sites.get(app) or []

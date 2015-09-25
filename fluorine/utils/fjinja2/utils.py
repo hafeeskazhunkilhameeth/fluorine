@@ -180,7 +180,12 @@ def msuper(ctx, adeep=1, rdeep=0, tkeep=None, tname=None):
 				print "page {} and tname {} relpath {} tkeep {}\n".format(page, tname, tobj.get("relpath"), tkeep)
 				#export_meteor_template(tname, page)
 				appname = sobj.get("appname")
-				export_meteor_template(appname, ctx.get("whatfor"), page, tname, frappe._dict(ctx))
+				package_name = sobj.get("package_name")
+				if not package_name:
+					package_name = obj.get("package_name")
+
+				package = frappe.local.packages.get(package_name)
+				export_meteor_template(appname, ctx.get("whatfor"), page, tname, frappe._dict(ctx), package.apis)
 			else:
 				appname = sobj.get("appname")
 				#TODO ver remove list

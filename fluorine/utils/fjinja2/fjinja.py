@@ -164,7 +164,7 @@ class MyFileSystemLoader(FileSystemLoader):
 					frappe.local.templates_referenced.append(referenced_template_path)
 				refs = frappe.local.meteor_map_templates.get(template).get("refs")
 				refs.append(referenced_template_path)
-				addto_meteor_templates_list(referenced_template_path)
+				addto_meteor_templates_list(referenced_template_path, parent_template_path=template)
 			else:
 				frappe.throw("The template reference %s does't exist or it reference it self %s" % (referenced_template_path, template))
 

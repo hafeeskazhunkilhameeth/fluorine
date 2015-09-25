@@ -131,6 +131,7 @@ def fluor_get_hooks(hook=None, default=None, app_name=None):
 def fluor_get_context(path):
 
 	context = frappe_get_context(path)
+
 	if path == "desk":
 		from fluorine.templates.pages import mdesk
 		context = mdesk.get_context(context)

@@ -233,7 +233,9 @@ class MeteorTemplate(Extension):
 			if not ref:
 				frappe.throw("mtkeep command only can be used inside meteor templates and only with fluorine templates (Ex. xhtml files) that extends another fluorine template.")
 			#export_meteor_template_out(tname, ref)
-			export_meteor_template(app, ctx.whatfor, ref, tname, frappe._dict(ctx))
+			package_name = ref.get("package_name")
+			package = frappe.local.packages.get(package_name)
+			export_meteor_template(app, ctx.whatfor, ref, tname, frappe._dict(ctx), package.apis)
 
 		devmod = ctx.get("developer_mode")
 		hightlight_all = ctx.get("highlight_all")

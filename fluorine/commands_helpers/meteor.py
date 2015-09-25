@@ -248,7 +248,7 @@ def meteor_run(app, app_path, mongo_custom=False):
 class MeteorDevelop(object):
 
 	def __init__(self, doc, current_dev_app, site=None, mongo_custom=False, server_port=None, ddp_port=None, bench="..",
-				file_to_add=None, file_to_remove=None, skip_package_check_updates=False):
+				file_to_add=None, file_to_remove=None, skip_package_check_updates=False, guess_mongodb_port=None):
 		self.doc = doc
 		self.site = site
 		self.bench = bench
@@ -259,6 +259,7 @@ class MeteorDevelop(object):
 		self.file_add = file_to_add
 		self.file_remove = file_to_remove
 		self.skip_package_check_updates = skip_package_check_updates
+		self.guess_mongodb_port = guess_mongodb_port
 
 	def start(self):
 		from fluorine.utils import meteor_config
@@ -333,7 +334,7 @@ class MeteorDevelop(object):
 
 		if not self.mongo_custom:
 			meteor_config.pop("meteor_mongo", None)
-			make_mongodb_default(meteor_config, self.doc.fluor_meteor_port or PORT.meteor_web)
+			make_mongodb_default(meteor_config, self.doc.fluor_meteor_port or PORT.meteor_web, self.guess_mongodb_port)
 			mongo_default = 0
 		else:
 			mongo_conf = meteor_config.get("meteor_mongo", None)

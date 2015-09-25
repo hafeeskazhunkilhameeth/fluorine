@@ -1,0 +1,80 @@
+{% if describe %}
+Package.describe({
+  name: '{{describe.name}}',
+  version: '{{describe.version}}',
+  // Brief, one-line summary of the package.
+  summary: '{{describe.summary}}',
+  // URL to the Git repository containing the source code for this package.
+  git: '{{describe.git}}',
+  // By default, Meteor will default to using README.md for documentation.
+  // To avoid submitting documentation, set this field to null.
+  documentation: '{{describe.documentation}}'
+});
+{%endif%}
+
+
+Package.onUse(function(api) {
+  {% if api.versionsFrom %}
+  api.versionsFrom('{{api.versionsFrom}}');
+  {% endif %}
+  {%- for use in api.use -%}
+  api.use({{use.packageNames}}{% if use.architecture %}, {{use.architecture}}{% endif %}{% if use.options %}, {{use.options}}{% endif %});
+  {% endfor%}
+  {%- for imply in api.imply %}
+  api.imply({{imply.packageNames}}{% if imply.architecture %}, {{imply.architecture}}{% endif %});
+  {%endfor%}
+  {% for export in api.export %}
+  api.export({{export.exportedObjects}}{% if export.architecture %}, {{export.architecture}}{% endif %}{% if export.options %}, {{export.options}}{% endif %}');
+  {% endfor %}
+  {% for addFiles in api.addFiles %}
+  api.addFiles('{{addFiles.filenames}}'{% if addFiles.architecture %}, {{addFiles.architecture}}{% endif %}{% if addFiles.options %}, {{addFiles.options}}{% endif %});
+  {% endfor %}
+});
+
+
+{% if registerBuildPlugin%}
+Package.registerBuildPlugin({
+  name: "{{name}}",
+  use: {{use}},
+  sources: {{sources}},
+  npmDependencies: {
+    "coffee-script": "1.9.2",
+    "source-map": "0.4.2"
+}
+});
+{%endif%}
+
+
+{% if onTest%}
+Package.onTest(function (api) {
+  api.use(['coffeescript', 'tinytest']);
+  api.use(['coffeescript-test-helper'], ['client', 'server']);
+  api.addFiles('bare_test_setup.coffee', ['client'], {bare: true});
+  api.addFiles('bare_tests.js', ['client']);
+  api.addFiles([
+    'coffeescript_test_setup.js',
+    'tests/coffeescript_tests.coffee',
+    'tests/coffeescript_strict_tests.coffee',
+    'tests/litcoffeescript_tests.litcoffee',
+    'tests/litcoffeescript_tests.coffee.md',
+    'coffeescript_tests.js'
+  ], ['client', 'server']);
+});
+{% endif %}
+
+
+{%if Npm %}
+Npm.depends({
+  {% for k,v in Npm.iteritems() -%}
+  '{{k}}':'{{v}}',
+  {% endfor%}
+});
+{%endif%}
+
+{%if Cordova %}
+Cordova.depends({
+ {% for k,v in Cordova.iteritems() %}
+  '{{k}}':'{{v}}',
+ {% endfor %}
+});
+{%endif%}
