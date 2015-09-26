@@ -175,7 +175,7 @@ def empty_directory(folder, remove=None):
 				shutil.rmtree(file_path)
 		except Exception, e:
 			print e
-
+"""
 #TODO to remove
 def empty_directory_first(folder, ignore=None):
 	import os, shutil
@@ -192,7 +192,9 @@ def empty_directory_first(folder, ignore=None):
 				shutil.rmtree(file_path)
 		except Exception, e:
 			print e
+"""
 
+"""
 def check_in_files_remove_list(app, template, list_meteor_files_remove):
 
 	for name in list_meteor_files_remove.get(app, []):
@@ -200,8 +202,9 @@ def check_in_files_remove_list(app, template, list_meteor_files_remove):
 			return True
 
 	return False
+"""
 
-
+"""
 def check_dirs_in_files_remove_list(app, template, dirs, list_meteor_files_remove):
 	dirToRemove = []
 	for d in dirs:
@@ -211,8 +214,9 @@ def check_dirs_in_files_remove_list(app, template, dirs, list_meteor_files_remov
 				dirToRemove.append(d)
 
 	return dirToRemove
+"""
 
-
+"""
 def match_path(startpath, excludes, includes):
 	import fnmatch
 	import re
@@ -234,6 +238,7 @@ def match_path(startpath, excludes, includes):
 
 		for fname in files:
 			print fname
+"""
 
 def check_files_folders_patterns(f, relpath, files_folder):
 	# Remove the first pattern found.
@@ -324,8 +329,8 @@ def copy_mobile_config_file(apps, whatfor):
 
 
 #from profilehooks import profile, timecall, coverage
-import re
-c = lambda t:re.compile(t, re.S|re.M)
+#import re
+#c = lambda t:re.compile(t, re.S|re.M)
 #common_pattern = c(r"templates/(.*)/?common/(.*)")
 
 
@@ -755,7 +760,6 @@ def _make_public_folder(folder_path, dst_folder_path, app, whatfor, custom_patte
 
 	custom_pattern = custom_pattern or []
 	custom_pattern = set(custom_pattern)
-	#if folder == "public":
 	custom_pattern.update(["build.json"])
 	custom_pattern.update(exclude)
 	pattern = ignore_patterns(*custom_pattern)
@@ -775,7 +779,7 @@ def _make_public_folder(folder_path, dst_folder_path, app, whatfor, custom_patte
 			if not os.path.exists(final_dst_path):
 				os.symlink(os.path.join(folder_path, f), final_dst_path)
 
-
+"""
 def check_remove(source):
 	for rapp, rpaths in frappe.local.files_to_remove.iteritems():
 		for obj in rpaths:
@@ -785,8 +789,9 @@ def check_remove(source):
 			if found:
 				return True
 	return False
+"""
 
-
+"""
 def process_pubpriv_folder(meteorpath, dst, app, app_folders, pattern, meteor_ignore=None):
 	from fluorine.utils import meteor_desk_app, meteor_web_app
 
@@ -810,8 +815,8 @@ def process_pubpriv_folder(meteorpath, dst, app, app_folders, pattern, meteor_ig
 				else:
 					frappe.create_folder(os.path.join(dst, folders[0], app_folders))
 					os.symlink(os.path.join(root, f), os.path.join(dst, folders[0], app_folders, f))
-
-
+"""
+"""
 def process_top_folder(meteorpath, dst, app, app_folders, pattern, meteor_ignore=None):
 	from fluorine.utils import meteor_desk_app, meteor_web_app
 
@@ -832,8 +837,8 @@ def process_top_folder(meteorpath, dst, app, app_folders, pattern, meteor_ignore
 			c = len(folders)
 			frappe.create_folder(os.path.join(destpath, folders[c]))
 			os.symlink(os.path.join(root, f), os.path.join(destpath, folders[c], f))
-
-
+"""
+"""
 def meteor_ignore_folders(app, meteor_relpath, root, dirs, meteor_ignore=None):
 	if meteor_ignore:
 		files_folders = meteor_ignore.get("remove").get("files_folders")
@@ -854,8 +859,8 @@ def meteor_ignore_folders(app, meteor_relpath, root, dirs, meteor_ignore=None):
 							dirs.remove(d)
 						except:
 							pass
-
-
+"""
+"""
 def meteor_ignore_files(app, meteor_relpath, root, file, meteor_ignore=None):
 
 	if meteor_ignore:
@@ -879,7 +884,9 @@ def meteor_ignore_files(app, meteor_relpath, root, file, meteor_ignore=None):
 					return False
 
 	return False
+"""
 
+"""
 def has_valid_add_templates(app, order, path, meteor_ignore=None):
 	templates_to_add = meteor_ignore.get("templates_to_add")
 	app_add = templates_to_add.get(app, None)
@@ -901,6 +908,7 @@ def has_valid_add_templates(app, order, path, meteor_ignore=None):
 					return True
 				return False
 	return False
+"""
 
 def set_config(fobj):
 	fobj = fobj or {}
