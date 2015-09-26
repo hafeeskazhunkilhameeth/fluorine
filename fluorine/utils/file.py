@@ -385,8 +385,8 @@ def make_all_files_with_symlink(known_apps, dst, whatfor):
 				for add_file_path, add_file_path_obj in api.get_dict_final_files_add().iteritems():
 					dest = make_dest_path(add_file_path_obj.type, add_file_path_obj)
 					if os.path.exists(add_file_path):
-						frappe.create_folder(os.path.dirname(dest))
 						if not os.path.exists(dest):
+							frappe.create_folder(os.path.dirname(dest))
 							os.symlink(add_file_path, dest)
 		else:
 			for api in pckg_obj.apis:
@@ -400,7 +400,7 @@ def make_all_files_with_symlink(known_apps, dst, whatfor):
 						os.symlink(add_file_path, dest_file)
 
 			config = template.render(**pckg_config)
-			print "package.js %s %s" % (config, dest)
+			#print "package.js %s %s" % (config, dest)
 			save_file(os.path.join(dest, "package.js"), config)
 
 
