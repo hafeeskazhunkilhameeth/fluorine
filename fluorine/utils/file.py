@@ -389,10 +389,10 @@ def make_all_files_with_symlink(known_apps, dst, whatfor):
 							frappe.create_folder(os.path.dirname(dest))
 							os.symlink(add_file_path, dest)
 		else:
+			dest = os.path.join(pckg_obj.real_path, ".%s" % pckg_obj.folder_name)
 			for api in pckg_obj.apis:
 				add_to_packagejs(api, pckg_config)
 				for add_file_path, add_file_path_obj in api.get_dict_final_files_add().iteritems():
-					dest = os.path.join(pckg_obj.real_path, ".%s" % pckg_obj.folder_name)
 					dest_file = os.path.join(pckg_obj.real_path, ".%s" % pckg_obj.folder_name, add_file_path_obj.internal_path)
 					if os.path.exists(add_file_path):
 						pckg_config.api.addFiles.append({"filenames": add_file_path_obj.internal_path, "architecture": add_file_path_obj.architecture, "options": add_file_path_obj.options})
