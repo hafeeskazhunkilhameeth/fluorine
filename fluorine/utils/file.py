@@ -720,31 +720,26 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, pfs_out, custom_patte
 							pass
 """
 
-
+"""
 def make_tests(app_path, dst_tests_path, app, whatfor, custom_pattern=None):
 
 	folder_path = os.path.join(app_path, "tests")
 	_make_public_private(folder_path, dst_tests_path, app, whatfor, "tests", custom_pattern=custom_pattern)
-
+"""
 
 def make_public(app_path, dst_public_assets_path, app, whatfor, custom_pattern=None):
 
 	folder_path = os.path.join(app_path, "public")
-	_make_public_private(folder_path, dst_public_assets_path, app, whatfor, "public", custom_pattern=custom_pattern)
+	_make_public_folder(folder_path, dst_public_assets_path, app, whatfor, custom_pattern=custom_pattern)
 
-
+"""
 def make_private(meteorpath, dst_private_path, app, whatfor, custom_pattern=None):
-	"""
-	dst_private_app_path = os.path.join(dst_private_path, app)
-	private_path = os.path.join(meteorpath, "private")
-	if os.path.exists(private_path):
-		os.symlink(private_path, dst_private_app_path)
-	"""
+
 	folder_path = os.path.join(meteorpath, "private")
 	_make_public_private(folder_path, dst_private_path, app, whatfor, "private", custom_pattern=custom_pattern)
+"""
 
-
-def _make_public_private(folder_path, dst_folder_path, app, whatfor, folder, custom_pattern=None):
+def _make_public_folder(folder_path, dst_folder_path, app, whatfor, custom_pattern=None):
 	from fluorine.utils import meteor_desk_app, meteor_web_app
 
 	_whatfor = [meteor_desk_app, meteor_web_app]
@@ -760,8 +755,8 @@ def _make_public_private(folder_path, dst_folder_path, app, whatfor, folder, cus
 
 	custom_pattern = custom_pattern or []
 	custom_pattern = set(custom_pattern)
-	if folder == "public":
-		custom_pattern.update(["build.json"])
+	#if folder == "public":
+	custom_pattern.update(["build.json"])
 	custom_pattern.update(exclude)
 	pattern = ignore_patterns(*custom_pattern)
 
@@ -772,7 +767,7 @@ def _make_public_private(folder_path, dst_folder_path, app, whatfor, folder, cus
 		for f in files:
 			if f in custom_ign_names:
 				continue
-			if folder == "public" and app == "fluorine" and f in whatfor:
+			if app == "fluorine" and f in whatfor:
 				continue
 
 			final_dst_path = os.path.join(dst_folder_app_path, f)
