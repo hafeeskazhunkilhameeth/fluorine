@@ -77,6 +77,8 @@ class Api(object):
 		self._Cordova = None
 		self.onTest = OnTest()
 		self.registerBuildPlugin = {}
+		self.public_folder = False
+		self.tests_folder = False
 
 
 	def versionsFrom(self, version):
@@ -155,7 +157,7 @@ class Api(object):
 		self.api_assets.append({"filenames": filenames, "architecture": architecture})
 
 
-	def addFiles(self, files, app=None, architecture=None, options=None):
+	def addFiles(self, files, app=None, architecture=None, options=None, type="normal"):
 		app, files = self.get_processed_input_data(app, files)
 		if isinstance(architecture, basestring):
 			architecture = [architecture]
@@ -165,7 +167,8 @@ class Api(object):
 			#print "real_path {} new prefix {}".format(real_path, new_prefix)
 			#self.list_final_files_add.append({"source_final_path": final_path, "relative_path": os.path.join(new_prefix, file), "app": app})
 			#self.dict_final_files_add[real_path] = {"relative_path": os.path.join(new_prefix, file), "app": app}
-			self.dict_final_files_add[real_path] = frappe._dict({"relative_path": new_prefix, "internal_path": file,"app": app, "architecture": architecture, "options": options})
+			self.dict_final_files_add[real_path] = frappe._dict({"relative_path": new_prefix, "internal_path": file,"app": app, "architecture": architecture, "options": options, "type": type})
+
 
 	def addJinjaFiles(self, files, app=None, out_ext="html", export=True):
 		app, files = self.get_processed_input_data(app, files)

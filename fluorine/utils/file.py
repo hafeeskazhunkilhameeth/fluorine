@@ -161,17 +161,17 @@ def save_file(file_path, p, mode="w"):
 		f.flush()
 
 
-def empty_directory(folder, ignore=None):
+def empty_directory(folder, remove=None):
 	from fluorine.utils import APPS as apps
 	import os, shutil
 
-	if isinstance(ignore, basestring):
-		ignore = [ignore]
+	if isinstance(remove, basestring):
+		ignore = [remove]
 
 	for f in os.listdir(folder):
 		file_path = os.path.join(folder, f)
 		try:
-			if os.path.isdir(file_path) and f in apps and f not in ignore:
+			if os.path.isdir(file_path) and f in apps or f in remove:
 				shutil.rmtree(file_path)
 		except Exception, e:
 			print e
@@ -347,6 +347,7 @@ def make_all_files_with_symlink(known_apps, dst, whatfor):
 
 
 	env = Environment(loader=PackageLoader('fluorine', 'templates'), trim_blocks=True)
+	template = env.get_template('package.template')
 
 	pckg_config = frappe._dict({
 		"describe": None,
@@ -357,34 +358,39 @@ def make_all_files_with_symlink(known_apps, dst, whatfor):
 		"registerBuildPlugin": None
 	})
 
+
+	def make_dest_path(type, add_file_path_obj):
+		file_appname = add_file_path_obj.get("app")
+		source_relative_path = add_file_path_obj.get("relative_path")
+		source_relative_path = remove_templates_react_path_from_source_path(whatfor, source_relative_path)
+		apps_path_order = get_apps_path_order(file_appname, known_apps)
+
+		if type == "private":
+			destpath = os.path.join(dst, "private", apps_path_order)
+			dest = os.path.join(destpath, source_relative_path)
+			#make_private(meteorpath, destpath, file_appname, whatfor, custom_pattern=None)
+		elif type == "tests":
+			destpath = os.path.join(dst, "tests", apps_path_order)
+			dest = os.path.join(destpath, source_relative_path)
+		else:
+			destpath = os.path.join(dst, apps_path_order)
+			dest = os.path.join(destpath, source_relative_path)
+
+		return dest
+
+
 	for pckg_name, pckg_obj in frappe.local.packages.iteritems():
 		if pckg_name == "fluorine:core":
 			for api in pckg_obj.apis:
 				for add_file_path, add_file_path_obj in api.get_dict_final_files_add().iteritems():
-					file_appname = add_file_path_obj.get("app")
-					source_relative_path = add_file_path_obj.get("relative_path")
-					source_relative_path = remove_templates_react_path_from_source_path(whatfor, source_relative_path)
-					apps_path_order = get_apps_path_order(file_appname, known_apps)
-					destpath = os.path.join(dst, apps_path_order)
-					dest = os.path.join(destpath, source_relative_path)
+					dest = make_dest_path(add_file_path_obj.type, add_file_path_obj)
 					if os.path.exists(add_file_path):
 						frappe.create_folder(os.path.dirname(dest))
-						os.symlink(add_file_path, dest)
+						if not os.path.exists(dest):
+							os.symlink(add_file_path, dest)
 		else:
 			for api in pckg_obj.apis:
-				if not pckg_config.describe and api._describe:
-					pckg_config.describe = api._describe
-				if not pckg_config.registerBuildPlugin:
-					pckg_config.registerBuildPlugin = api.registerBuildPlugin
-				if not pckg_config.versionsFrom and api._versionsFrom:
-					pckg_config.versionsFrom = api._versionsFrom
-				pckg_config.api.use.extend(api.api_use)
-				pckg_config.api.imply.extend(api.api_imply)
-				pckg_config.api.export.extend(api.api_export)
-				if api._Npm and api._Npm._depends:
-					pckg_config.Npm.update(api._Npm._depends)
-				if api._Cordova and api._Cordova._depends:
-					pckg_config.Cordova.update(api._Cordova._depends)
+				add_to_packagejs(api, pckg_config)
 				for add_file_path, add_file_path_obj in api.get_dict_final_files_add().iteritems():
 					dest = os.path.join(pckg_obj.real_path, ".%s" % pckg_obj.folder_name)
 					dest_file = os.path.join(pckg_obj.real_path, ".%s" % pckg_obj.folder_name, add_file_path_obj.internal_path)
@@ -393,11 +399,31 @@ def make_all_files_with_symlink(known_apps, dst, whatfor):
 						frappe.create_folder(dest)
 						os.symlink(add_file_path, dest_file)
 
-			template = env.get_template('package.template')
 			config = template.render(**pckg_config)
 			print "package.js %s %s" % (config, dest)
 			save_file(os.path.join(dest, "package.js"), config)
 
+
+def add_to_packagejs(api, pckg_config):
+
+	if not pckg_config.describe and api._describe:
+		pckg_config.describe = api._describe
+
+	if not pckg_config.registerBuildPlugin:
+		pckg_config.registerBuildPlugin = api.registerBuildPlugin
+
+	if not pckg_config.versionsFrom and api._versionsFrom:
+		pckg_config.versionsFrom = api._versionsFrom
+
+	pckg_config.api.use.extend(api.api_use)
+	pckg_config.api.imply.extend(api.api_imply)
+	pckg_config.api.export.extend(api.api_export)
+
+	if api._Npm and api._Npm._depends:
+		pckg_config.Npm.update(api._Npm._depends)
+
+	if api._Cordova and api._Cordova._depends:
+		pckg_config.Cordova.update(api._Cordova._depends)
 
 
 """
@@ -449,6 +475,7 @@ def make_all_files_with_symlink_first(known_apps, dst, whatfor):
 				os.symlink(add_file_path, dest)
 """
 
+"""
 def _make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custom_pattern=None):
 	from fluorine.utils.react_file_loader import get_default_custom_pattern
 	from fluorine.utils import meteor_desk_app, meteor_web_app
@@ -590,9 +617,9 @@ def _make_all_files_with_symlink(known_apps, dst, whatfor, pfs_out, toadd, custo
 						dest = os.path.realpath(os.path.join(destpath, os.path.join(relative_file,f)))
 						if not os.path.exists(dest):
 							os.symlink(os.path.join(root, f), dest)
+"""
 
-
-
+"""
 def custom_make_all_files_with_symlink(apps, dst, whatfor, pfs_out, custom_pattern=None):
 	from fluorine.utils import meteor_desk_app, meteor_web_app, get_attr_from_json
 	from fluorine.utils.apps import get_apps_path_order
@@ -691,7 +718,7 @@ def custom_make_all_files_with_symlink(apps, dst, whatfor, pfs_out, custom_patte
 							os.symlink(os.path.join(root, f), os.path.realpath(os.path.join(dst, os.path.join(intern_relative_react,f))))
 						except:
 							pass
-
+"""
 
 
 def make_tests(app_path, dst_tests_path, app, whatfor, custom_pattern=None):
@@ -748,8 +775,10 @@ def _make_public_private(folder_path, dst_folder_path, app, whatfor, folder, cus
 			if folder == "public" and app == "fluorine" and f in whatfor:
 				continue
 
-			frappe.create_folder(os.path.dirname(os.path.join(dst_folder_app_path, f)))
-			os.symlink(os.path.join(folder_path, f), os.path.join(dst_folder_app_path, f))
+			final_dst_path = os.path.join(dst_folder_app_path, f)
+			frappe.create_folder(os.path.dirname(final_dst_path))
+			if not os.path.exists(final_dst_path):
+				os.symlink(os.path.join(folder_path, f), final_dst_path)
 
 
 def check_remove(source):

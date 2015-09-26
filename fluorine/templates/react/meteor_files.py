@@ -11,6 +11,7 @@ def get_files(api, whatfor):
 
 def get_web_files(api):
 
+	api.public_folder = True
 	app_path_prefix = meteor_web_app
 	jinja_templates_tuple = ("Layout.xhtml", "login.xhtml", "extend_teste3.xhtml", "Header.xhtml", "highlight.xhtml", "notFound.xhtml")
 	for add_jinja_file in jinja_templates_tuple:
@@ -30,6 +31,9 @@ def get_web_files(api):
 	for add_file in ("frappe_call.js", "translation.js"):
 		prefix = "%s/common/server" % app_path_prefix
 		api.addFiles("%s/%s" % (prefix, add_file))
+
+	api.addFiles("../common_site_config.json", type="private")
+	api.addFiles("meteor_web/tests", type="tests")
 
 	api.addPackages("meteor_web/packages/simple")
 	#api.imply("less")

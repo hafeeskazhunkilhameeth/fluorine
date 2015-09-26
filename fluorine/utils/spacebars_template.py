@@ -263,7 +263,7 @@ def fluorine_build_context(context, whatfor):
 	from fluorine.utils.apps import get_active_apps
 	from fluorine.utils import meteor_web_app, meteor_config
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation,\
-		copy_mobile_config_file, custom_make_all_files_with_symlink
+		copy_mobile_config_file#, custom_make_all_files_with_symlink
 	from fluorine.utils.permission_file import ProcessFileSystem, list_ignores
 	from react_file_loader import get_custom_pattern
 	from fluorine.utils.meteor.packages import process_meteor_packages_from_apps
@@ -334,7 +334,7 @@ def fluorine_build_context(context, whatfor):
 	custom_pattern = get_custom_pattern(whatfor, custom_pattern=None)
 
 	fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
-	process_react_templates(known_apps, whatfor, context, fluorine_publicjs_dst_path)
+	process_react_templates(known_apps, whatfor, context, fluorine_publicjs_dst_path, custom_pattern=None)
 
 	#do not revert apps. Use from first installed app to current dev app
 	#This way we can use context from the first installed to the last installed
@@ -344,7 +344,7 @@ def fluorine_build_context(context, whatfor):
 
 	compile_jinja_templates(context, whatfor)
 
-	empty_directory(fluorine_publicjs_dst_path, ignore=(".meteor",))
+	empty_directory(fluorine_publicjs_dst_path, remove=("private", "tests"))
 
 	#read_file_pattern = get_read_file_patterns()
 	#make_all_files_with_symlink(known_apps, fluorine_publicjs_dst_path, whatfor, pfs_out, frappe.local.context.files_to_add, custom_pattern=read_file_pattern.keys())
@@ -361,11 +361,16 @@ def fluorine_build_context(context, whatfor):
 
 	return context
 
-def process_react_templates(apps, whatfor, context, reactivity_dst_path):
+def process_react_templates(apps, whatfor, context, reactivity_dst_path, custom_pattern=None):
 	from fluorine.utils.context import get_app_jinja_files_to_process
 	from fluorine.utils.api import Api
 	from shutil import rmtree
+	from fluorine.utils.file import make_public, get_path_reactivity
+	from fluorine.utils.react_file_loader import get_default_custom_pattern
 
+
+	custom_pattern = get_default_custom_pattern(custom_pattern)
+	custom_pattern = set(custom_pattern)
 	#list_apis = frappe.local.list_files_apis
 	#list_core_apis = frappe.local.packages.core
 	def _addto_templates_list(files_dict, package_name):
@@ -386,6 +391,9 @@ def process_react_templates(apps, whatfor, context, reactivity_dst_path):
 			#files = read_client_jinja_files(path, app, pfs_in, api.get_list_jinja_files(), meteor_ignore=xhtml_ignores, custom_pattern=custom_pattern)
 			files_dict = api.get_dict_jinja_files()
 			_addto_templates_list(files_dict, "fluorine:core")
+			if api.public_folder == True:
+				dst_public_assets_path = os.path.join(get_path_reactivity(), whatfor, "public", "assets")
+				make_public(app_path, dst_public_assets_path, app, whatfor, custom_pattern=custom_pattern)
 			#for file_path, fobj in files_dict.iteritems():
 			#	jinja_template_path = fobj.get("relative_path")
 			#	addto_meteor_templates_list(jinja_template_path, fobj.get("ext_out"))

@@ -330,11 +330,15 @@ production_if_redirect = """
 		#fix the frappe POST to root url '/'
 		set $referer 0;
 		if ($request_method = POST){
-			set $post 1;
+			set $frappe 1;
+		}
+
+		if ($args ~ "cmd=(.+)") {
+			set $frappe 1;
 		}
 
 		if ($http_referer ~* [http://|https://](.*)/desk){
-			set $referer "${post}1";
+			set $referer "${frappe}1";
 		}
 
 		if ($referer = 11){
