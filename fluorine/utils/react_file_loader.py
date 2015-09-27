@@ -107,13 +107,14 @@ def get_custom_pattern(whatfor, custom_pattern=None):
 
 	return pattern, ignored_names_any, ignored_names_top
 
-
+"""
 def read_client_jinja_files(appname, pfs_in, list_jinja_files_to_read, meteor_ignore=None, custom_pattern=None):
 	from fluorine.utils.file import check_files_folders_patterns
 
 	for file in list_jinja_files_to_read:
 		pass
-
+"""
+"""
 def _read_client_jinja_files(start_folder, appname, pfs_in, list_jinja_files_to_read, meteor_ignore=None, custom_pattern=None):
 	from fluorine.utils.file import check_files_folders_patterns
 
@@ -178,7 +179,7 @@ def _read_client_jinja_files(start_folder, appname, pfs_in, list_jinja_files_to_
 				files_to_read.append(obj)
 
 	return (files_in_lib, files_to_read, main_lib_files, main_files)
-
+"""
 
 def check_read_file_pattern(f):
 	from fluorine.utils.reactivity import get_read_file_patterns

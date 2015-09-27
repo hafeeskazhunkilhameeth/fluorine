@@ -110,7 +110,7 @@ class MyFileSystemLoader(FileSystemLoader):
 			relpath = os.path.relpath(filepath, os.path.normpath(os.path.join(os.path.join(os.getcwd(), ".."), "apps")))
 			try:
 				contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, relpath)
-				frappe.local.meteor_map_templates[template] = frappe._dict({"appname": app, "template":template, "relpath": relpath, "realpath": filepath, "refs":[]})
+				frappe.local.meteor_map_templates[template] = frappe._dict({"appname": app, "template":template, "relpath": relpath, "realpath": filepath, "refs":[], "readed_meteor_templates":[]})
 				self.process_references(template, contents)
 				#print "Template Found {}".format(template)
 				return contents, filename, uptodate

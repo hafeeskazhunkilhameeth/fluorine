@@ -19,7 +19,7 @@ def get_common_config_file_json():
 
 	return
 
-
+"""
 def save_custom_template(template_path):
 	from fluorine.utils import get_encoding
 
@@ -29,7 +29,7 @@ def save_custom_template(template_path):
 	tplt = os.path.join(fluorine_path, "templates", "pages", "fluorine_home.html")
 	content = ("{%% extends '%s' %%}\n" % template_path).encode(get_encoding())
 	save_file(tplt, content)
-
+"""
 
 def make_meteor_file(site, mtport=3070, mthost="http://127.0.0.1", architecture="os.linux.x86_64", whatfor=None):
 	from fluorine.utils import meteor_web_app, get_meteor_final_name
@@ -125,6 +125,7 @@ def get_path_reactivity():
 	path_reactivity = os.path.join(path_apps, "reactivity")
 	return path_reactivity
 
+
 def get_path_assets_js():
 
 	base = get_fluorine_conf("sites_path")
@@ -136,6 +137,7 @@ def get_path_assets_js():
 
 	print "js_path {}".format(js_path)
 	return js_path
+
 
 def get_fluorine_conf(name):
 	path_reactivity = get_path_reactivity()
@@ -159,7 +161,6 @@ def save_file(file_path, p, mode="w"):
 	with open(file_path, mode) as f:
 		f.write(p)
 		f.flush()
-
 
 def empty_directory(folder, remove=None):
 	from fluorine.utils import APPS as apps
@@ -363,6 +364,26 @@ def make_all_files_with_symlink(known_apps, dst, whatfor):
 		"registerBuildPlugin": None
 	})
 
+	def add_to_packagejs(api, pckg_config):
+
+		if not pckg_config.describe and api._describe:
+			pckg_config.describe = api._describe
+
+		if not pckg_config.registerBuildPlugin:
+			pckg_config.registerBuildPlugin = api.registerBuildPlugin
+
+		if not pckg_config.versionsFrom and api._versionsFrom:
+			pckg_config.versionsFrom = api._versionsFrom
+
+		pckg_config.api.use.extend(api.api_use)
+		pckg_config.api.imply.extend(api.api_imply)
+		pckg_config.api.export.extend(api.api_export)
+
+		if api._Npm and api._Npm._depends:
+			pckg_config.Npm.update(api._Npm._depends)
+
+		if api._Cordova and api._Cordova._depends:
+			pckg_config.Cordova.update(api._Cordova._depends)
 
 	def make_dest_path(type, add_file_path_obj):
 		file_appname = add_file_path_obj.get("app")
@@ -383,6 +404,13 @@ def make_all_files_with_symlink(known_apps, dst, whatfor):
 
 		return dest
 
+	def make_symlink(pckg_obj, dict_files_to_add):
+		for add_file_path, add_file_path_obj in dict_files_to_add.iteritems():
+			dest_file = os.path.join(pckg_obj.real_path, ".%s" % pckg_obj.folder_name, add_file_path_obj.internal_path)
+			if os.path.exists(add_file_path):
+				pckg_config.api.addFiles.append({"filenames": add_file_path_obj.internal_path, "architecture": add_file_path_obj.architecture, "options": add_file_path_obj.options})
+				os.symlink(add_file_path, dest_file)
+
 
 	for pckg_name, pckg_obj in frappe.local.packages.iteritems():
 		if pckg_name == "fluorine:core":
@@ -396,39 +424,14 @@ def make_all_files_with_symlink(known_apps, dst, whatfor):
 		else:
 			for api in pckg_obj.apis:
 				add_to_packagejs(api, pckg_config)
-				for add_file_path, add_file_path_obj in api.get_dict_final_files_add().iteritems():
-					dest_file = os.path.join(pckg_obj.real_path, ".%s" % pckg_obj.folder_name, add_file_path_obj.internal_path)
-					if os.path.exists(add_file_path):
-						pckg_config.api.addFiles.append({"filenames": add_file_path_obj.internal_path, "architecture": add_file_path_obj.architecture, "options": add_file_path_obj.options})
-						os.symlink(add_file_path, dest_file)
+				make_symlink(pckg_obj, api.get_dict_final_files_add())
+				make_symlink(pckg_obj, api.get_dict_final_Assets_add())
 
 			config = template.render(**pckg_config)
 			#print "package.js %s %s" % (config, dest)
 			dest = os.path.join(pckg_obj.real_path, ".%s" % pckg_obj.folder_name)
 			frappe.create_folder(dest)
 			save_file(os.path.join(dest, "package.js"), config)
-
-
-def add_to_packagejs(api, pckg_config):
-
-	if not pckg_config.describe and api._describe:
-		pckg_config.describe = api._describe
-
-	if not pckg_config.registerBuildPlugin:
-		pckg_config.registerBuildPlugin = api.registerBuildPlugin
-
-	if not pckg_config.versionsFrom and api._versionsFrom:
-		pckg_config.versionsFrom = api._versionsFrom
-
-	pckg_config.api.use.extend(api.api_use)
-	pckg_config.api.imply.extend(api.api_imply)
-	pckg_config.api.export.extend(api.api_export)
-
-	if api._Npm and api._Npm._depends:
-		pckg_config.Npm.update(api._Npm._depends)
-
-	if api._Cordova and api._Cordova._depends:
-		pckg_config.Cordova.update(api._Cordova._depends)
 
 
 """

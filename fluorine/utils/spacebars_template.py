@@ -137,7 +137,7 @@ def compile_jinja_templates(context, whatfor):
 				save_file(dstPath, content.encode(get_encoding()))
 				package_name = obj.get("package_name")
 				package = frappe.local.packages.get(package_name)
-
+				export_fluorine_template(appname, whatfor, template_path, context, package.apis)
 				#if package_name != "core" and os.path.exists(os.path.join(os.path.dirname(dstPath), ".%s" % package.folder_name)):
 				#	print "package_path %s" % package.folder_name
 				#	os.symlink()
@@ -155,7 +155,6 @@ def compile_jinja_templates(context, whatfor):
 				if auto_out:
 					add_to_path(template, refs, tcont, whatfor, context, package)
 
-				export_fluorine_template(appname, whatfor, template_path, context, package.apis)
 				#api = Api(appname, whatfor, devmode=context.developer_mode)
 				#get_app_fluorine_template_files_to_process(appname, whatfor, template_path, api, context)
 				#validate_update_api_list_members(api, list_apis)
@@ -363,7 +362,7 @@ def fluorine_build_context(context, whatfor):
 
 def process_react_templates(apps, whatfor, context, reactivity_dst_path, custom_pattern=None):
 	from fluorine.utils.context import get_app_jinja_files_to_process
-	from fluorine.utils.api import Api
+	from fluorine.utils.api import Api, filter_api_list_members
 	from shutil import rmtree
 	from fluorine.utils.file import make_public, get_path_reactivity
 	from fluorine.utils.react_file_loader import get_default_custom_pattern
@@ -386,6 +385,7 @@ def process_react_templates(apps, whatfor, context, reactivity_dst_path, custom_
 			api.set_startpath("templates/react")
 			get_app_jinja_files_to_process(app, whatfor, api, app_react_path)
 			#list_core_apis.append(api)
+			#filter_api_list_members(api, frappe.local.packages.get("fluorine:core").apis)
 			frappe.local.packages.get("fluorine:core").apis.append(api)
 			#api.get_packagejs_file()
 			#files = read_client_jinja_files(path, app, pfs_in, api.get_list_jinja_files(), meteor_ignore=xhtml_ignores, custom_pattern=custom_pattern)

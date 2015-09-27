@@ -227,10 +227,15 @@ def export_meteor_template(appname, whatfor, template_path, tname, context, pack
 	from fluorine.utils.context import get_app_meteor_template_files_to_process
 
 
+	obj = frappe.local.meteor_map_templates.get(template_path)
+	readed_meteor_template = obj.get("readed_meteor_templates")
+	if tname in readed_meteor_template:
+		return
+	readed_meteor_template.append(tname)
 	#list_apis = frappe.local.list_files_apis
 	api = Api(appname, whatfor, devmode=context.developer_mode)
 	get_app_meteor_template_files_to_process(appname, whatfor, template_path, tname, api, context)
-	#filter_api_list_members(api, package_apis)
+	filter_api_list_members(api, package_apis)
 	package_apis.append(api)
 
 def export_fluorine_template(appname, whatfor, template_path, context, package_apis):
@@ -240,5 +245,5 @@ def export_fluorine_template(appname, whatfor, template_path, context, package_a
 	#list_apis = frappe.local.list_files_apis
 	api = Api(appname, whatfor, devmode=context.developer_mode)
 	get_app_fluorine_template_files_to_process(appname, whatfor, template_path, api, context)
-	#filter_api_list_members(api, package_apis)
+	filter_api_list_members(api, package_apis)
 	package_apis.append(api)

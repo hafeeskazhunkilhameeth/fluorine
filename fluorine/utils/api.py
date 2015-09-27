@@ -59,6 +59,7 @@ class Api(object):
 		#self.list_final_files_add = []
 		self.dict_final_files_add = frappe._dict()
 		#self.list_final_files_remove = []
+		self.dict_final_assets_add = frappe._dict()
 		self.dict_final_files_remove = frappe._dict()
 		self.dict_packages = frappe._dict()
 		#self.list_packages = {}
@@ -72,7 +73,6 @@ class Api(object):
 		self.api_use = []
 		self.api_imply = []
 		self.api_export = []
-		self.api_assets = []
 		self._Npm = None
 		self._Cordova = None
 		self.onTest = OnTest()
@@ -149,12 +149,16 @@ class Api(object):
 
 		return new_prefix
 
-	def addAssets(self, filenames, architecture=None):
+	def addAssets(self, files, app=None, architecture=None):
+		app, files = self.get_processed_input_data(app, files)
+
 		if isinstance(architecture, basestring):
 			architecture = [architecture]
-		if isinstance(filenames, basestring):
-			filenames = [filenames]
-		self.api_assets.append({"filenames": filenames, "architecture": architecture})
+
+		for file in files:
+			new_prefix = self.change_file_path_if_not_relative(file)
+			real_path = self.get_real_path(app, new_prefix, file)
+			self.dict_final_assets_add[real_path] = frappe._dict({"relative_path": new_prefix, "internal_path": file, "app":app, "architecture": architecture})
 
 
 	def addFiles(self, files, app=None, architecture=None, options=None, type="normal"):
@@ -226,6 +230,9 @@ class Api(object):
 
 	def get_dict_jinja_files(self):
 		return self.dict_jinja_files
+
+	def get_dict_final_Assets_add(self):
+		return self.dict_final_assets_add
 
 	def get_dict_final_files_add(self):
 		return self.dict_final_files_add

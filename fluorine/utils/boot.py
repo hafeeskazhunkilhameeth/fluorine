@@ -27,3 +27,17 @@ def get_meteor_init_file_names():
 
 	sitename = file_map_site.get(current_site)
 	return sitename
+
+
+@frappe.whitelist(allow_guest=True)
+def get_js_css_files():
+	from fluorine.utils.spacebars_template import get_app_pages
+
+	context = frappe._dict()
+	context = get_app_pages(context)
+
+	ijs = context.meteor_package_js
+	icss = context.meteor_package_css
+
+	return ijs, icss
+
