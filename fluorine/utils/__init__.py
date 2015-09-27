@@ -218,10 +218,10 @@ get_installed_apps()
 
 def prepare_environment():
 
-	if frappe_get_hooks == None:
-		patch_hooks()
-	else:
-		print "error hooks"
+	#if frappe_get_hooks == None:
+	#	patch_hooks()
+	#else:
+	#	print "error hooks"
 
 	if not meteor_config.get("stop") or is_making_production():
 		#PATCH get_context
