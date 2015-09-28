@@ -4,15 +4,15 @@ __author__ = 'luissaguas'
 import frappe, os
 
 
-
+#todo fazer de novo
 def make_page_relations(context, whatfor):
 	from fluorine.utils.spacebars_template import fluorine_get_fenv
 	from fluorine.utils.file import save_file, get_path_reactivity
 	from fluorine.utils import get_encoding
-	from fluorine.utils.reactivity import get_read_file_patterns
+	#from fluorine.utils.reactivity import get_read_file_patterns
 
 
-	file_patterns = get_read_file_patterns()
+	#file_patterns = get_read_file_patterns()
 
 	if context.page_relations:
 		try:

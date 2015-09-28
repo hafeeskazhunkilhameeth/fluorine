@@ -1,5 +1,4 @@
 {
-  "IN":{
     "apps": {
       "base_vat":{
         "remove": 0,
@@ -7,5 +6,4 @@
       }
     },
     "only_for_sites":["site2.local"]
-    }
 }

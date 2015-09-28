@@ -308,18 +308,18 @@ def fluorine_build_context(context, whatfor):
 	#apps current dev app is in last
 	apps = get_active_apps(whatfor)
 
-	pfs_in = frappe.local.context.pfs_in = ProcessFileSystem(whatfor, curr_app)
-	pfs_out = frappe.local.context.pfs_out = ProcessFileSystem(whatfor, curr_app)
+	#pfs_in = frappe.local.context.pfs_in = ProcessFileSystem(whatfor, curr_app)
+	#pfs_out = frappe.local.context.pfs_out = ProcessFileSystem(whatfor, curr_app)
 
-	process_common_context(apps, whatfor, context, pfs_in, pfs_out)
-	process_general_context(apps, whatfor, context, pfs_in, pfs_out)
+	#process_common_context(apps, whatfor, context, pfs_in, pfs_out)
+	#process_general_context(apps, whatfor, context, pfs_in, pfs_out)
 
-	pfs_in.compile_pattern()
-	pfs_out.compile_pattern()
+	#pfs_in.compile_pattern()
+	#pfs_out.compile_pattern()
 
-	apps_remove = pfs_in.get_apps_remove()
-	for r in apps_remove:
-		apps.remove(r)
+	#apps_remove = pfs_in.get_apps_remove()
+	#for r in apps_remove:
+	#	apps.remove(r)
 	#go from current dev app then last installed app to first installed app in order.
 	known_apps = apps[::-1]
 
@@ -345,14 +345,16 @@ def fluorine_build_context(context, whatfor):
 
 	#process_meteor_packages_from_apps(whatfor)
 	#custom_make_all_files_with_symlink(known_apps, fluorine_publicjs_dst_path, whatfor, pfs_out, custom_pattern=read_file_pattern.keys())
-	copy_project_translation(apps, whatfor, pfs_out, custom_pattern)
+	#copy_project_translation(apps, whatfor, pfs_out, custom_pattern)
 
-	make_page_relations(context, whatfor)
+	#TODO adaptar para a nova estrutura
+	#make_page_relations(context, whatfor)
 	#Only support for mibile in web app
 	if whatfor == meteor_web_app:
 		copy_mobile_config_file(known_apps, whatfor)
 
 	return context
+
 
 def process_react_templates(apps, whatfor, context, reactivity_dst_path, custom_pattern=None):
 	from fluorine.utils.context import get_app_jinja_files_to_process

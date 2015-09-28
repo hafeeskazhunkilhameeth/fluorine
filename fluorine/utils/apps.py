@@ -36,7 +36,7 @@ def get_list_all_sites(bench=None):
 
 def get_active_apps(whatfor):
 	from fluorine.utils import APPS as apps, get_attr_from_json, meteor_config
-	from fluorine.utils.permission_file import make_meteor_ignor_files, list_ignores, is_app_for_site
+	from fluorine.utils.permission_file import make_ignor_apps_list, list_ignores, is_app_for_site
 
 
 	#global active_apps
@@ -46,7 +46,8 @@ def get_active_apps(whatfor):
 	#else:
 	#	active_apps = {meteor_desk_app: [], meteor_web_app: []}
 
-	list_ignores = make_meteor_ignor_files()
+	#list_ignores = make_meteor_ignor_files()
+	list_ignores = make_ignor_apps_list()
 
 	ign_apps = get_attr_from_json([whatfor, "remove", "apps"], list_ignores)
 

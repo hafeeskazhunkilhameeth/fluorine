@@ -54,11 +54,11 @@ class MeteorContext(object):
 		make_meteor_properties(context, whatfor, production=self.production, site=self.site)
 		#make_includes(context)
 
-
+"""
 def remove_output_files(whatfor):
 	from fluorine.utils.react_file_loader import get_default_custom_pattern
 	from fluorine.utils.apps import get_active_apps
-	from fluorine.utils.reactivity import get_read_file_patterns
+	#from fluorine.utils.reactivity import get_read_file_patterns
 	from shutil import ignore_patterns
 
 	read_file_pattern = get_read_file_patterns()
@@ -84,7 +84,7 @@ def remove_output_files(whatfor):
 					if f1 in files and f2 in files:
 						if f.endswith(".%s" % out_ext):
 							os.unlink(os.path.join(root, f))
-
+"""
 
 def prepare_context_meteor_file(whatfor):
 	from fluorine.templates.pages.fluorine_home import get_context as fluorine_get_context
@@ -94,7 +94,7 @@ def prepare_context_meteor_file(whatfor):
 	#from fluorine.templates.pages.mdesk import get_context
 	#from frappe.website.context import get_context
 
-	remove_output_files(whatfor)
+	#remove_output_files(whatfor)
 
 	if whatfor == meteor_desk_app:
 		#frappe.local.path = "desk"

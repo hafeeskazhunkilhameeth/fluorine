@@ -56,13 +56,14 @@ def tkeep(ctx, patterns):
 
 	#app_path = frappe.get_app_path(parent_appname)
 
-	pfs_out = frappe.local.context.pfs_out
-	list_meteor_files_folders_add = pfs_out.get_add_files_folders()
-	appname_files_folder_add = list_meteor_files_folders_add.get(parent_appname)
-	if not appname_files_folder_add:
-		list_meteor_files_folders_add[parent_appname] = set([])
+	#TODO preparar para a nova estrutura de addFiles
+	#pfs_out = frappe.local.context.pfs_out
+	#list_meteor_files_folders_add = pfs_out.get_add_files_folders()
+	#appname_files_folder_add = list_meteor_files_folders_add.get(parent_appname)
+	#if not appname_files_folder_add:
+	#	list_meteor_files_folders_add[parent_appname] = set([])
 
-	appname_files_folder_add = list_meteor_files_folders_add.get(parent_appname)
+	#appname_files_folder_add = list_meteor_files_folders_add.get(parent_appname)
 
 	if isinstance(patterns, basestring):
 		patterns = [patterns]
@@ -76,7 +77,7 @@ def tkeep(ctx, patterns):
 		pattern = "%s/.*/?%s/%s" % (tpath, tname, pattern)
 		#print "pattern to use %s" % pattern
 		p = c(pattern)
-		appname_files_folder_add.add(p)
+		#appname_files_folder_add.add(p)
 	#export_meteor_template_out(tname, template_path)
 	#print "tname {} template_real_path {} pattern {}".format(obj.get("tname"), obj.get("template"), patterns)
 
@@ -143,7 +144,6 @@ def get_msuper_inner_content(ctx, source):
 @contextfunction
 def msuper(ctx, adeep=1, rdeep=0, tkeep=None, tname=None):
 	from fluorine.utils.fjinja2.refs import get_deep_refs, export_meteor_template
-
 
 
 	ocode = ""
