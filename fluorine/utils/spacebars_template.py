@@ -328,7 +328,7 @@ def process_common_context(apps, whatfor, context, pfs_in, pfs_out):
 """
 
 def addto_meteor_templates_list(template_path, package_name=None, ext_out="html", export=True, parent_template_path=None):
-	from fluorine.utils.context import get_xhtml_files_to_add_remove
+	#from fluorine.utils.context import get_xhtml_files_to_add_remove
 
 	if not frappe.local.meteor_map_templates.get(template_path, None):# and template_path not in frappe.local.templates_referenced:
 		template = fluorine_get_fenv().get_template(template_path)
@@ -339,6 +339,6 @@ def addto_meteor_templates_list(template_path, package_name=None, ext_out="html"
 		#TODO get the context from file of the template...pass the context, the template object and template_path
 		#TODO with template_path and frappe.local.meteor_map_templates.get(template_path) get refs if needed to pass macro template object
 		#TODO get the context from frappe.local.context!
-		get_xhtml_files_to_add_remove(frappe.local.context, template_path)
+		#get_xhtml_files_to_add_remove(frappe.local.context, template_path)
 
 

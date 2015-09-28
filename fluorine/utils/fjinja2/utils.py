@@ -30,8 +30,7 @@ def mtlog(ctx, msg):
 def tkeep(ctx, patterns):
 	import os
 	from fluorine.utils.fjinja2.extension_template import get_appname, get_template_path
-	from fluorine.utils.fjinja2.refs import get_meteor_template_parent_path
-
+	from fluorine.utils.fjinja2.refs import get_meteor_template_parent_path, export_meteor_template
 
 	obj = frappe.local.context.current_xhtml_template
 	appname = get_appname(obj.get("template"))
@@ -60,15 +59,32 @@ def tkeep(ctx, patterns):
 	if isinstance(patterns, basestring):
 		patterns = [patterns]
 
-	reactpath = os.path.join("templates", "react")
-	relpath = os.path.relpath(ref, reactpath)
+	#reactpath = os.path.join("templates", "react")
+	#relpath = os.path.relpath(ref, reactpath)
 
-	tpath = relpath.rsplit(".", 1)[0]
+	#tpath = relpath.rsplit(".", 1)[0]
+	package_name = parent_obj.get("package_name")
+	package = frappe.local.packages.get(package_name)
+	api = export_meteor_template(parent_appname, ctx.get("whatfor"), ref, tname, frappe._dict(ctx), package.apis)
 
-	for pattern in patterns:
-		pattern = "%s/.*/?%s/%s" % (tpath, tname, pattern)
+	#TODO fazer o check para assets.
+	tokeep = []
+	dict_files_added = api.get_dict_final_files_add()
+	for add_file_path, add_file_path_obj in dict_files_added.iteritems():
+		for pattern in patterns:
+			if re.match(pattern, add_file_path_obj.get("internal_path")):
+				tokeep.append(add_file_path)
+				break
+
+	for add_file_path, add_file_path_obj in dict_files_added.iteritems():
+		if add_file_path not in tokeep:
+			dict_files_added.pop(add_file_path, None)
+
+
+		#pattern = "%s/.*/?%s/%s" % (tpath, tname, pattern)
 		#print "pattern to use %s" % pattern
-		p = c(pattern)
+		#p = c(pattern)
+
 		#appname_files_folder_add.add(p)
 	#export_meteor_template_out(tname, template_path)
 	#print "tname {} template_real_path {} pattern {}".format(obj.get("tname"), obj.get("template"), patterns)

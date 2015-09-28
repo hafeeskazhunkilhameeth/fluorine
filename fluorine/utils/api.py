@@ -54,15 +54,11 @@ class Api(object):
 
 	def __init__(self, app, whatfor, devmode=True):
 		self.developer_mode = devmode
-		#self.list_jinja_files = []
 		self.dict_jinja_files = frappe._dict()
-		#self.list_final_files_add = []
 		self.dict_final_files_add = frappe._dict()
-		#self.list_final_files_remove = []
 		self.dict_final_assets_add = frappe._dict()
 		self.dict_final_files_remove = frappe._dict()
 		self.dict_packages = frappe._dict()
-		#self.list_packages = {}
 		self.app = app
 		self.whatfor = whatfor
 		self.startpath = "templates/react"
@@ -79,7 +75,21 @@ class Api(object):
 		self.registerBuildPlugin = {}
 		self.public_folder = False
 		self.tests_folder = False
+		self.meteor_template_name = None
+		self.fluorine_template_host_name = None
 
+
+	def set_meteor_template_name(self, name):
+		self.meteor_template_name = name
+
+	def get_meteor_template_name(self):
+		return self.meteor_template_name
+
+	def set_fluorine_template_name(self, name):
+		self.fluorine_template_host_name = name
+
+	def get_fluorine_template_name(self):
+		return self.fluorine_template_host_name
 
 	def versionsFrom(self, version):
 		self._versionsFrom = version

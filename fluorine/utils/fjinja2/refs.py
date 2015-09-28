@@ -144,6 +144,8 @@ def get_meteor_template_parent_path(tname, template_path):
 
 def add_to_path(template, refs, tcont, whatfor, context, parent_package):
 
+	api = None
+
 	for tname in tcont.keys():
 		if template and tname not in template.blocks.keys():
 			ref = check_refs(tname, refs)
@@ -159,9 +161,9 @@ def add_to_path(template, refs, tcont, whatfor, context, parent_package):
 			else:
 				package = frappe.local.packages.get(package_name)
 
-			export_meteor_template(appname, whatfor, ref, tname, context, package.apis)
+			api = export_meteor_template(appname, whatfor, ref, tname, context, package.apis)
 
-	return
+	return api
 
 
 def export_meteor_template(appname, whatfor, template_path, tname, context, package_apis):
@@ -172,12 +174,17 @@ def export_meteor_template(appname, whatfor, template_path, tname, context, pack
 	obj = frappe.local.meteor_map_templates.get(template_path)
 	readed_meteor_template = obj.get("readed_meteor_templates")
 	if tname in readed_meteor_template:
-		return
+		return get_api_from_meteor_template_and_fluorine_template_name(template_path, tname)
+
 	readed_meteor_template.append(tname)
 	api = Api(appname, whatfor, devmode=context.developer_mode)
+	api.set_meteor_template_name(tname)
+	api.set_fluorine_template_name(template_path)
 	get_app_meteor_template_files_to_process(appname, whatfor, template_path, tname, api, context)
 	filter_api_list_members(api, package_apis)
 	package_apis.append(api)
+
+	return api
 
 def export_fluorine_template(appname, whatfor, template_path, context, package_apis):
 	from fluorine.utils.api import Api, filter_api_list_members
@@ -185,6 +192,26 @@ def export_fluorine_template(appname, whatfor, template_path, context, package_a
 
 
 	api = Api(appname, whatfor, devmode=context.developer_mode)
+	api.set_fluorine_template_name(template_path)
 	get_app_fluorine_template_files_to_process(appname, whatfor, template_path, api, context)
 	filter_api_list_members(api, package_apis)
 	package_apis.append(api)
+
+	return api
+
+
+def get_package_from_fluorine_template_path(template_path):
+
+	obj = frappe.local.meteor_map_templates.get(template_path)
+	package_name = obj.get("package_name")
+	package = frappe.local.packages.get(package_name)
+
+	return package
+
+def get_api_from_meteor_template_and_fluorine_template_name(template_name, meteor_template_name):
+
+	package = get_package_from_fluorine_template_path(template_name)
+	for api in package.apis:
+		if api.get_meteor_template_name() == meteor_template_name:
+			return api
+	return None
