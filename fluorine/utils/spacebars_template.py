@@ -214,6 +214,7 @@ def prepare_common_page_context(context, whatfor):
 
 	return fluorine_build_context(context, whatfor)
 
+"""
 def make_includes(context):
 
 	include_js = context.get("include_js",[])
@@ -221,7 +222,7 @@ def make_includes(context):
 
 	context["include_js"] = include_js + context.meteor_package_js
 	context["include_css"] = include_css + context.meteor_package_css
-
+"""
 
 def get_app_pages(context):
 	from fluorine.utils import meteor_desk_app, is_making_production
@@ -237,7 +238,8 @@ def get_app_pages(context):
 
 	if devmode and not is_making_production():
 		make_meteor_props(context, meteor_desk_app)
-		make_includes(context)
+		#make_includes(context)
+		#print "meteor is in devmod %s" % context.meteor_package_js
 
 
 	return context

@@ -82,6 +82,7 @@ def get_frappe_apps_path():
 
 	return os.path.normpath(os.path.join(os.path.realpath("."), "..", "apps"))
 
+"""
 def remove_from_hooks(hooks, stop=False):
 
 	base_template = "templates/fluorine_base.html"
@@ -117,8 +118,9 @@ def remove_from_hooks(hooks, stop=False):
 				hooks.remove(base_template)
 			if home_page in hooks:
 				hooks.remove(home_page)
+"""
 
-
+"""
 def fluor_get_hooks(hook=None, default=None, app_name=None):
 	hooks = frappe_get_hooks(hook=hook, default=default, app_name=app_name)
 	if meteor_config.get("stop"):
@@ -126,8 +128,9 @@ def fluor_get_hooks(hook=None, default=None, app_name=None):
 	else:
 		remove_from_hooks(hooks)
 	return hooks
+"""
 
-
+"""
 def fluor_get_context(path):
 
 	context = frappe_get_context(path)
@@ -137,6 +140,7 @@ def fluor_get_context(path):
 		context = mdesk.get_context(context)
 
 	return context
+"""
 
 #Get all apps installed and not installed. This away we can have multiple sites and fluorine installed in only one site.
 def get_installed_apps():
@@ -195,8 +199,9 @@ def get_meteor_configuration_file():
 	return meteor_config
 
 
-
+"""
 frappe_get_hooks = None
+
 
 def patch_hooks():
 	global frappe_get_hooks
@@ -205,17 +210,19 @@ def patch_hooks():
 
 
 frappe_get_context = None
-
+"""
+"""
 def patch_frappe_get_context():
 	import frappe.website.context
 
 	global frappe_get_context
 	frappe_get_context = frappe.website.context.get_context
 	frappe.website.context.get_context = fluor_get_context
-
+"""
 
 get_installed_apps()
 
+"""
 def prepare_environment():
 
 	#if frappe_get_hooks == None:
@@ -223,12 +230,14 @@ def prepare_environment():
 	#else:
 	#	print "error hooks"
 
-	if not meteor_config.get("stop") or is_making_production():
+	#if not meteor_config.get("stop") or is_making_production():
 		#PATCH get_context
-		if frappe_get_context == None:
-			patch_frappe_get_context()
-		else:
-			print "error get_context"
+	#	if frappe_get_context == None:
+	#		patch_frappe_get_context()
+	#	else:
+	#		print "error get_context"
+	pass
+"""
 
 def is_open_port(ip="127.0.0.1", port=3070):
 	import socket
@@ -316,7 +325,7 @@ if check_dev_mode():
 	from fluorine.utils.meteor.packages import make_list_installed_packages
 
 	make_list_installed_packages()
-	prepare_environment()
+	#prepare_environment()
 	import reactivity
 else:
 	get_file_map_site()

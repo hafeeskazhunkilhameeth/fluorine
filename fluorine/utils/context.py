@@ -27,15 +27,15 @@ class MeteorContext(object):
 					return
 
 	def make_context(self):
-		from fluorine.utils import prepare_environment
+		#from fluorine.utils import prepare_environment
 		from fluorine.utils.reactivity import start_meteor
 		from fluorine.utils.finals import make_public_folders
 		#from fluorine.command import prepare_make_meteor_file
 
 		make_public_folders()
-		prepare_environment()
+		#prepare_environment()
 		start_meteor()
-		frappe.local.request = frappe._dict()
+		#frappe.local.request = frappe._dict()
 
 		for w in whatfor_all:
 			#prepare_compile_environment(w)
@@ -45,11 +45,11 @@ class MeteorContext(object):
 
 	def make_meteor_properties(self):
 		from fluorine.utils.meteor.utils import make_meteor_props
-		from fluorine.utils.spacebars_template import make_includes
+		#from fluorine.utils.spacebars_template import make_includes
 
 		context = self.context.get(meteor_desk_app)
 		make_meteor_props(context, meteor_desk_app, production=True, site=self.site)
-		make_includes(context)
+		#make_includes(context)
 
 
 def remove_output_files(whatfor):
@@ -85,14 +85,21 @@ def remove_output_files(whatfor):
 
 def prepare_context_meteor_file(whatfor):
 	from fluorine.templates.pages.fluorine_home import get_context as fluorine_get_context
-	from fluorine.utils import meteor_desk_app, fluor_get_context as get_context
+	#from fluorine.utils import meteor_desk_app, fluor_get_context as get_context
+	from fluorine.utils import meteor_desk_app
+	from fluorine.utils.spacebars_template import get_app_pages
+	#from fluorine.templates.pages.mdesk import get_context
+	#from frappe.website.context import get_context
 
 	remove_output_files(whatfor)
 
 	if whatfor == meteor_desk_app:
-		frappe.local.path = "desk"
-		frappe.local.session.data.csrf_token = "no need token"
-		return get_context("desk")
+		#frappe.local.path = "desk"
+		#frappe.local.session.data.csrf_token = "no need token"
+		#context = frappe._dict()
+		context = get_app_pages(frappe._dict())
+		#return get_context("desk")
+		return context
 	else:
 		return fluorine_get_context(frappe._dict())
 

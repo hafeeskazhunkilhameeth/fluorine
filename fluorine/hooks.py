@@ -17,3 +17,7 @@ app_name=["fluorine"]
 #app_include_css=["/assets/css/meteor_app.css"]
 boot_session = "fluorine.utils.boot.boot_session"
 app_include_js=["/assets/fluorine/js/fluorine_header_loader.js"]
+
+website_route_rules = [
+	{"from_route": "/desk", "to_route": "mdesk"},
+]
