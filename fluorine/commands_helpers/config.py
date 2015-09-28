@@ -160,7 +160,6 @@ def make_supervisor(doc, site):
 	from distutils.spawn import find_executable
 
 	nodepath = find_executable('node') or find_executable('nodejs')
-	#sitename = site.replace(".","_")
 	conf = frappe._dict()
 	conf.user = getpass.getuser()
 	conf.bench_dir = os.path.abspath("..")
@@ -210,12 +209,10 @@ def generate_nginx_supervisor_conf(doc, site, user=None, debug=None, update=Fals
 	elif platform.system() != "Darwin" and not debug:
 
 		if not update:
-			#import frappe
 			try:
 				sup_conf_dir = get_supervisor_confdir(bench=bench)
 				final_path = os.path.join(sup_conf_dir, get_supervisor_conf_filename(bench=bench))
 				if not (os.path.exists(final_path) and os.path.exists('/etc/nginx/conf.d/frappe.conf')):
-					#frappe.throw("Can't continue: the symlink to supervisor config file %s exist and must be remove it.\nCheck also nginx conf file /etc/nginx/conf.d/frappe.conf" % final_path)
 					bench_setup_production(user=user, bench=bench)
 				else:
 					bench_generate_supervisor_config(bench=bench, user=user)

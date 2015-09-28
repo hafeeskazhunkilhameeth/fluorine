@@ -18,11 +18,6 @@ cur_frm.cscript.fluor_update_fluorine_apps_btn = function(doc){
 
 cur_frm.cscript.refresh = function(doc){
 	var cs = cur_frm.cscript;
-	/*if(cs.devmode == 0){
-		unhide_field(["update_fluor_apps"]);
-	}else{
-		hide_field(["update_fluor_apps"]);
-	}*/
 
 	if(doc.fluorine_state === "off"){
 		hide_field(["fluorine_reactivity"]);

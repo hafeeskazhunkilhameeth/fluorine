@@ -27,7 +27,6 @@ def get_bench_module(module, depends=None, bench=".."):
 	if bench_path not in sys.path:
 		sys.path.append(bench_path)
 
-	#print "cwd {} bench {} abs_bench {} bench_path in sys.path {}".format(os.getcwd(), bench, bench_path, bench_path in sys.path)
 	for d in depends:
 		importlib.import_module("bench." + d)
 
@@ -62,7 +61,6 @@ def exec_cmd(cmd, service="service", cwd="..", with_password=False, echo=None):
 	import subprocess, click
 
 	stderr=stdout=subprocess.PIPE
-	#echo = None
 
 	return_code = 1
 	password_error = 0
@@ -74,25 +72,21 @@ def exec_cmd(cmd, service="service", cwd="..", with_password=False, echo=None):
 
 		p = subprocess.Popen(cmd, cwd=cwd, shell=True, stdin=echo.stdout if echo else None, stdout=stdout, stderr=stderr)
 
-		#return_code = p.wait()
-		#out, err = p.communicate()
 		p.wait()
 		return_code = p.returncode
 		error = p.stderr.read()
-		#out = p.stdout.read()
-		#print "return code out {} err {} retcode {} i {}".format(out, error, return_code, i)
 		if not with_password:
 			break
 		elif return_code == 0:
 			return echo
-		elif password_error_txt in error: #or not with_password or return_code == 0:
+		elif password_error_txt in error:
 			password_error = 1
 			click.echo(error.replace("1",str(i + 1)))
 			echo = None
 		else:
 			password_error = 0
 			break
-		#return_code = 0
+
 	if return_code > 0:
 		if password_error:
 			raise PasswordError("Password error.")
@@ -127,11 +121,8 @@ def bench_setup_production(user=None, bench=".."):
 	if not user:
 		user = getpass.getuser()
 
-	#cwd = os.getcwd()
-	#os.chdir("../")
 	click.echo("Generating supervisor and nginx files.")
 	exec_cmd("sudo -S bench setup production %s" % user, with_password=True)
-	#os.chdir(cwd)
 
 def get_supervisor_confdir(bench="."):
 	m = get_bench_module("production_setup", bench=bench)
@@ -144,7 +135,6 @@ def get_supervisor_conf_filename(bench="."):
 	res = run_bench_module(m, "is_centos7")
 	if res:
 		return 'frappe.ini'
-		#copy_default_nginx_config()
 	else:
 		return 'frappe.conf'
 
@@ -152,7 +142,6 @@ def get_supervisor_conf_filename(bench="."):
 def get_current_version(app, bench='.'):
 	import semantic_version
 
-	#get_bench_module("utils", bench=bench)
 	m = get_bench_module("app", depends=["utils"], bench=bench)
 	version = run_bench_module(m, "get_current_version", app)
 

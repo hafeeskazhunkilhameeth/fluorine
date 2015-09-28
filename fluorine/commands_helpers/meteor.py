@@ -244,7 +244,6 @@ class MeteorDevelop(object):
 		self.update_meteor_conf_file()
 		update_url_port(self.doc, self.meteor_config, self.server_port, self.ddp_port)
 		self.make_mongo()
-		#self.doc.save()
 		self.check_apps_updates()
 		self.update_list_packages()
 		self.make_apps_context()
@@ -383,7 +382,6 @@ class MeteorProduction(object):
 		self.update_meteor_conf_file()
 		self.update_doctype()
 		update_url_port(self.doc, self.meteor_config, self.server_port, self.ddp_port)
-		#self.doc.save()
 		self.check_apps_updates()
 		self.check_hosts()
 
@@ -447,15 +445,10 @@ class MeteorProduction(object):
 
 	def check_meteor_apps(self):
 		from fluorine.utils.apps import check_meteor_apps_created
-		#from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import check_meteor_apps_created
 		click.echo("Checking for meteor apps folder. Please wait.")
 		return check_meteor_apps_created(self.doc)
 
 	def check_apps_updates(self):
-		#from fluorine.utils import make_list_installed_packages, get_list_installed_packages
-
-		#if not get_list_installed_packages(whatfor):
-			#make_list_installed_packages()
 		click.echo("Checking for fluorine apps updates. Please wait.")
 		for whatfor in whatfor_all:
 			if check_updates(whatfor, bench=self.bench):
@@ -501,7 +494,6 @@ class MeteorProduction(object):
 		self.m_ctx.make_meteor_properties(meteor_desk_app)
 
 	def build_json(self):
-		#from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import make_final_app_client
 		from fluorine.utils.finals import make_final_app_client
 
 		click.echo("Make build.json for meteor_app.")
@@ -519,7 +511,6 @@ class MeteorProduction(object):
 		make_production_link(self.site)
 
 	def remove_from_procfile(self):
-		#from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import remove_from_procfile
 		from fluorine.utils.procfile import remove_from_procfile
 
 		remove_from_procfile(self.site)

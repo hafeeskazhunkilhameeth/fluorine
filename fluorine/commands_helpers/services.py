@@ -29,7 +29,7 @@ def start_nginx_supervisor_services(debug=False):
 	from distutils.spawn import find_executable
 	import platform, frappe
 
-	echo = None#get_password()
+	echo = None
 
 	if platform.system() == 'Darwin':
 		nginx = find_executable("nginx")
@@ -41,7 +41,6 @@ def start_nginx_supervisor_services(debug=False):
 			click.echo("nginx not running. Starting nginx...")
 			echo = exec_cmd("sudo -S %s" % nginx, service="nginx", with_password=True, echo=echo)
 			click.echo("nginx started.")
-			#os.popen("sudo -S %s"%("sudo -S nginx"), 'w').write(password)
 
 	elif not os.environ.get('NO_SERVICE_RESTART'):
 		click.echo("restarting nginx...")

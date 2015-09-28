@@ -8,7 +8,6 @@ def _check_custom_mongodb(doc):
 
 	path_reactivity = get_path_reactivity()
 	config_file_path = os.path.join(path_reactivity, "common_site_config.json")
-	#meteor_config = frappe.get_file_json(config_file_path)
 	mongo_conf = meteor_config.get("meteor_mongo", None)
 	if not mongo_conf or mongo_conf.get("type", None) == "default":
 		if doc.fluor_mongo_host:
