@@ -11,9 +11,6 @@ def save_to_procfile(doc, site, production_debug=False):
 
 
 	procfile, procfile_path = get_procfile(site)
-	#tostart = {"Both": ("meteor_app", "meteor_web"), "Reactive App": ("meteor_app", ), "Reactive Web": ("meteor_web", )}
-	#meteor_apps = tostart.get(doc.fluorine_reactivity)
-
 
 	for app in ("meteor_app", "meteor_web"):
 		export_mongo, mongo_default = get_mongo_exports(doc)
@@ -21,7 +18,6 @@ def save_to_procfile(doc, site, production_debug=False):
 
 		if production_debug:
 			final_app = get_meteor_final_name(site, app)
-			#final_app = "%s_%s" % (app.replace("meteor", "final"), sitename)
 			procfile.insert(0, "%s: (cd apps/reactivity/%s/bundle && ./exec_meteor)\n" %
 							(final_app.replace(".","_"), final_app.replace(".","_")))
 		else:

@@ -42,9 +42,6 @@ def make_meteor_properties(context, whatfor, production=False, site=None):
 
 	if context.developer_mode or is_making_production():
 		make_meteor_props(context, whatfor, production=production, site=site)
-	#elif not context.developer_mode and not is_making_production():
 	elif production:
 		context.meteor_package_js = ["/assets/js/%s.min.js" % site]
 		context.meteor_package_css = ["/assets/css/%s.css" % site]
-		#make_includes(context)
-		#print "meteor is in devmod %s" % context.meteor_package_js

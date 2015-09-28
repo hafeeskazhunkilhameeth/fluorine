@@ -7,7 +7,7 @@ def make_public_folders():
 	from fluorine.utils import meteor_desk_app
 
 	app_path = frappe.get_app_path("fluorine")
-	for whatfor in (meteor_desk_app, ):#("meteor_app", "meteor_web"):
+	for whatfor in (meteor_desk_app, ):
 		public_app_folder = os.path.join(app_path, "public", whatfor)
 		frappe.create_folder(public_app_folder)
 
@@ -27,7 +27,6 @@ def make_production_link(site):
 	from fluorine.utils.file import get_path_reactivity
 	from fluorine.utils import meteor_web_app
 
-	#final_app = get_meteor_final_path(site, app)
 	path_reactivity = get_path_reactivity()
 	final_web_path = os.path.join(path_reactivity, meteor_web_app.replace("meteor", "final"), "bundle", "programs", "web.browser")
 	meteor_web_path = os.path.join("assets", "js", meteor_web_app)
@@ -65,7 +64,6 @@ def make_final_app_client(site, jquery=0):
 
 	react_path = get_path_reactivity()
 
-	#sitename = site.replace(".", "_")
 	final_app_name = get_meteor_final_name(site, meteor_desk_app)
 	meteor_final_path = os.path.join(react_path, final_app_name)
 	progarm_path = os.path.join(meteor_final_path, "bundle", "programs", "web.browser", "program.json")
@@ -99,7 +97,6 @@ def build_frappe_json_files(manifest, build_json, site, jquery=0):
 
 
 	react_path = get_path_reactivity()
-	#sitename = site.replace(".", "_")
 	final_app_path = get_meteor_final_name(site, meteor_desk_app)
 
 	for m in manifest:

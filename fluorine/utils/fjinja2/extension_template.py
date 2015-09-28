@@ -127,9 +127,6 @@ class MeteorTemplate(Extension):
 		else:
 			template_real_path = nodes.Const(None)
 
-		#frappe.local.context.current_xhtml_template = {"tname": tname.value, "template": filename}
-		#print "current template {} template_path {}".format(tname.value, filename)
-
 		lineno = nodes.Const(tag.lineno)
 		stream.skip_if('colon')
 		stream.expect('block_end')
@@ -169,7 +166,6 @@ class MeteorTemplate(Extension):
 					token = parser.stream.current
 					if token.test_any(*expr_tokens):
 						if token.value == "%":
-							#value = ""
 							next(parser.stream)
 							token = parser.stream.current
 							value = token.value
@@ -232,7 +228,6 @@ class MeteorTemplate(Extension):
 			ref = get_meteor_template_parent_path(tname, relpath)
 			if not ref:
 				frappe.throw("mtkeep command only can be used inside meteor templates and only with fluorine templates (Ex. xhtml files) that extends another fluorine template.")
-			#export_meteor_template_out(tname, ref)
 			package_name = ref.get("package_name")
 			package = frappe.local.packages.get(package_name)
 			export_meteor_template(app, ctx.whatfor, ref, tname, frappe._dict(ctx), package.apis)

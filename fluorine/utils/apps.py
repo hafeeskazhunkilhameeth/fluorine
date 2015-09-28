@@ -39,19 +39,12 @@ def get_active_apps(whatfor):
 	from fluorine.utils.permission_file import make_ignor_apps_list, list_ignores, is_app_for_site
 
 
-	#global active_apps
-
 	if active_apps.get(whatfor) != None:
 		return active_apps.get(whatfor)[:]
-	#else:
-	#	active_apps = {meteor_desk_app: [], meteor_web_app: []}
-
-	#list_ignores = make_meteor_ignor_files()
 	list_ignores = make_ignor_apps_list()
 
 	ign_apps = get_attr_from_json([whatfor, "remove", "apps"], list_ignores)
 
-	#current_site = get_default_site()
 	only_for_sites = get_attr_from_json([whatfor, "only_for_sites"], list_ignores)
 
 
@@ -72,27 +65,8 @@ def get_active_apps(whatfor):
 	aapps = []
 	#current dev apps go in last
 	for app in known_apps:
-		#found = False
-		#app_path = frappe.get_app_path(app)
-		#meteor_app = os.path.join(app_path, "templates", "react", whatfor)
-
-		#if not os.path.exists(meteor_app):
-		#	continue
-		#meteor_web = os.path.join(app_path, "templates", "react", meteor_web_app)
-		#if (os.path.exists(meteor_app) or os.path.exists(meteor_web)) and app not in ign_apps:
-		#app_only_for = only_for_sites.get(app) or []
-		#for obj in only_for_sites.get(app, []):
-		#	if obj.get("site") == current_site:
-				#found = True
-		#		aapps.append(app)
-		#		break
-		#if app in only_for_sites.get(current_site):
 		if is_app_for_site(app, only_for_sites):
 			aapps.append(app)
-
-		#if found:
-			#active_apps.get(whatfor).append(app)
-			#aapps.append(app)
 
 	active_apps[whatfor] = aapps
 

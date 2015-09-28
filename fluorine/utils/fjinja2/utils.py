@@ -14,12 +14,7 @@ STARTTEMPLATE_SUB_ALL = c(r"<\s*template\s+name\s*=\s*(['\"])(\w+)\1(.*?)\s*>(.*
 STARTDIV_SUB_ALL = r"<\s*div\s+class\s*=\s*(['\"])%s\1\s*>(.*?)<\s*/\s*div\s*>"
 
 
-"""
-def get_pattern_path(name, path):
-	pattern = path + r"/(?:.+?/)?(?:(?:%s)/(?:.+)|(?:%s/?$))" % (name, name)
-	#pattern = path + r"(/.+?/%s/.*)?|(/.+/%s$)?" % (name, name)
-	return pattern
-"""
+
 
 @contextfilter
 def mtlog(ctx, msg):
@@ -36,16 +31,13 @@ def tkeep(ctx, patterns):
 	import os
 	from fluorine.utils.fjinja2.extension_template import get_appname, get_template_path
 	from fluorine.utils.fjinja2.refs import get_meteor_template_parent_path
-	#from fluorine.utils.spacebars_template import check_refs
+
 
 	obj = frappe.local.context.current_xhtml_template
 	appname = get_appname(obj.get("template"))
 	tname = obj.get("tname")
 	template_path = get_template_path(appname, obj.get("template"))
-	#print "ctx.name {} blocks {}".format(ctx.name, obj.get("template"))
-	#obj = frappe.local.meteor_map_templates.get(template_path)
-	#refs = obj.get("refs")
-	#ref = check_refs(tname, refs)
+
 	ref = get_meteor_template_parent_path(tname, template_path)
 
 	if not ref:
@@ -82,53 +74,6 @@ def tkeep(ctx, patterns):
 	#print "tname {} template_real_path {} pattern {}".format(obj.get("tname"), obj.get("template"), patterns)
 
 
-	"""
-	if not page:
-		obj = frappe.local.meteor_map_templates.get(ctx.name)
-		refs = obj.get("refs")
-		page = get_deep_refs(refs, tname, deep)
-
-	fadd = ctx.get("files_to_add")
-	if fadd == None:
-		ctx["files_to_add"] = {}
-		fadd = ctx.get("files_to_add")
-
-	fadd.append({"tname": tname, "pattern": patterns, "page": page})
-	"""
-
-"""
-def local_tkeep(ctx, tname, page, patterns=None):
-
-	fadd = ctx.get("files_to_add")
-	if fadd == None:
-		ctx["files_to_add"] = {}
-		fadd = ctx.get("files_to_add")
-
-	if  patterns and isinstance(patterns, basestring):
-		patterns = [patterns]
-
-	obj = frappe.local.meteor_map_templates.get(page)
-	appname = obj.get("appname")
-
-	if not fadd.get(appname):
-		fadd[appname] = []
-	template_path = obj.get("template")
-
-	in_ext = template_path.rsplit(".", 1)[1]
-	ext_len = len(in_ext) + 1
-
-	if not patterns:
-		pattern = get_pattern_path(tname, template_path[:-ext_len])
-		fadd.get(appname).append({"tname": page, "pattern":pattern})
-	elif tname:
-		for pattern in patterns:
-			pat = template_path[:-ext_len] + r"/.*/"+ tname + "/" + pattern
-			fadd.get(appname).append({"tname": page, "pattern": pat})
-	else:
-		for pattern in patterns:
-			fadd.get(appname).append({"tname": page, "pattern": pattern})
-"""
-
 def get_msuper_inner_content(ctx, source):
 	s = STARTTEMPLATE_SUB_ALL.search(source)
 	if s:
@@ -147,9 +92,8 @@ def msuper(ctx, adeep=1, rdeep=0, tkeep=None, tname=None):
 
 
 	ocode = ""
-	#page = ctx.name
+
 	tobj = frappe.local.context.current_xhtml_template
-	#print "ctx.name {}".format(ctx.name)
 	page = tobj.get("relpath")
 	if not tname:
 		tname = tobj.get("tname")

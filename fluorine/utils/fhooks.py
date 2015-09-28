@@ -15,19 +15,8 @@ class FluorineHooks(object):
 
 	def __exit__(self, type, value, trace):
 		return self.save_hook()
-		#print "value {}".format(type)
 
-	#def change_base_template(self, hooks=None, page_default=True, site=None):
 	def change_base_template(self, page_default=True):
-		from fluorine.utils.fcache import clear_frappe_caches
-
-		#def remove_meteor_include():
-		#	try:
-		#		hooks.get("app_include_js").remove("/assets/js/meteor_app.js")
-		#	except:
-		#		pass
-		#if not hooks:
-			#hooks = frappe.get_hooks(app_name="fluorine")
 		self.hooks.pop("base_template", None)
 		self.hooks.pop("home_page", None)
 
@@ -35,26 +24,8 @@ class FluorineHooks(object):
 			self.hooks["base_template"] = ["templates/fluorine_base.html"]
 			self.hooks["home_page"] = ["fluorine_home"]
 
-		#remove_meteor_include()
-
-		#if not devmode:
-		#	app_include_js = hooks.get("app_include_js")
-		#	if app_include_js:
-		#		app_include_js.append("/assets/js/meteor_app.js")
-		#	else:
-		#		hooks["app_include_js"] = ["/assets/js/meteor_app.js"]
-
-
-		#fluorine_path = frappe.get_app_path("fluorine")
-		#save_batch_hook(hooks, os.path.join(fluorine_path, "hooks.py"))
-		#clear_frappe_caches(site=site)
-		#return hooks
 
 	def hook_app_include(self, ijs, icss):
-		from fluorine.utils.fcache import clear_frappe_caches
-
-		#if not hooks:
-		#hooks = frappe.get_hooks(app_name="fluorine")
 
 		app_include_js = self.hooks.get("app_include_js") or []
 		app_include_css = self.hooks.get("app_include_css") or []
@@ -81,16 +52,8 @@ class FluorineHooks(object):
 		elif icss:
 			self.hooks["app_include_css"] = icss
 
-		#fluorine_path = frappe.get_app_path("fluorine")
-		#save_batch_hook(hooks, fluorine_path + "/hooks.py")
-		#clear_frappe_caches(site=site)
-
 
 	def remove_hook_app_include(self):
-		#from fluorine.utils.fcache import clear_frappe_caches
-
-		#if not hooks:
-		#	hooks = frappe.get_hooks(app_name="fluorine")
 
 		app_include_js = self.hooks.get("app_include_js") or []
 		app_include_css = self.hooks.get("app_include_css") or []
@@ -113,15 +76,12 @@ class FluorineHooks(object):
 		if not app_include_css:
 			self.hooks.pop("app_include_css", None)
 
-		#fluorine_path = frappe.get_app_path("fluorine")
-		#save_batch_hook(hooks, fluorine_path + "/hooks.py")
-		#clear_frappe_caches(site=site)
-
 
 	def save_hook(self):
 		fluorine_path = frappe.get_app_path("fluorine")
 		save_batch_hook(self.hooks, os.path.join(fluorine_path, "hooks.py"))
 
+"""
 #not used
 def add_react_to_hook(paths, page_default=True):
 	from fluorine.utils import assets_public_path
@@ -157,7 +117,8 @@ def add_react_to_hook(paths, page_default=True):
 	save_batch_hook(hooks, frappe.get_app_path("fluorine") + "/hooks.py")
 
 	fcache.clear_frappe_caches()
-
+"""
+"""
 #not used
 def remove_react_from_hook(paths, where="app", hooks=None, include_files_from_disk=True):
 	from fluorine.utils import assets_public_path
@@ -188,7 +149,8 @@ def remove_react_from_hook(paths, where="app", hooks=None, include_files_from_di
 
 	save_batch_hook(hooks, frappe.get_app_path("fluorine") + "/hooks.py")
 	fcache.clear_frappe_caches()
-
+"""
+"""
 #not used
 def remove_react_from_app_hook(paths, hooks=None, include_files_from_disk=True):
 	remove_react_from_hook(paths, where="app", hooks=hooks, include_files_from_disk=include_files_from_disk)
@@ -196,7 +158,7 @@ def remove_react_from_app_hook(paths, hooks=None, include_files_from_disk=True):
 #not used
 def remove_react_from_web_hook(paths, hooks=None, include_files_from_disk=True):
 	remove_react_from_hook(paths, where="web", hooks=hooks, include_files_from_disk=include_files_from_disk)
-
+"""
 
 def get_hook_files_from_disk():
 	import glob
@@ -211,18 +173,10 @@ def save_batch_hook_all(sessionId, objjs):
 	fcache.save_fluorine_cache(sessionId, objjs)
 
 def save_batch_hook(objjs, file_path):
-	#module_path = os.path.dirname(fluorine.__file__)
-	#file_path = file.get_path_fluorine("hook_help.txt")
-	#with open(os.path.join(module_path, "hook_help.txt"), "w") as f:
 	with open(file_path, "w") as f:
 		for key, value in objjs.iteritems():
-			#value = objjs.get(key)
-			#if isinstance(value, (list,dict,tuple)):
 			f.write(key + '=' + json.dumps(value) + os.linesep)
 			f.flush()
-			#else:
-			#	f.write(key + '=' + json.dumps(value) + os.linesep)
-
 
 def get_extras_context():
 	hooks = frappe.get_hooks("fluorine_extras_context_method")

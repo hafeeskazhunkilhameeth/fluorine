@@ -132,17 +132,6 @@ def get_meteor_environment(doc, whatfor):
 	return env
 
 
-"""
-def make_public_link():
-
-	app_path = frappe.get_app_path("fluorine")
-	public_folder = os.path.join(app_path, "public")
-
-	for app in (meteor_desk_app, ):
-		folder = os.path.join(public_folder, app)
-		frappe.create_folder(folder)
-"""
-
 def remove_from_assets():
 	try:
 		meteor_path = os.path.join("assets", "js", meteor_web_app)
@@ -150,26 +139,6 @@ def remove_from_assets():
 	except:
 		pass
 
-"""
-def _get_active_apps():
-	from fluorine.utils import APPS as apps, get_attr_from_json
-	from fluorine.utils.reactivity import make_meteor_ignor_files
-
-	ign_files = make_meteor_ignor_files()
-
-	#ign_apps = ign_files.remove.get("apps")
-	ign_apps = get_attr_from_json([meteor_web_app, "remove", "apps"], ign_files)
-
-	active_apps = []
-	for app in apps:
-		app_path = frappe.get_app_path(app)
-		meteor_app = os.path.join(app_path, "templates", "react", meteor_desk_app)
-		meteor_web = os.path.join(app_path, "templates", "react", meteor_web_app)
-		if (os.path.exists(meteor_app) or os.path.exists(meteor_web)) and app not in ign_apps:
-			active_apps.append(app)
-
-	return active_apps
-"""
 
 def check_updates(whatfor, bench=".."):
 	from fluorine.utils.apps import get_active_apps

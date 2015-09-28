@@ -55,11 +55,8 @@ def build_meteor_context(context, whatfor):
 
 	#host
 	context.meteor_root_url = host
-	#host:port
 	context.meteor_root_url_port = meteor_host
-	#hpst/prefix
 	context.meteor_url_path_prefix = meteor_url_path_prefix(whatfor)
-	#ddpurl:port
 	context.meteor_ddp_default_connection_url = ddpurl_port
 
 
@@ -96,28 +93,6 @@ Package.jquery = {
 }; """ if whatfor == meteor_desk_app else ""}
 
 	return meteor_config
-
-"""
-def make_auto_update_version(path, meteorRelease, root_url, root_prefix, whatfor, appId=None):
-	from fluorine.utils import file
-
-	runtimeCfg = OrderedDict()
-	runtimeCfg["meteorRelease"] = meteorRelease
-	runtimeCfg["ROOT_URL"] = root_url
-	if whatfor == "meteor_web":
-		runtimeCfg["ROOT_URL_PATH_PREFIX"] = root_prefix
-	else:
-		runtimeCfg["ROOT_URL_PATH_PREFIX"] = "/meteordesk"
-
-	if appId:
-		runtimeCfg["appId"] = appId
-
-	manifest = file.read(path)
-	manifest = json.loads(manifest).get("manifest")
-	autoupdateVersion, autoupdateVersionRefresh, frappe_manifest_js, frappe_manifest_css = meteor_hash_version(manifest, runtimeCfg, whatfor)
-	print "sha1 digest {} {}".format(autoupdateVersion, autoupdateVersionRefresh)
-	return autoupdateVersion, autoupdateVersionRefresh, frappe_manifest_js, frappe_manifest_css
-"""
 
 def get_meteor_config(mthost, mtddpurlport, meteor_url_path_prefix, version, version_fresh, mrelease, appId=None):
 
@@ -195,48 +170,6 @@ def meteor_hash_version(manifest, runtimeCfg):
 
 	return sh1.hexdigest(), sh2.hexdigest(), frappe_manifest_js, frappe_manifest_css
 
-"""
-def meteor_hash_version(manifest, runtimeCfg, whatfor):
-	sh1 = hashlib.sha1()
-	sh2 = hashlib.sha1()
-	frappe_manifest_js = []
-	frappe_manifest_css = []
-
-	rt = json.dumps(runtimeCfg).replace(" ", "").encode('utf8')
-	print "json.dumps ", rt
-	sh1.update(rt)
-	sh2.update(rt)
-
-	if whatfor == meteor_desk_app:
-		prefix = "/meteordesk"
-	else:
-		prefix = ""
-
-	for m in manifest:
-		if m.get("where") == "client" or m.get("where") == "internal":
-			path = m.get("path")
-			mhash = m.get("hash")
-			if m.get("where") == "client":
-				if whatfor == meteor_desk_app:
-					nurl = prefix + m.get("url")
-				else:
-					nurl = m.get("url")
-				if m.get("type") == "css":
-					frappe_manifest_css.append(nurl)
-					sh2.update(path)
-					sh2.update(mhash)
-					continue
-				elif m.get("type") == "js":
-					if whatfor == meteor_desk_app:
-						if "jquery" not in path:
-							frappe_manifest_js.append(nurl)
-					else:
-						frappe_manifest_js.append(nurl)
-			sh1.update(path)
-			sh1.update(mhash)
-
-	return sh1.hexdigest(), sh2.hexdigest(), frappe_manifest_js, frappe_manifest_css
-"""
 
 def make_meteor_props(context, whatfor, production=False, site=None):
 	from fluorine.utils import get_meteor_runtime_config_path
@@ -249,10 +182,6 @@ def make_meteor_props(context, whatfor, production=False, site=None):
 		Used when issued from command line
 		From web force production = False
 	"""
-	#try:
-	#	production = frappe.local.making_production
-	#except:
-	#	production = False
 
 	appId = ""
 	if not production:
@@ -284,13 +213,7 @@ def make_meteor_props(context, whatfor, production=False, site=None):
 							context.meteor_autoupdate_version_freshable, context.meteorRelease, context.appId)
 
 	meteor_runtime_real_path = get_meteor_runtime_config_path(whatfor, real=True)
-	#if not production:
 	save_meteor_props(props, meteor_runtime_real_path)
-	#else:
-	#	try:
-	#		os.unlink(meteor_runtime_real_path)
-	#	except:
-	#		pass
 
 
 def update_common_config(config):
@@ -320,16 +243,14 @@ def get_meteor_appId(path):
 
 #TODO PASSAR site
 def prepare_client_files(curr_app):
-	from fluorine.utils import get_meteor_final_name
 	from fluorine.utils.react_file_loader import remove_directory
 	from fluorine.utils.file import get_path_reactivity, save_file
 	from fluorine.utils.apps import get_active_apps
 
-	#final_app_name = get_meteor_final_name(site, meteor_desk_app)
 	react_path = get_path_reactivity()
 	curr_app_path = frappe.get_app_path(curr_app)
 
-	for whatfor in whatfor_all:#("meteor_web", "meteor_app"):
+	for whatfor in whatfor_all:
 		meteor_final_path = os.path.join(react_path, whatfor.replace("meteor", "final"))
 		if os.path.exists(meteor_final_path):
 			try:
@@ -377,9 +298,3 @@ def make_meteor_files(mthost, mtport, architecture, site):
 	for w in whatfor_all:
 		make_meteor_file(site, whatfor=w, mtport=mtport, mthost=mthost, architecture=architecture)
 
-
-"""
-def template_replace(m):
-	content = m.group(3)
-	return content
-"""

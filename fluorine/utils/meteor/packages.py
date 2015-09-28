@@ -57,7 +57,6 @@ def meteor_package(whatfor, packages, path_reactivity=None, action="add"):
 	if packages:
 		meteor_packages = frappe.get_file_items(os.path.join(cwd, ".meteor", "packages"))
 
-		#packages_to_use = []
 		#NOTE: Only add packages that do not exist or remove packages that exist
 
 		for pckg in set(packages):
@@ -211,13 +210,8 @@ def get_list_packages_to_install_by_apps(curr_app, whatfor, file_add=None, file_
 			file_src_add = _get_file(src_add)
 			src_remove = os.path.join(app_path, "templates", file_par[1])
 			file_src_remove = _get_file(src_remove)
-			#src_custom_add = os.path.join(app_path, "templates", file_add)
-			#file_custom_add = _get_file(src_custom_add)
-			#src_custom_remove = os.path.join(app_path, "templates", file_remove)
-			#file_custom_remove = _get_file(src_custom_remove)
 
 			_package(app, file_src_add, file_src_remove)
-			#_package(app, file_custom_add, file_custom_remove)
 
 	return packages_to_add, packages_to_remove
 

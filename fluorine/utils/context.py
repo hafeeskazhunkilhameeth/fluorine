@@ -7,7 +7,6 @@ from fluorine.utils import whatfor_all, meteor_desk_app, set_making_production
 class MeteorContext(object):
 	def __init__(self, site, production=True):
 		self.context = frappe._dict({meteor_desk_app:None})
-		#frappe.local.making_production = production
 		self.site = site
 		self.production = production
 		set_making_production(production)
@@ -28,31 +27,22 @@ class MeteorContext(object):
 					return
 
 	def make_context(self):
-		#from fluorine.utils import prepare_environment
 		from fluorine.utils.reactivity import start_meteor
 		from fluorine.utils.finals import make_public_folders
-		#from fluorine.command import prepare_make_meteor_file
 
 		make_public_folders()
-		#prepare_environment()
 		start_meteor()
-		#frappe.local.request = frappe._dict()
 
 		for w in whatfor_all:
-			#prepare_compile_environment(w)
 			ctx = prepare_context_meteor_file( w)
 			if w == meteor_desk_app:
 				self.context[meteor_desk_app] = ctx
 
 	def make_meteor_properties(self, whatfor):
-		#from fluorine.utils.meteor.utils import make_meteor_props
 		from fluorine.templates.pages.mdesk import make_meteor_properties
-		#from fluorine.utils.spacebars_template import make_includes
 
 		context = self.context.get(whatfor)
-		#make_meteor_props(context, meteor_desk_app, production=True, site=self.site)
 		make_meteor_properties(context, whatfor, production=self.production, site=self.site)
-		#make_includes(context)
 
 """
 def remove_output_files(whatfor):
@@ -88,20 +78,11 @@ def remove_output_files(whatfor):
 
 def prepare_context_meteor_file(whatfor):
 	from fluorine.templates.pages.fluorine_home import get_context as fluorine_get_context
-	#from fluorine.utils import meteor_desk_app, fluor_get_context as get_context
 	from fluorine.utils import meteor_desk_app
 	from fluorine.utils.spacebars_template import get_app_pages
-	#from fluorine.templates.pages.mdesk import get_context
-	#from frappe.website.context import get_context
-
-	#remove_output_files(whatfor)
 
 	if whatfor == meteor_desk_app:
-		#frappe.local.path = "desk"
-		#frappe.local.session.data.csrf_token = "no need token"
-		#context = frappe._dict()
 		context = get_app_pages(frappe._dict())
-		#return get_context("desk")
 		return context
 	else:
 		return fluorine_get_context(frappe._dict())
@@ -158,7 +139,7 @@ def get_xhtml_module(appname, template_path, path):
 
 	return None
 
-
+"""
 def get_general_context(context, apps, whatfor, pfs_in, pfs_out):
 
 	from fluorine.utils.module import get_app_module
@@ -222,8 +203,9 @@ def get_general_context(context, apps, whatfor, pfs_in, pfs_out):
 				frappe.local.files_to_remove.get(k).append({"tname": "", "pattern": pattern})
 
 	return
+"""
 
-
+"""
 def get_common_context(context, apps, whatfor, pfs_in, pfs_out):
 
 	from fluorine.utils.module import get_app_module
@@ -270,9 +252,6 @@ def get_common_context(context, apps, whatfor, pfs_in, pfs_out):
 				appsout = fapps.get("OUT") or fapps.get("out") or {}
 				pfs_out.feed_apps(appsout)
 
-	#pfs_in.compile_pattern()
-	#pfs_out.compile_pattern()
-
 	for k,v in ctx.iteritems():
 		for obj in v:
 			pattern = obj.get("pattern")
@@ -287,7 +266,7 @@ def get_common_context(context, apps, whatfor, pfs_in, pfs_out):
 				frappe.local.files_to_remove.get(k).append({"tname": "", "pattern": pattern})
 
 	return
-
+"""
 
 
 def get_extra_context_func(context, apps, extras):
@@ -308,7 +287,6 @@ def get_app_jinja_files_to_process(app, whatfor, api, file_path):
 	from fluorine.utils.module import get_app_module
 
 	app_path = frappe.get_app_path(app)
-	#path = os.path.join(app_path, "templates", "react")
 	module = get_app_module(file_path, app, app_path, "meteor_files.py")
 
 	if module:
@@ -320,17 +298,14 @@ def get_app_fluorine_template_files_to_process(app, whatfor, template_path, api,
 
 	app_path = frappe.get_app_path(app)
 
-	#template_app_path = os.path.join(app_path, os.path.dirname(template_path), os.path.basename(template_path).rsplit(".",1)[0])
 	fluorine_template_name_without_extension = template_path.rsplit(".",1)[0]
 	template_app_path = os.path.join(app_path, fluorine_template_name_without_extension)
 	module = get_app_module(template_app_path, app, app_path, "meteor_files.py")
-	#print "controller module {} rel {}".format(template_path, os.path.relpath(template_path, app_path))
 	if module:
 		if hasattr(module, "get_files"):
-			#api.set_startpath(os.path.relpath(template_path, app_path))
+
 			api.set_startpath(fluorine_template_name_without_extension)
 			api.set_template_path(template_path)
-			#os.path.relpath(template_path, app_path)
 			module.get_files(api, whatfor, context)
 
 
@@ -339,14 +314,13 @@ def get_app_meteor_template_files_to_process(app, whatfor, template_path, templa
 
 	app_path = frappe.get_app_path(app)
 
-	#template_app_path = os.path.join(app_path, os.path.dirname(template_path), os.path.basename(template_path).rsplit(".",1)[0])
+
 	fluorine_template_name_without_extension = template_path.rsplit(".",1)[0]
 	template_app_path = os.path.join(app_path, fluorine_template_name_without_extension)
 	module = get_app_module(template_app_path, app, app_path, "meteor_files.py")
 	if module:
 		if template_name:
 			if hasattr(module, "get_meteor_template_files"):
-				#api.set_startpath(os.path.relpath(template_path, app_path))
 				api.set_startpath(fluorine_template_name_without_extension)
 				api.set_template_path(template_path)
 				api.set_template_name(template_name)
@@ -354,6 +328,5 @@ def get_app_meteor_template_files_to_process(app, whatfor, template_path, templa
 		else:
 			if hasattr(module, "get_template_files"):
 				api.set_startpath(fluorine_template_name_without_extension)
-				#api.set_startpath(os.path.relpath(template_path, app_path))
 				api.set_template_path(template_path)
 				module.get_template_files(api, whatfor, context)
