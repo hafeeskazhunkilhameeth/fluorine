@@ -81,6 +81,18 @@ def tkeep(ctx, patterns):
 			dict_files_added.pop(add_file_path, None)
 
 
+	tokeep = []
+	dict_assets_added = api.get_dict_final_Assets_add()
+	for add_file_path, add_file_path_obj in dict_assets_added.iteritems():
+		for pattern in patterns:
+			if re.match(pattern, add_file_path_obj.get("internal_path")):
+				tokeep.append(add_file_path)
+				break
+
+	for add_file_path, add_file_path_obj in dict_assets_added.iteritems():
+		if add_file_path not in tokeep:
+			dict_files_added.pop(add_file_path, None)
+
 		#pattern = "%s/.*/?%s/%s" % (tpath, tname, pattern)
 		#print "pattern to use %s" % pattern
 		#p = c(pattern)
