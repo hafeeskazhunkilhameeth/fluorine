@@ -201,11 +201,9 @@ def remove_from_path(ctx, toadd):
 
 
 def prepare_common_page_context(context, whatfor):
-	from fluorine.utils import check_dev_mode, jquery_include
+	from fluorine.utils import jquery_include
 	from fluorine.utils.meteor.utils import build_meteor_context
 
-	devmode = check_dev_mode()
-	context.developer_mode = devmode
 	context.jquery_include = jquery_include()
 
 	#Meteor
@@ -226,32 +224,26 @@ def make_includes(context):
 
 def get_app_pages(context):
 	from fluorine.utils import meteor_desk_app, is_making_production
-	from fluorine.utils.meteor.utils import make_meteor_props
+	#from fluorine.utils.meteor.utils import make_meteor_props
 
 	context.admin_menus = [{"name":"panel_home", "text":"Home"}, {"name":"panel_profile", "text":"Profile"}]
 
 	context.whatfor = meteor_desk_app
 	context = prepare_common_page_context(context, meteor_desk_app)
 
-	devmode = context.developer_mode
-
-
-	if devmode and not is_making_production():
-		make_meteor_props(context, meteor_desk_app)
-		#make_includes(context)
-		#print "meteor is in devmod %s" % context.meteor_package_js
-
+	#devmode = context.developer_mode
 
 	return context
 
 
 def get_web_pages(context):
-	from fluorine.utils import meteor_web_app
+	from fluorine.utils import meteor_web_app, check_dev_mode
 
 	context.meteor_web_include_css = frappe.get_hooks("meteor_web_include_css")
 	context.meteor_web_include_js = frappe.get_hooks("meteor_web_include_js")
 
 	context.whatfor = meteor_web_app
+	context.developer_mode = check_dev_mode()
 
 	context = prepare_common_page_context(context, meteor_web_app)
 

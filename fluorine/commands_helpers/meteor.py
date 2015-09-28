@@ -279,6 +279,7 @@ class MeteorDevelop(object):
 		self.check_apps_updates()
 		self.update_list_packages()
 		self.make_apps_context()
+		self.make_meteor_properties()
 		self.remove_from_assets()
 		self.save_procfile()
 		self.generate_configs()
@@ -344,6 +345,10 @@ class MeteorDevelop(object):
 			mongo_default = 1
 
 		self.doc.check_mongodb = mongo_default
+
+	def make_meteor_properties(self):
+		click.echo("Make meteor properties.")
+		self.m_ctx.make_meteor_properties(meteor_desk_app)
 
 	def remove_from_assets(self):
 		remove_from_assets()
@@ -524,7 +529,7 @@ class MeteorProduction(object):
 
 	def make_meteor_properties(self):
 		click.echo("Make meteor properties.")
-		self.m_ctx.make_meteor_properties()
+		self.m_ctx.make_meteor_properties(meteor_desk_app)
 
 	def build_json(self):
 		#from fluorine.fluorine.doctype.fluorine_reactivity.fluorine_reactivity import make_final_app_client

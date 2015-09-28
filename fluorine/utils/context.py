@@ -9,6 +9,7 @@ class MeteorContext(object):
 		self.context = frappe._dict({meteor_desk_app:None})
 		#frappe.local.making_production = production
 		self.site = site
+		self.production = production
 		set_making_production(production)
 
 	def meteor_init(self, mongo_custom=False):
@@ -43,12 +44,14 @@ class MeteorContext(object):
 			if w == meteor_desk_app:
 				self.context[meteor_desk_app] = ctx
 
-	def make_meteor_properties(self):
-		from fluorine.utils.meteor.utils import make_meteor_props
+	def make_meteor_properties(self, whatfor):
+		#from fluorine.utils.meteor.utils import make_meteor_props
+		from fluorine.templates.pages.mdesk import make_meteor_properties
 		#from fluorine.utils.spacebars_template import make_includes
 
-		context = self.context.get(meteor_desk_app)
-		make_meteor_props(context, meteor_desk_app, production=True, site=self.site)
+		context = self.context.get(whatfor)
+		#make_meteor_props(context, meteor_desk_app, production=True, site=self.site)
+		make_meteor_properties(context, whatfor, production=self.production, site=self.site)
 		#make_includes(context)
 
 
