@@ -2,17 +2,16 @@ __author__ = 'luissaguas'
 
 
 import frappe
+import frappe.async
 
 
-
-@frappe.whitelist(allow_guest=True)
+#@frappe.whitelist(allow_guest=True)
+@frappe.async.handler
 def meteor_compile():
-	"""
-	This request gives a Broken pipe error. This is because meteor get's new data and automaticaly disconnect current connection.
-	This is a normal proceed.
-	"""
 	from fluorine.utils.context import prepare_context_meteor_file
 	from fluorine.utils import meteor_config, meteor_web_app
+
+
 	if meteor_config.get("developer_mode") and not meteor_config.get("stop"):
 		prepare_context_meteor_file(meteor_web_app)
-		print "compile_meteor called for site {}".format(frappe.local.site)
+		#_run_task()

@@ -77,15 +77,16 @@ def remove_output_files(whatfor):
 """
 
 def prepare_context_meteor_file(whatfor):
-	from fluorine.templates.pages.fluorine_home import get_context as fluorine_get_context
+	#from fluorine.templates.pages.fluorine_home import get_context as fluorine_get_context
 	from fluorine.utils import meteor_desk_app
-	from fluorine.utils.spacebars_template import get_app_pages
+	from fluorine.utils.spacebars_template import get_app_pages, get_web_pages
 
 	if whatfor == meteor_desk_app:
 		context = get_app_pages(frappe._dict())
 		return context
 	else:
-		return fluorine_get_context(frappe._dict())
+		#return fluorine_get_context(frappe._dict())
+		return get_web_pages(frappe._dict())
 
 
 def get_xhtml_files_to_add_remove(context, template_path):
