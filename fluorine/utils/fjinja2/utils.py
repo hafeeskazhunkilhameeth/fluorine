@@ -64,6 +64,7 @@ def tkeep(ctx, patterns):
 
 	#tpath = relpath.rsplit(".", 1)[0]
 	package_name = parent_obj.get("package_name")
+	print "appname %s tname %s template_path %s and ref %s" % (appname, tname, template_path, ref)
 	package = frappe.local.packages.get(package_name)
 	api = export_meteor_template(parent_appname, ctx.get("whatfor"), ref, tname, frappe._dict(ctx), package.apis)
 

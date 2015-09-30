@@ -259,6 +259,7 @@ def process_react_templates(apps, whatfor, context, reactivity_dst_path, custom_
 		for file_path, fobj in files_dict.iteritems():
 			jinja_template_path = fobj.get("relative_path")
 			addto_meteor_templates_list(jinja_template_path, package_name=package_name, ext_out=fobj.get("ext_out"))
+			set_refs_package_name(jinja_template_path, package_name)
 
 	for app in apps:
 		app_path = frappe.get_app_path(app)
@@ -298,6 +299,16 @@ def process_react_templates(apps, whatfor, context, reactivity_dst_path, custom_
 				_addto_templates_list(files_dict, pckg_name)
 
 
+def set_refs_package_name(template_path, package_name):
+	from fluorine.utils.fjinja2.refs import flat_refs
+
+	refs = flat_refs(template_path)
+	for ref in refs:
+		r = frappe.local.meteor_map_templates.get(ref)
+		r["package_name"] = package_name
+		#print "set package name %s for %s parent %s len refs %s" % (ref, package_name, template_path, len(refs))
+
+
 
 def process_xhtml_context(context):
 	from fluorine.utils.context import get_xhtml_context
@@ -335,6 +346,7 @@ def addto_meteor_templates_list(template_path, package_name=None, ext_out="html"
 		if parent_template_path:
 			parent_template = frappe.local.meteor_map_templates.get(parent_template_path)
 			package_name = parent_template.package_name
+		#print "parent template %s template %s package name %s" % (parent_template_path, template_path, package_name)
 		frappe.local.meteor_map_templates.get(template_path).update({"template_obj": template, "ext_out": ext_out, "export": export, "package_name": package_name})
 		#TODO get the context from file of the template...pass the context, the template object and template_path
 		#TODO with template_path and frappe.local.meteor_map_templates.get(template_path) get refs if needed to pass macro template object

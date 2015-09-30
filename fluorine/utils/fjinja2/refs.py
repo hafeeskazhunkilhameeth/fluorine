@@ -36,7 +36,7 @@ def check_refs(tname, refs):
 def get_deep_refs(refs, tname, deep):
 
 	if deep == 1:
-		return get_page(refs, tname)
+		return get_page_from_meteor_template(refs, tname)
 
 	page = None
 	#first is the extends so only this count for deep
@@ -72,7 +72,7 @@ def get_page_templates_and_refs(page):
 	return parent_relation
 
 
-def get_page(refs, tname):
+def get_page_from_meteor_template(refs, tname):
 
 	for ref in refs:
 		sobj = frappe.local.meteor_map_templates.get(ref)
