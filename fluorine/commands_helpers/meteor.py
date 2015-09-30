@@ -331,8 +331,9 @@ class MeteorDevelop(object):
 		from fluorine.commands_helpers import bench_generate_nginx_config
 		import platform
 
-		bench_generate_nginx_config(bench=self.bench)
-		config._generate_fluorine_nginx_conf(production=False, site=self.site)
+		#bench_generate_nginx_config(bench=self.bench)
+		#config._generate_fluorine_nginx_conf(production=False, site=self.site)
+		config.generate_nginx_config(bench=self.bench)
 		try:
 			src = os.path.abspath(os.path.join("..", 'config', 'nginx.conf'))
 			if platform.system() == 'Darwin':

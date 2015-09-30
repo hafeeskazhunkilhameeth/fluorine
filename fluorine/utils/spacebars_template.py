@@ -10,7 +10,7 @@ import os
 from collections import OrderedDict
 
 
-xhtml_ignores = ["page_relations.xhtml", "AppLayout.xhtml"]
+#xhtml_ignores = ["page_relations.xhtml", "AppLayout.xhtml"]
 
 
 
@@ -36,9 +36,9 @@ def fluorine_get_fenv():
 
 		frappe.local.fenv = fenv
 
-		add_jinja_extension(MeteorTemplate)
-		add_jinja_globals([{"msuper":msuper}, {"mself":mself}, {"mtkeep":tkeep}])
-		add_jinja_filters({"mdom_filter": mdom_filter})
+		#add_jinja_extension(MeteorTemplate)
+		#add_jinja_globals([{"msuper":msuper}, {"mself":mself}, {"mtkeep":tkeep}])
+		#add_jinja_filters({"mdom_filter": mdom_filter})
 
 	return frappe.local.fenv
 

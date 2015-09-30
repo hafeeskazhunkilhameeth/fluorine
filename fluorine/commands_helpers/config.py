@@ -137,6 +137,40 @@ def _generate_fluorine_nginx_conf(hosts_web=None, hosts_app=None, production=Non
 	save_file(config_file, "\n".join(ll))
 
 
+from jinja2 import Environment, PackageLoader
+env = Environment(loader=PackageLoader('fluorine', 'templates'), trim_blocks=True)
+
+
+def generate_nginx_config(bench='.'):
+
+	template = env.get_template('fluorine_nginx.conf')
+	bench_dir = os.path.abspath(".")
+	sites_dir = os.path.join(bench_dir)
+
+	sites = execute_bench_func("config", "get_sites_with_config", bench, ".")
+
+	get_config = execute_bench_func("utils", "get_config", bench)
+	if get_config.get('serve_default_site'):
+		try:
+			with open("currentsite.txt") as f:
+				default_site = {'name': f.read().strip()}
+		except IOError:
+			default_site = None
+	else:
+		default_site = None
+
+	config = template.render(**{
+		"sites_dir": sites_dir,
+		"http_timeout": get_config.get("http_timeout", 120),
+		"default_site": default_site,
+		"dns_multitenant": get_config.get('dns_multitenant'),
+		"sites": sites,
+		"meteor_fluorine_desk_ips": {"127.0.0.1":3080},
+		"meteor_fluorine_web_ips": {"127.0.0.1":3070}
+	})
+
+	execute_bench_func("config", "write_config_file", bench, ".", 'nginx.conf', config)
+
 
 def get_mac_supervisor_confdir(path=""):
 
