@@ -1,9 +1,10 @@
 from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
-import frappe, os, json
+import frappe#, os, json
 
 
+"""
 class FluorineHooks(object):
 
 	def __init__(self, site=None):
@@ -80,7 +81,7 @@ class FluorineHooks(object):
 	def save_hook(self):
 		fluorine_path = frappe.get_app_path("fluorine")
 		save_batch_hook(self.hooks, os.path.join(fluorine_path, "hooks.py"))
-
+"""
 """
 #not used
 def add_react_to_hook(paths, page_default=True):
@@ -159,7 +160,7 @@ def remove_react_from_app_hook(paths, hooks=None, include_files_from_disk=True):
 def remove_react_from_web_hook(paths, hooks=None, include_files_from_disk=True):
 	remove_react_from_hook(paths, where="web", hooks=hooks, include_files_from_disk=include_files_from_disk)
 """
-
+"""
 def get_hook_files_from_disk():
 	import glob
 	fluorine_publicjs_path = os.path.join(frappe.get_app_path("fluorine"), "public", "js", "react")
@@ -177,12 +178,13 @@ def save_batch_hook(objjs, file_path):
 		for key, value in objjs.iteritems():
 			f.write(key + '=' + json.dumps(value) + os.linesep)
 			f.flush()
+"""
 
 def get_extras_context():
 	hooks = frappe.get_hooks("fluorine_extras_context_method")
 	return hooks
 
-
+"""
 def check_jquery(hook, hooks):
 	found = False
 	iweb = hooks.get(hook, None)
@@ -193,8 +195,8 @@ def check_jquery(hook, hooks):
 	if not found:
 		iweb.insert(0, "/assets/frappe/js/lib/jquery/jquery.min.js")
 		print "jquery not found, inserting frappe jquery!"
-
-
+"""
+"""
 def check_includes(hook, hooks):
 	iweb = hooks.get(hook, None)
 	if iweb and not any("before_fluorine_helper" in s for s in iweb):
@@ -207,8 +209,9 @@ def check_includes(hook, hooks):
 		for i in to_remove:
 			iweb.remove(i)
 		update_includes(hook, iweb)
+"""
 
-
+"""
 def update_includes(hook, iweb):
 	from fluorine.utils import fcache
 
@@ -224,7 +227,7 @@ def update_includes(hook, iweb):
 		if fweb[2:]:
 			iweb.extend(fweb[2:])
 		fcache.clear_frappe_caches()
-
+"""
 
 class FrappeContext:
 

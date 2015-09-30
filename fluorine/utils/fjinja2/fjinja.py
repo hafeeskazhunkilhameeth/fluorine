@@ -3,53 +3,58 @@ from __future__ import unicode_literals
 __author__ = 'luissaguas'
 
 
-from jinja2 import FileSystemLoader, TemplateNotFound, ChoiceLoader
-from jinja2.utils import internalcode
+from jinja2 import FileSystemLoader, TemplateNotFound#, ChoiceLoader
+#from jinja2.utils import internalcode
 from jinja2.environment import Environment
 
-import os, re, frappe
+import os, frappe
 
+"""
 class MyChoiceLoader(ChoiceLoader):
 	def __init__(self, loaders):
 		super(MyChoiceLoader, self).__init__(loaders)
 		self.curr_loader = None
+"""
+"""
+def get_source(self, environment, template):
+	for loader in self.loaders:
+		try:
+			l = loader.get_source(environment, template)
+			self.curr_loader = loader
+			return l
+		except TemplateNotFound:
+			pass
+	raise TemplateNotFound(template)
+"""
+"""
+def get_meteor_source(self, environment, template):
 
-	def get_source(self, environment, template):
-		for loader in self.loaders:
-			try:
-				l = loader.get_source(environment, template)
-				self.curr_loader = loader
-				return l
-			except TemplateNotFound:
-				pass
-		raise TemplateNotFound(template)
+	for loader in self.loaders:
+		try:
+			l = loader.get_meteor_source(environment, template)
+			self.curr_loader = loader
+			return l
+		except TemplateNotFound:
+			pass
+	raise TemplateNotFound(template)
+"""
 
-
-	def get_meteor_source(self, environment, template):
-
-		for loader in self.loaders:
-			try:
-				l = loader.get_meteor_source(environment, template)
-				self.curr_loader = loader
-				return l
-			except TemplateNotFound:
-				pass
-		raise TemplateNotFound(template)
-
-
-	@internalcode
-	def load(self, environment, name, globals=None):
-		for loader in self.loaders:
-			try:
-				l = loader.load(environment, name, globals)
-				self.curr_loader = loader
-				return l
-			except TemplateNotFound:
-				pass
-		raise TemplateNotFound(name)
-
-	def get_curr_loader(self):
-		return self.curr_loader
+"""
+@internalcode
+def load(self, environment, name, globals=None):
+	for loader in self.loaders:
+		try:
+			l = loader.load(environment, name, globals)
+			self.curr_loader = loader
+			return l
+		except TemplateNotFound:
+			pass
+	raise TemplateNotFound(name)
+"""
+"""
+def get_curr_loader(self):
+	return self.curr_loader
+"""
 
 class MyEnvironment(Environment):
 
@@ -59,28 +64,29 @@ class MyEnvironment(Environment):
 		self.devmode = check_dev_mode()
 
 
-from collections import OrderedDict
+#from collections import OrderedDict
 
 class MyFileSystemLoader(FileSystemLoader):
-	def __init__(self, apps, searchpath, dbpath=None, encoding='utf-8'):
+	def __init__(self, apps, searchpath, encoding='utf-8'):
 		super(MyFileSystemLoader, self).__init__(searchpath, encoding=encoding)
 		self.apps = apps
 		#register the name of the jinja (xhtml files) templates founded
-		self.list_apps_remove = []
-		self.list_meteor_tplt_remove = frappe._dict({})
-		self.list_meteor_tplt_add = frappe._dict({})
-		self.list_meteor_files_remove = frappe._dict({})
-		self.list_meteor_files_add = frappe._dict({})
+		#self.list_apps_remove = []
+		#self.list_meteor_tplt_remove = frappe._dict({})
+		#self.list_meteor_tplt_add = frappe._dict({})
+		#self.list_meteor_files_remove = frappe._dict({})
+		#self.list_meteor_files_add = frappe._dict({})
 		self.templates_referenced = []
-		self.duplicated_templates_to_remove = frappe._dict({})
+		#self.duplicated_templates_to_remove = frappe._dict({})
 
-		if not frappe.local.meteor_map_path:
+		#if not frappe.local.meteor_map_path:
 			#keep the loaded order
-			self.meteor_map_path = frappe.local.meteor_map_path = OrderedDict()
+		#	self.meteor_map_path = frappe.local.meteor_map_path = OrderedDict()
 
-		self.start_hook_lists()
+		#self.start_hook_lists()
 
 
+	"""
 	def start_hook_lists(self):
 
 		list_ignores = frappe.local.meteor_ignores
@@ -92,18 +98,21 @@ class MyFileSystemLoader(FileSystemLoader):
 		list_meteor_tplt_remove = remove.get("meteor_templates", frappe._dict({}))
 		self.list_meteor_tplt_add.update(list_meteor_tplt_add)
 		self.list_meteor_tplt_remove.update(list_meteor_tplt_remove)
+	"""
 
+	"""
 	@internalcode
 	def load(self, environment, name, globals=None):
 		template = super(MyFileSystemLoader, self).load(environment, name, globals=globals)
 		return template
+	"""
 
 	def get_source(self, environment, template):
 
 		for app in self.apps:
 
-			if app in self.list_apps_remove:
-				continue
+			#if app in self.list_apps_remove:
+			#	continue
 
 			app_path = frappe.get_app_path(app)
 			filepath = os.path.join(app_path, template)
@@ -136,12 +145,12 @@ class MyFileSystemLoader(FileSystemLoader):
 			else:
 				frappe.throw("The template reference %s does't exist or it reference it self %s" % (referenced_template_path, template))
 
-	def get_source_old(self, environment, template):
-		contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, template)
+	#def get_source_old(self, environment, template):
+	#	contents, filename, uptodate = super(MyFileSystemLoader, self).get_source(environment, template)
 
-		return contents, filename, uptodate
+	#	return contents, filename, uptodate
 
-
+	"""
 	def remove_dynamic_templates(self, template, contents, doc):
 		c = lambda t:re.compile(t, re.S|re.M)
 		t = frappe.local.meteor_dynamic_templates_remove.get(template)
@@ -155,14 +164,16 @@ class MyFileSystemLoader(FileSystemLoader):
 				contents = block.sub("", contents)
 
 		return contents
+	"""
 
-
+	"""
 	def check_uptodate(self, file_temp_path, filepath):
 		try:
 			return os.path.getmtime(file_temp_path) >= os.path.getmtime(filepath)
 		except OSError:
 			return False
-
+	"""
+	"""
 	def get_meteor_template_list(self):
 		from fluorine.utils.spacebars_template import fluorine_get_fenv
 
@@ -175,7 +186,8 @@ class MyFileSystemLoader(FileSystemLoader):
 				templates_list.append(frappe._dict({"template":t, "tpath":template, "doc": value}))
 
 		return templates_list
-
+	"""
+	"""
 	def compile_templates(self):
 		#remove only files xhtml and is folders for xhtml that was replaced
 		for d in self.duplicated_templates_to_remove.values():
@@ -186,7 +198,9 @@ class MyFileSystemLoader(FileSystemLoader):
 			if not doc.extends_found:
 				doc.make_path_add(doc)
 			doc.make_final_list_of_templates()
+	"""
 
+"""
 def process_hooks_meteor_templates(apps, hook_name):
 	list_meteor_tplt_add = frappe._dict({})
 	list_meteor_tplt_remove = frappe._dict({})
@@ -256,7 +270,8 @@ def process_hooks_meteor_templates(apps, hook_name):
 			process_add(k, add)
 
 	return list_meteor_tplt_add, list_meteor_tplt_remove
-
+"""
+"""
 def process_hooks_apps_old(apps):
 	from fluorine.utils.file import process_ignores_from_modules
 
@@ -286,8 +301,8 @@ def process_hooks_apps_old(apps):
 			process(modules_list[n])
 
 	return list_apps_remove
-
-
+"""
+"""
 def process_hooks_apps(apps):
 	list_apps_add = []
 	list_apps_remove = []
@@ -307,3 +322,4 @@ def process_hooks_apps(apps):
 		process(hooks)
 
 	return list_apps_remove
+"""

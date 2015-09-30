@@ -59,22 +59,25 @@ def add_jinja_extension(extension):
 
 def fluorine_get_floader(encoding="utf-8"):
 
-	from fluorine.utils import APPS
-	from fluorine.utils.fjinja2.fjinja import MyChoiceLoader
+	from jinja2 import ChoiceLoader
+	#from fluorine.utils import APPS
+
+	#from fluorine.utils.fjinja2.fjinja import MyChoiceLoader
 	from fluorine.utils.fjinja2.fjinja import MyFileSystemLoader
 
 	if not frappe.local.floader:
 
 		path = os.path.normpath(os.path.join(os.getcwd(), "..")) + "/apps"
-		apps = APPS[::-1]
-		app_fluorine = frappe.get_app_path("fluorine")
-		dbname = os.path.join(app_fluorine, "templates/react/temp", "fluorinedb")
-		db_dirpath = os.path.dirname(os.path.join(dbname))
-		frappe.create_folder(db_dirpath)
-		m = MyFileSystemLoader(apps, path, dbpath=dbname, encoding=encoding)
+		#apps = APPS[::-1]
+		apps = frappe.local.active_apps[::-1]
+		#app_fluorine = frappe.get_app_path("fluorine")
+		#dbname = os.path.join(app_fluorine, "templates/react/temp", "fluorinedb")
+		#db_dirpath = os.path.dirname(os.path.join(dbname))
+		#frappe.create_folder(db_dirpath)
+		m = MyFileSystemLoader(apps, path, encoding=encoding)
 		fluor_loader = [m]
 
-		frappe.local.floader = MyChoiceLoader(fluor_loader)
+		frappe.local.floader = ChoiceLoader(fluor_loader)
 
 	return frappe.local.floader
 
@@ -170,20 +173,21 @@ def fluorine_build_context(context, whatfor):
 	from fluorine.utils import meteor_web_app, meteor_config
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation,\
 		copy_mobile_config_file
-	from fluorine.utils.permission_file import list_ignores
+	#from fluorine.utils.permission_file import list_ignores
 	from react_file_loader import get_custom_pattern
 
 
 	frappe.local.context = context
 	frappe.local.fenv = None
 	frappe.local.floader = None
-	frappe.local.meteor_map_path = None
-	frappe.local.meteor_Templates = None
-	frappe.local.meteor_dynamic_templates_remove = frappe._dict()
-	frappe.local.jinja_blocks = None
-	frappe.local.meteor_ignores = None
-	frappe.local.templates_found_add = frappe._dict()
-	frappe.local.templates_found_remove = frappe._dict()
+
+	#frappe.local.meteor_map_path = None
+	#frappe.local.meteor_Templates = None
+	#frappe.local.meteor_dynamic_templates_remove = frappe._dict()
+	#frappe.local.jinja_blocks = None
+	#frappe.local.meteor_ignores = None
+	#frappe.local.templates_found_add = frappe._dict()
+	#frappe.local.templates_found_remove = frappe._dict()
 
 	frappe.local.meteor_map_templates = OrderedDict()
 	frappe.local.templates_referenced = []
@@ -192,12 +196,12 @@ def fluorine_build_context(context, whatfor):
 	#{"template": template_path, "tname": tname}
 	frappe.local.context.current_xhtml_template = None
 	#for to add used meteor templates
-	frappe.local.context.files_to_add = frappe._dict()
-	frappe.local.context.files_to_remove = frappe._dict()
+	#frappe.local.context.files_to_add = frappe._dict()
+	#frappe.local.context.files_to_remove = frappe._dict()
 
 	#for to add compiled fluorine xhtml templates
-	frappe.local.files_to_add = frappe._dict()
-	frappe.local.files_to_remove = frappe._dict()
+	#frappe.local.files_to_add = frappe._dict()
+	#frappe.local.files_to_remove = frappe._dict()
 
 	frappe.local.page_relations = frappe._dict()
 
@@ -208,14 +212,14 @@ def fluorine_build_context(context, whatfor):
 
 	path_reactivity = get_path_reactivity()
 
-	frappe.local.meteor_ignores = list_ignores.get(whatfor)
+	#frappe.local.meteor_ignores = list_ignores.get(whatfor)
 
 
 	context.page_relations = meteor_config.get("page_relations", True)
 
 	#apps current dev app is in last
 	apps = get_active_apps(whatfor)
-
+	frappe.local.active_apps = apps
 	#go from current dev app then last installed app to first installed app in order.
 	known_apps = apps[::-1]
 
