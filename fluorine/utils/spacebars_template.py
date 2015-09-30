@@ -246,7 +246,7 @@ def fluorine_build_context(context, whatfor):
 
 def process_react_templates(apps, whatfor, context, reactivity_dst_path, custom_pattern=None):
 	from fluorine.utils.context import get_app_jinja_files_to_process
-	from fluorine.utils.api import Api, filter_api_list_members
+	from fluorine.utils.api import Api, filter_api_list_files_members
 	from shutil import rmtree
 	from fluorine.utils.file import make_public, get_path_reactivity
 	from fluorine.utils.react_file_loader import get_default_custom_pattern

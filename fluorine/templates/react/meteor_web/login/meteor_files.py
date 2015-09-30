@@ -32,7 +32,6 @@ def get_meteor_template_files(api, whatfor, template_name, context):
 		getattr(module, template_name)(api, whatfor, context)
 
 
-
 def forgot_password(api, whatfor, context):
 	for add_file in ("forgot.js",):
 		prefix = "client/forgot_password"

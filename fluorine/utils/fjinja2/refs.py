@@ -167,7 +167,7 @@ def add_to_path(template, refs, tcont, whatfor, context, parent_package):
 
 
 def export_meteor_template(appname, whatfor, template_path, tname, context, package_apis):
-	from fluorine.utils.api import Api, filter_api_list_members
+	from fluorine.utils.api import Api, filter_api_list_files_members, filter_api_list_assets_members
 	from fluorine.utils.context import get_app_meteor_template_files_to_process
 
 
@@ -181,20 +181,22 @@ def export_meteor_template(appname, whatfor, template_path, tname, context, pack
 	api.set_meteor_template_name(tname)
 	api.set_fluorine_template_name(template_path)
 	get_app_meteor_template_files_to_process(appname, whatfor, template_path, tname, api, context)
-	filter_api_list_members(api, package_apis)
+	filter_api_list_files_members(api, package_apis)
+	filter_api_list_assets_members(api, package_apis)
 	package_apis.append(api)
 
 	return api
 
 def export_fluorine_template(appname, whatfor, template_path, context, package_apis):
-	from fluorine.utils.api import Api, filter_api_list_members
+	from fluorine.utils.api import Api, filter_api_list_files_members, filter_api_list_assets_members
 	from fluorine.utils.context import get_app_fluorine_template_files_to_process
 
 
 	api = Api(appname, whatfor, devmode=context.developer_mode)
 	api.set_fluorine_template_name(template_path)
 	get_app_fluorine_template_files_to_process(appname, whatfor, template_path, api, context)
-	filter_api_list_members(api, package_apis)
+	filter_api_list_files_members(api, package_apis)
+	filter_api_list_assets_members(api, package_apis)
 	package_apis.append(api)
 
 	return api

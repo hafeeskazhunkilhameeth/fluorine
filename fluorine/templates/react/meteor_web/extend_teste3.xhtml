@@ -14,7 +14,7 @@
 {%- meteor teste10 -%}
 <template name="teste10">
     {% do "teste log 10" | mlog %}
-    {% do mtkeep(patterns=["javascript/.*\.js$"]) %}
+    {% do mtkeep(patterns=["client/teste10/javascript/.*\.js$"]) %}
     <p>From Fluorine teste10 template!!!</p>
     {{ msuper(adeep=2) }}
 </template>

@@ -55,8 +55,9 @@ class Api(object):
 	def __init__(self, app, whatfor, devmode=True):
 		self.developer_mode = devmode
 		self.dict_jinja_files = frappe._dict()
-		self.dict_final_files_add = frappe._dict()
 		self.dict_final_assets_add = frappe._dict()
+		self.dict_final_assets_remove = frappe._dict()
+		self.dict_final_files_add = frappe._dict()
 		self.dict_final_files_remove = frappe._dict()
 		self.dict_packages = frappe._dict()
 		self.app = app
@@ -207,7 +208,16 @@ class Api(object):
 			real_path = self.get_real_path(app, new_prefix, file)
 			#self.list_final_files_remove.append(final_path)
 			#self.dict_final_files_add[real_path] = {"relative_path": os.path.join(new_prefix, file), "app": app}
-			self.dict_final_files_add[real_path] = frappe._dict({"relative_path": new_prefix, "internal_path": file, "app": app})
+			self.dict_final_files_remove[real_path] = frappe._dict({"relative_path": new_prefix, "internal_path": file, "app": app})
+
+	def removeAssets(self, files, app=None):
+		app, files = self.get_processed_input_data(app, files)
+		for file in files:
+			new_prefix = self.change_file_path_if_not_relative(file)
+			real_path = self.get_real_path(app, new_prefix, file)
+			#self.list_final_files_remove.append(final_path)
+			#self.dict_final_files_add[real_path] = {"relative_path": os.path.join(new_prefix, file), "app": app}
+			self.dict_final_assets_remove[real_path] = frappe._dict({"relative_path": new_prefix, "internal_path": file, "app": app})
 
 
 	def is_developer_mode(self):
@@ -244,6 +254,9 @@ class Api(object):
 	def get_dict_final_Assets_add(self):
 		return self.dict_final_assets_add
 
+	def get_dict_final_Assets_remove(self):
+		return self.dict_final_assets_remove
+
 	def get_dict_final_files_add(self):
 		return self.dict_final_files_add
 
@@ -251,18 +264,30 @@ class Api(object):
 		return self.dict_final_files_remove
 
 	def filter_add_new_dict_members(self, original_dict_files_to_remove):
+		self._filter_add_new_dict_members(original_dict_files_to_remove, self.dict_final_files_add)
+
+	def _filter_add_new_dict_members(self, original_dict_files_to_remove, dict_files_add):
 		list_original_files_to_remove = original_dict_files_to_remove.keys()
-		for new_file in self.dict_final_files_add.keys():
+		for new_file in dict_files_add.keys():
 			if new_file in list_original_files_to_remove:
-				self.dict_final_files_add.pop(new_file, None)
+				dict_files_add.pop(new_file, None)
 
 	def filter_remove_new_dict_members(self, original_dict_files_to_add):
+		self._filter_remove_new_dict_members(original_dict_files_to_add, self.dict_final_files_remove)
+
+	def _filter_remove_new_dict_members(self, original_dict_files_to_add, dict_files_remove):
 		list_original_files_to_add = original_dict_files_to_add.keys()
-		for new_file_folder in self.dict_final_files_remove.keys():
+		for new_file_folder in dict_files_remove.keys():
 			for orig_file in list_original_files_to_add:
 				if new_file_folder == orig_file or orig_file.startswith(new_file_folder):
-					self.dict_final_files_remove.pop(file, None)
+					dict_files_remove.pop(file, None)
 					break
+
+	def filter_assets_add_new_dict_members(self, original_dict_files_to_remove):
+		self._filter_add_new_dict_members(original_dict_files_to_remove, self.dict_final_files_add)
+
+	def filter_assets_remove_new_dict_members(self, original_dict_files_to_add):
+		self._filter_remove_new_dict_members(original_dict_files_to_add, self.dict_final_files_remove)
 
 	def check_can_remove_final_files(self, file_to_remove):
 		return file_to_remove not in self.dict_final_files_add.keys()
@@ -305,8 +330,15 @@ class Api(object):
 		print "package.js %s" % config
 
 
-def filter_api_list_members(api, original_list_apis):
+def filter_api_list_files_members(api, original_list_apis):
 
 	for app_api in original_list_apis:
 		api.filter_add_new_dict_members(app_api.get_dict_final_files_remove())
 		api.filter_remove_new_dict_members(app_api.get_dict_final_files_add())
+
+
+def filter_api_list_assets_members(api, original_list_apis):
+
+	for app_api in original_list_apis:
+		api.filter_assets_add_new_dict_members(app_api.get_dict_final_files_remove())
+		api.filter_assets_remove_new_dict_members(app_api.get_dict_final_Assets_add())

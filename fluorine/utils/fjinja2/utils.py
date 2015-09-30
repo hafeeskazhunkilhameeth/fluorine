@@ -64,22 +64,23 @@ def tkeep(ctx, patterns):
 
 	#tpath = relpath.rsplit(".", 1)[0]
 	package_name = parent_obj.get("package_name")
-	print "appname %s tname %s template_path %s and ref %s" % (appname, tname, template_path, ref)
+	#print "appname %s tname %s template_path %s and ref %s package_name %s whatfor %s" % (parent_appname, tname, template_path, ref, package_name, ctx.get("whatfor"))
 	package = frappe.local.packages.get(package_name)
 	api = export_meteor_template(parent_appname, ctx.get("whatfor"), ref, tname, frappe._dict(ctx), package.apis)
 
-	#TODO fazer o check para assets.
 	tokeep = []
 	dict_files_added = api.get_dict_final_files_add()
 	for add_file_path, add_file_path_obj in dict_files_added.iteritems():
 		for pattern in patterns:
 			if re.match(pattern, add_file_path_obj.get("internal_path")):
 				tokeep.append(add_file_path)
+				#print "to keep %s " % add_file_path
 				break
 
 	for add_file_path, add_file_path_obj in dict_files_added.iteritems():
 		if add_file_path not in tokeep:
 			dict_files_added.pop(add_file_path, None)
+			#print "a remover from tokeep %s " % add_file_path
 
 
 	tokeep = []
@@ -97,7 +98,6 @@ def tkeep(ctx, patterns):
 		#pattern = "%s/.*/?%s/%s" % (tpath, tname, pattern)
 		#print "pattern to use %s" % pattern
 		#p = c(pattern)
-
 		#appname_files_folder_add.add(p)
 	#export_meteor_template_out(tname, template_path)
 	#print "tname {} template_real_path {} pattern {}".format(obj.get("tname"), obj.get("template"), patterns)
