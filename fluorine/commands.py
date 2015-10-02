@@ -222,7 +222,8 @@ def cmd_reset_meteor_packages(app=None, site=None):
 		if not is_valid_fluorine_app(app):
 			click.echo("Sorry. App %s does not exist as meteor app." % app)
 			return
-		_reset_packages(app, file_add=file_add, file_remove=file_remove)
+		for whatfor in whatfor_all:
+			_reset_packages(app, whatfor, file_add=file_add, file_remove=file_remove)
 	else:
 		_reset_packages_all(file_add=file_add, file_remove=file_remove)
 
@@ -236,13 +237,14 @@ def cmd_create_meteor_apps():
 @click.command('get-apps-packages-list')
 @click.option('--custom-file-to-add', default=None, help='Name of the custom file with packages to add.')
 @click.option('--custom-file-to-remove', default=None, help='Name of the custom file with packages to remove.')
-def cmd_get_apps_packages_list(custom_file_to_add=None, custom_file_to_remove=None):
+@click.option('--only-installed', help='Name of the custom file with packages to remove.', is_flag=True)
+def cmd_get_apps_packages_list(custom_file_to_add=None, custom_file_to_remove=None, only_installed=None):
 	"""Get a list of packages to install and to remove by meteor app. This also show the packages already installed."""
 	from fluorine.utils.meteor.packages import print_meteor_packages_list, get_package_list_updates
 
 	curr_app = get_current_dev_app()
 	for whatfor in whatfor_all:
-		pckg_add, pckg_remove, i_pckgs = get_package_list_updates(curr_app, whatfor, file_add=custom_file_to_add, file_remove=custom_file_to_remove)
+		pckg_add, pckg_remove, i_pckgs = get_package_list_updates(curr_app, whatfor, file_add=custom_file_to_add, file_remove=custom_file_to_remove, only_installed=only_installed)
 		print_meteor_packages_list(whatfor, pckg_add, pckg_remove, i_pckgs)
 
 @click.command('get-current-state')

@@ -95,7 +95,7 @@ def meteor_package(whatfor, packages, path_reactivity=None, action="add"):
 
 	return False
 
-
+"""
 def _meteor_package(whatfor, packages, path_reactivity=None, action="add"):
 	import subprocess, re
 	from fluorine.utils.file import get_path_reactivity, save_file
@@ -134,11 +134,38 @@ def _meteor_package(whatfor, packages, path_reactivity=None, action="add"):
 		return True
 
 	return False
+"""
+
+def get_packages_list_version(whatfor, path_reactivity=None, only_installed=False):
+	import click, re
+
+	if not path_reactivity:
+		from fluorine.utils.file import get_path_reactivity
+		path_reactivity = get_path_reactivity()
+
+	cwd = os.path.join(path_reactivity, whatfor)
+	click.echo("%s: Getting meteor installed packages. Please wait." % whatfor)
+	meteor_package_version_path = os.path.join(cwd, ".meteor", "versions")
+	package_list_version = frappe.get_file_items(meteor_package_version_path)
+
+	if only_installed:
+		meteor_package_path = os.path.join(cwd, ".meteor", "packages")
+		meteor_packages = frappe.get_file_items(meteor_package_path)
+		for version_pckg in package_list_version[:]:
+			found = False
+			for i_pckg in meteor_packages:
+				re_packg = re.match("%s@=?\d+\.\d+\.\d+(?:.*)?" % i_pckg, version_pckg, re.S)
+				if re_packg:
+					found = True
+			if not found:
+				package_list_version.remove(version_pckg)
 
 
+	return package_list_version
 
 
-def get_packages_list_version(whatfor, path_reactivity=None):
+"""
+def _get_packages_list_version(whatfor, path_reactivity=None):
 	import subprocess, click, re
 
 	if not path_reactivity:
@@ -158,7 +185,7 @@ def get_packages_list_version(whatfor, path_reactivity=None):
 			pkg_list.append("%s@=%s" %(p[0], re.sub(r"[^\d.|^_]+", "", p[1])))
 
 	return pkg_list
-
+"""
 
 def get_packages_file(app, package_name):
 
@@ -270,7 +297,7 @@ def get_list_packages_to_install_by_apps(curr_app, whatfor, file_add=None, file_
 	return packages_to_add, packages_to_remove
 
 
-def get_package_list_updates(curr_app, whatfor, file_add=None, file_remove=None):
+def get_package_list_updates(curr_app, whatfor, file_add=None, file_remove=None, only_installed=False):
 	from fluorine.utils.file import get_path_reactivity
 	from fluorine.utils.apps import get_active_apps
 	import re
@@ -280,7 +307,7 @@ def get_package_list_updates(curr_app, whatfor, file_add=None, file_remove=None)
 	package_add, package_remove = get_list_packages_to_install_by_apps(curr_app, whatfor, file_add=file_add, file_remove=file_remove)
 
 	react_path = get_path_reactivity()
-	installed_packages = get_packages_list_version(whatfor, path_reactivity=react_path)
+	installed_packages = get_packages_list_version(whatfor, path_reactivity=react_path, only_installed=only_installed)
 
 	apps = get_active_apps(whatfor)
 	apps.remove(curr_app)
