@@ -281,11 +281,10 @@ def make_file_map_site():
 
 	fluorine_common_data.file_map_site = file_map_site
 
-	return
 
 
 def get_file_map_site():
-	return fluorine_common_data.file_mape_site
+	return fluorine_common_data.file_map_site
 
 
 def get_meteor_path(whatfor):
@@ -328,5 +327,5 @@ if check_dev_mode():
 	#prepare_environment()
 	import reactivity
 else:
-	get_file_map_site()
+	make_file_map_site()
 

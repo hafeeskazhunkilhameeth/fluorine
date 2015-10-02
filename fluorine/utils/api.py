@@ -193,13 +193,23 @@ class Api(object):
 			#self.dict_jinja_files[real_path] = {"relative_path": os.path.join(new_prefix, file), "ext_out": out_ext, "export": export, "prefix": new_prefix}
 			self.dict_jinja_files[real_path] = frappe._dict({"relative_path": new_prefix, "internal_path": file, "ext_out": out_ext, "export": export, "prefix": new_prefix})
 
-	def addPackages(self, files):
+	def _addPackages(self, files):
 		app, files = self.get_processed_input_data(self.app, files)
 		for file in files:
 			new_prefix = self.change_file_path_if_not_relative(file)
 			real_path = self.get_real_path(app, new_prefix, file)
 			package_folder_name = file.rsplit("/", 1)[1]
 			self.dict_packages[real_path] = frappe._dict({"relative_path": new_prefix, "internal_path": file, "folder_name": package_folder_name})
+
+	#add packages only if it is installed
+	def addPackages(self, packages):
+		from fluorine.utils.meteor.packages import filterPackagesApi
+
+		if isinstance(packages, dict):
+			packages = [packages]
+
+		packages_to_add = filterPackagesApi(self.whatfor, packages)
+		self._addPackages(packages_to_add)
 
 	def removeFiles(self, files, app=None):
 		app, files = self.get_processed_input_data(app, files)

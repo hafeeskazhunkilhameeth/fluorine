@@ -9,7 +9,7 @@ from frappe.model.document import Document
 class FluorineSiteNames(Document):
 
 	def validate(self, method=None):
-		from fluorine.utils import is_valid_site
+		from fluorine.utils import is_valid_site, update_file_map_site
 
 
 		if not is_valid_site(self.fluorine_site_name):
@@ -19,7 +19,7 @@ class FluorineSiteNames(Document):
 
 			if not self.fluorine_ddp_conn_url or self.fluorine_ddp_conn_url.strip() == "":
 				return frappe.throw("For Dedicated site you must provide a valid DDP ip/url for desk app.")
-			elif not self.fluorine_site_root_prefix or self.fluorine_site_root_prefix.strip() == "":
+			elif not self.fluorine_desk_site_root_prefix or self.fluorine_desk_site_root_prefix.strip() == "":
 				return frappe.throw("For Dedicated site you must provide a valid root url path prefix for desk app.")
 
 			len_tables_ips = len(self.fluorine_table_site_addr)
@@ -42,6 +42,12 @@ class FluorineSiteNames(Document):
 					if site.fluorine_site_name == self.name:
 						frappe.throw("It is not permited to have itself as depend.")
 
+					#frappe.cache().set_value("fluorine:site:%s" % site.fluorine_site_name, self.name)
+					update_file_map_site({site.fluorine_site_name: self.name})
+
+			#frappe.cache().set_value("fluorine:site:%s" % self.name, self.name)
+			update_file_map_site({self.name: self.name})
+
 		else:
 			if not self.fluorine_site_depends_of_name or self.fluorine_site_depends_of_name.strip() == "":
 				return frappe.throw("For integrated site you must provide a valid depend of site.")
@@ -52,4 +58,5 @@ class FluorineSiteNames(Document):
 				doc = frappe.get_doc("Fluorine Site Names", depend_of)
 				if doc.fluorine_site_type == "Integrated":
 					return frappe.throw("Sorry, but you must depend only of Dedicated sites.")
+
 

@@ -1,13 +1,19 @@
 __author__ = 'luissaguas'
 
 from fluorine.utils import meteor_web_app, meteor_desk_app
+import frappe
 
 
 def get_files(api, whatfor):
+	from fluorine.utils.meteor.packages import filterPackagesApi
 	if whatfor == meteor_web_app:
 		get_web_files(api)
 	else:
 		get_desk_files(api)
+
+	package_simple = frappe._dict({"name":"fluorine:simple", "path": "meteor_web/packages/simple"})
+	list_packages = [package_simple]
+	filterPackagesApi(whatfor, api, list_packages)
 
 def get_web_files(api):
 
@@ -35,7 +41,8 @@ def get_web_files(api):
 	api.addFiles("../common_site_config.json", type="private")
 	api.addFiles("meteor_web/tests", type="tests")
 
-	api.addPackages("meteor_web/packages/simple")
+	#api.addPackages("meteor_web/packages/simple")
+	api.addPackages({"name":"fluorine:simple", "path": "meteor_web/packages/simple"})
 	#api.imply("less")
 	#api.imply("amplify")
 	#api.export("ReactionCore")
@@ -43,6 +50,7 @@ def get_web_files(api):
 	#api.addFiles("templates/teste3.xhtml", app="base_vat")
 	#api.addFiles("/fixtures/custom_field.json", app="jasper_erpnext_report")
 	#api.addFiles("/modules.txt")
+
 
 def get_desk_files(api):
 

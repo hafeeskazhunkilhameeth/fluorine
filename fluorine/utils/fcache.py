@@ -63,3 +63,28 @@ def get_cached_value(sessionId):
 		data = file.read_file("hook_help.txt")
 
 	return data
+
+"""
+def save_sites_to_cache(link_sites):
+
+	for site in link_sites:
+		dedicated_name = site.fluorine_site_name
+		frappe.cache().set_value("fluorine:site:%s" % dedicated_name, dedicated_name)
+		doc_fluorine_site = frappe.get_doc("Fluorine Site Names", dedicated_name)
+		sites_dependents = doc_fluorine_site.fluorine_table_site_dependents
+		for site_dependent in sites_dependents:
+			site_dependents_name = site_dependent.fluorine_site_name
+			frappe.cache().set_value("fluorine:site:%s" % site_dependents_name, dedicated_name)
+
+
+def get_dedicated_site_name(current_site):
+
+	site_name = frappe.cache().get_value("fluorine:site:%s" % current_site)
+	if not site_name:
+		doc_fluorine_reactivity = frappe.get_doc("Fluorine Reactivity")
+		link_sites = doc_fluorine_reactivity.fluorine_link_sites
+		save_sites_to_cache(link_sites)
+		site_name = frappe.cache().get_value("fluorine:site:%s" % current_site)
+
+	return site_name
+"""

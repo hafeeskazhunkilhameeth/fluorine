@@ -133,6 +133,7 @@ def prepare_common_page_context(context, whatfor):
 	from fluorine.utils import jquery_include
 	from fluorine.utils.meteor.utils import build_meteor_context
 
+
 	context.jquery_include = jquery_include()
 
 	#Meteor

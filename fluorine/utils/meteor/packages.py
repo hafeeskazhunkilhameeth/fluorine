@@ -402,10 +402,6 @@ def process_meteor_packages_from_apps_first(whatfor):
 					copy_file_package_to_meteor_packages(app, dir, whatfor, list_api_addFile)
 
 
-def process_meteor_packages_from_apps(whatfor):
-
-	copy_file_package_to_meteor_packages(app, dir, whatfor, list_api_addFile)
-
 
 def copy_file_package_to_meteor_packages(app, dir, whatfor, list_api_addFile):
 	from fluorine.utils.file import get_path_reactivity
@@ -445,3 +441,22 @@ def copy_file_package_to_meteor_packages(app, dir, whatfor, list_api_addFile):
 	frappe.create_folder(os.path.dirname(dest_package_path))
 	os.symlink(os.path.join(app_packages_path, dir, "package.js"), os.path.join(dest_meteor_packages_path, dir, "package.js"))
 
+
+#don't each package don't use name without @version
+#this add a package to api only if package is installed
+def filterPackagesApi(whatfor, packages):
+	from fluorine.utils.file import get_path_reactivity
+	import os, re
+
+	path_reactivity = get_path_reactivity()
+	packages_to_add = []
+	cwd = os.path.join(path_reactivity, whatfor)
+	meteor_packages = frappe.get_file_items(os.path.join(cwd, ".meteor", "packages"))
+	for pckg in set(packages):
+		for i_pckg in meteor_packages:
+			if re.match(pckg.name, i_pckg):
+				packages_to_add.append(pckg.path)
+				print "{}: {} already exist - no action was taken. Try to update.".format(whatfor, pckg.name)
+				break
+
+	return packages_to_add

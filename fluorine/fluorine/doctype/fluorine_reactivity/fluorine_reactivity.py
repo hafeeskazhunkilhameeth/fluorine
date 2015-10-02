@@ -11,6 +11,7 @@ class FluorineReactivity(Document):
 
 	def on_update(self, method=None):
 		from fluorine.utils.reactivity import meteor_config
+		from fluorine.utils.spacebars_template import save_sites_to_cache
 
 		meteor_config["developer_mode"] = self.fluor_dev_mode
 		if self.current_dev_app and self.current_dev_app.strip() != "":
