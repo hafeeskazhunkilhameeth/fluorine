@@ -5,15 +5,11 @@ import frappe
 
 
 def get_files(api, whatfor):
-	from fluorine.utils.meteor.packages import filterPackagesApi
 	if whatfor == meteor_web_app:
 		get_web_files(api)
 	else:
 		get_desk_files(api)
 
-	package_simple = frappe._dict({"name":"fluorine:simple", "path": "meteor_web/packages/simple"})
-	list_packages = [package_simple]
-	filterPackagesApi(whatfor, api, list_packages)
 
 def get_web_files(api):
 
@@ -41,8 +37,10 @@ def get_web_files(api):
 	api.addFiles("../common_site_config.json", type="private")
 	api.addFiles("meteor_web/tests", type="tests")
 
+
 	#api.addPackages("meteor_web/packages/simple")
-	api.addPackages({"name":"fluorine:simple", "path": "meteor_web/packages/simple"})
+	package_simple = frappe._dict({"name":"fluorine:simple", "path": "meteor_web/packages/simple"})
+	api.addPackages(package_simple)
 	#api.imply("less")
 	#api.imply("amplify")
 	#api.export("ReactionCore")
