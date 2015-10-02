@@ -46,23 +46,75 @@ def cmd_packages_from(curr_app, whatfor, package_file_name):
 	return set(installed_packages).difference(packages_to_remove)
 
 
+meteor_package_message =\
+"""
+# Meteor packages used by this project, one per line.
+# Check this file (and the other files in this directory) into your repository.
+#
+# 'meteor add' and 'meteor remove' will edit this file for you,
+# but you can also edit it by hand.
+
+"""
+
+
+
 def meteor_package(whatfor, packages, path_reactivity=None, action="add"):
-	import subprocess, re
+	import re
+	from fluorine.utils.file import get_path_reactivity, save_file
 
 	if not path_reactivity:
-		from fluorine.utils.file import get_path_reactivity
 		path_reactivity = get_path_reactivity()
 
 	cwd = os.path.join(path_reactivity, whatfor)
 	if packages:
-		meteor_packages = frappe.get_file_items(os.path.join(cwd, ".meteor", "packages"))
+		meteor_package_path = os.path.join(cwd, ".meteor", "packages")
+		meteor_packages = frappe.get_file_items(meteor_package_path)
+
+		#NOTE: Only add packages that do not exist or remove packages that exist
+
+		for pckg in set(packages):
+			found = False
+			for i_pckg in meteor_packages[:]:
+				re_packg = re.match("%s@=?\d+\.\d+\.\d+(?:.*)?" % i_pckg, pckg, re.S)
+				if re_packg:
+					if action == "remove":
+						meteor_packages.remove(i_pckg)
+						print "{}: {} removed.".format(whatfor, pckg)
+					found = True
+					break
+			if not found and action == "add":
+				re_packg = re.match("(.*)@=?\d+\.\d+\.\d+(?:.*)?", pckg, re.S)
+				if re_packg:
+					pckg = re_packg.group(1)
+				meteor_packages.append(pckg)
+				print "{}: {} added.".format(whatfor, pckg)
+
+		save_file(meteor_package_path, "%s\n%s" % (meteor_package_message, "\n".join(meteor_packages)))
+
+		return True
+
+	return False
+
+
+def _meteor_package(whatfor, packages, path_reactivity=None, action="add"):
+	import subprocess, re
+	from fluorine.utils.file import get_path_reactivity, save_file
+
+	if not path_reactivity:
+		path_reactivity = get_path_reactivity()
+
+	cwd = os.path.join(path_reactivity, whatfor)
+	if packages:
+		meteor_package_path = os.path.join(cwd, ".meteor", "packages")
+		meteor_packages = frappe.get_file_items(meteor_package_path)
 
 		#NOTE: Only add packages that do not exist or remove packages that exist
 
 		for pckg in set(packages):
 			found = False
 			for i_pckg in meteor_packages:
-				if re.match(pckg, i_pckg):
+				re_packg = re.match("%s@\d+\.\d+\.\d+_?\d?" % i_pckg, pckg, re.S)
+				if re_packg:
 					if action == "add":
 						packages.remove(pckg)
 						print "{}: {} already exist - no action was taken. Try to update.".format(whatfor, pckg)
@@ -82,6 +134,8 @@ def meteor_package(whatfor, packages, path_reactivity=None, action="add"):
 		return True
 
 	return False
+
+
 
 
 def get_packages_list_version(whatfor, path_reactivity=None):
@@ -452,7 +506,8 @@ def filterPackagesApi(whatfor, packages):
 	packages_to_add = []
 	cwd = os.path.join(path_reactivity, whatfor)
 	meteor_packages = frappe.get_file_items(os.path.join(cwd, ".meteor", "packages"))
-	for pckg in set(packages):
+	for pckg in packages:
+		pckg = frappe._dict(pckg)
 		for i_pckg in meteor_packages:
 			if re.match(pckg.name, i_pckg):
 				packages_to_add.append(pckg.path)

@@ -39,7 +39,7 @@ def get_web_files(api):
 
 
 	#api.addPackages("meteor_web/packages/simple")
-	package_simple = frappe._dict({"name":"fluorine:simple", "path": "meteor_web/packages/simple"})
+	package_simple = {"name":"fluorine:simple", "path": "meteor_web/packages/simple"}
 	api.addPackages(package_simple)
 	#api.imply("less")
 	#api.imply("amplify")
