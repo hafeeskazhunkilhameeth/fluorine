@@ -21,17 +21,20 @@ def get_common_config_file_json():
 
 
 def make_meteor_file(site, mtport=3070, mthost="http://127.0.0.1", architecture="os.linux.x86_64", whatfor=None):
-	from fluorine.utils import meteor_web_app, get_meteor_final_name
+	from fluorine.utils import meteor_web_app, get_meteor_final_name, get_meteor_folder_for_site
 	import shlex
 
 	whatfor = whatfor or meteor_web_app
 
 	final_app_name = get_meteor_final_name(site, whatfor)
 	path = get_path_reactivity()
+
+	folder = get_meteor_folder_for_site(whatfor, frappe.local.site)
+	cwd = os.path.join(path, folder)
 	args = shlex.split("meteor build --directory %s --server %s --architecture %s %s" % (os.path.join(path, final_app_name), mthost + ':' + str(mtport), architecture,
 																						"--debug" if whatfor == "meteor_app" else ""))
 	print "start make meteor... {}".format(whatfor)
-	subprocess.call(args, cwd=os.path.join(path, whatfor), close_fds=True)
+	subprocess.call(args, cwd=cwd, close_fds=True)
 
 
 def remove_file(file):
@@ -91,10 +94,12 @@ def get_path_fluorine(file):
 	file_path = os.path.join(module_path, file)
 	return file_path
 
+"""
 def get_path_server_observe():
 	path_reactivity = get_path_reactivity()
 	path = os.path.join(path_reactivity, "app", "server")
 	return path
+"""
 
 def get_path_reactivity():
 	frappe_module = os.path.dirname(frappe.__file__)
@@ -199,11 +204,13 @@ def copy_meteor_languages(start_folders, dest_folder, appname, psf_out, custom_p
 					pass
 
 def copy_project_translation(apps, whatfor, pfs_out, custom_pattern=None):
+	from fluorine.utils import get_meteor_folder_for_site
 
+	folder = get_meteor_folder_for_site(whatfor, frappe.local.site)
 	path_reactivity = get_path_reactivity()
 	i18n_files_route = "tap-i18n"
 	project_file = "project-tap.i18n"
-	destpath = os.path.join(path_reactivity, whatfor, project_file)
+	destpath = os.path.join(path_reactivity, folder, project_file)
 
 	#from first installed to the last installed
 	for app in apps:
@@ -224,10 +231,12 @@ def copy_project_translation(apps, whatfor, pfs_out, custom_pattern=None):
 Get the mobile-config.js from current-app. If not exists then copy from the most recent app to the last.
 """
 def copy_mobile_config_file(apps, whatfor):
+	from fluorine.utils import get_meteor_folder_for_site
 
+	folder = get_meteor_folder_for_site(whatfor, frappe.local.site)
 	mobile_file = "mobile-config.js"
 	path_reactivity = get_path_reactivity()
-	destpath = os.path.join(path_reactivity, whatfor, mobile_file)
+	destpath = os.path.join(path_reactivity, folder, mobile_file)
 
 	#from more recent to last.
 	for app in apps:

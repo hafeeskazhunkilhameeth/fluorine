@@ -5,9 +5,10 @@ from fluorine.utils.mongodb.utils import get_mongo_exports
 import os
 
 def save_to_procfile(doc, site, production_debug=False):
+	import frappe
 	from fluorine.utils.file import writelines
 	from fluorine.commands_helpers.meteor import get_meteor_settings
-	from fluorine.utils import get_meteor_final_name
+	from fluorine.utils import get_meteor_final_name, get_meteor_folder_for_site
 
 
 	procfile, procfile_path = get_procfile(site)
@@ -19,8 +20,9 @@ def save_to_procfile(doc, site, production_debug=False):
 		if production_debug:
 			final_app = get_meteor_final_name(site, app)
 			procfile.insert(0, "%s: (cd apps/reactivity/%s/bundle && ./exec_meteor)\n" %
-							(final_app.replace(".","_"), final_app.replace(".","_")))
+							(final_app, final_app))
 		else:
+			folder = get_meteor_folder_for_site(app, frappe.local.site)
 			if app == "meteor_web" and mongo_default:
 				exp_mongo = ""
 			else:
@@ -28,7 +30,7 @@ def save_to_procfile(doc, site, production_debug=False):
 
 			msf= get_meteor_settings(app)
 			procfile.insert(0, "%s: (%s%s && export ROOT_URL=%s && cd apps/reactivity/%s && meteor --port %s%s)\n" %
-							(app, exp_mongo, forwarded_count, mthost, app, mtport, msf))
+							(folder, exp_mongo, forwarded_count, mthost, folder, mtport, msf))
 
 		writelines(procfile_path, procfile)
 
@@ -38,7 +40,8 @@ def get_procfile(site):
 	from fluorine.utils.fjinja2.utils import c
 
 	sitename = site.replace(".", "_")
-	re_meteor_procfile = c(r"^(meteor_app:|meteor_web:|final_app_%s:|final_web_%s:)" % (sitename, sitename))
+	re_meteor_procfile = c(r"^(meteor_app_%s:|meteor_web_%s:|final_app_%s:|final_web_%s:)" % (sitename, sitename, sitename, sitename))
+	#re_meteor_procfile = c(r"^(meteor_app(.*):|meteor_web(.*):|final_app(.*):|final_web(.*):)")
 	procfile_dir = os.path.normpath(os.path.join(os.getcwd(), ".."))
 	procfile_path = os.path.join(procfile_dir, "Procfile")
 

@@ -171,7 +171,7 @@ def get_web_pages(context):
 def fluorine_build_context(context, whatfor):
 	from fluorine.utils.debug import make_page_relations
 	from fluorine.utils.apps import get_active_apps
-	from fluorine.utils import meteor_web_app, meteor_config
+	from fluorine.utils import meteor_web_app, meteor_config, get_meteor_folder_for_site
 	from file import make_all_files_with_symlink, empty_directory, get_path_reactivity, copy_project_translation,\
 		copy_mobile_config_file
 	#from fluorine.utils.permission_file import list_ignores
@@ -226,7 +226,8 @@ def fluorine_build_context(context, whatfor):
 
 	custom_pattern = get_custom_pattern(whatfor, custom_pattern=None)
 
-	fluorine_publicjs_dst_path = os.path.join(path_reactivity, whatfor)
+	folder = get_meteor_folder_for_site(whatfor, frappe.local.site)
+	fluorine_publicjs_dst_path = os.path.join(path_reactivity, folder)
 	process_react_templates(known_apps, whatfor, context, fluorine_publicjs_dst_path, custom_pattern=None)
 
 	#do not revert apps. Use from first installed app to current dev app
@@ -250,6 +251,7 @@ def fluorine_build_context(context, whatfor):
 
 
 def process_react_templates(apps, whatfor, context, reactivity_dst_path, custom_pattern=None):
+	from fluorine.utils import get_meteor_folder_for_site
 	from fluorine.utils.context import get_app_jinja_files_to_process
 	from fluorine.utils.api import Api, filter_api_list_files_members
 	from shutil import rmtree
@@ -266,6 +268,9 @@ def process_react_templates(apps, whatfor, context, reactivity_dst_path, custom_
 			addto_meteor_templates_list(jinja_template_path, package_name=package_name, ext_out=fobj.get("ext_out"))
 			set_refs_package_name(jinja_template_path, package_name)
 
+	folder = get_meteor_folder_for_site(whatfor, frappe.local.site)
+	dst_public_assets_path = os.path.join(get_path_reactivity(), folder, "public", "assets")
+
 	for app in apps:
 		app_path = frappe.get_app_path(app)
 		app_react_path = os.path.join(app_path, "templates", "react")
@@ -278,7 +283,6 @@ def process_react_templates(apps, whatfor, context, reactivity_dst_path, custom_
 			files_dict = api.get_dict_jinja_files()
 			_addto_templates_list(files_dict, "fluorine:core")
 			if api.public_folder == True:
-				dst_public_assets_path = os.path.join(get_path_reactivity(), whatfor, "public", "assets")
 				make_public(app_path, dst_public_assets_path, app, whatfor, custom_pattern=custom_pattern)
 
 			packages = api.get_packages_list()

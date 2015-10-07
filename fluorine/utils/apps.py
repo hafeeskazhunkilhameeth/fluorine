@@ -77,11 +77,13 @@ def get_active_apps(whatfor):
 def check_meteor_apps_created(with_error=True):
 	from fluorine.utils.file import get_path_reactivity
 	from frappe import _
-	from fluorine.utils import meteor_desk_app, meteor_web_app
+	from fluorine.utils import meteor_desk_app, meteor_web_app, get_meteor_folder_for_site
 
+	web_folder = get_meteor_folder_for_site(meteor_web_app, frappe.local.site)
+	desk_folder = get_meteor_folder_for_site(meteor_desk_app, frappe.local.site)
 	path_reactivity = get_path_reactivity()
-	meteor_web = os.path.join(path_reactivity, meteor_web_app, ".meteor")
-	meteor_app = os.path.join(path_reactivity, meteor_desk_app, ".meteor")
+	meteor_web = os.path.join(path_reactivity, web_folder, ".meteor")
+	meteor_app = os.path.join(path_reactivity, desk_folder, ".meteor")
 	msg = "Please install meteor app first. From command line issue 'bench fluorine create-meteor-apps.'"
 	error = False
 

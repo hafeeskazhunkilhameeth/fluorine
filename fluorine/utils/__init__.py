@@ -314,10 +314,19 @@ def get_list_sites():
 
 	return list_sites
 
+def get_dedicated_site(site_name):
+	sites = fluorine_common_data.file_map_site
+	return sites.get(site_name)
+
+def get_meteor_folder_for_site(whatfor, site):
+	dedicated_site = get_dedicated_site(site)
+	folder = "%s_%s" % (whatfor, dedicated_site.replace(".", "_"))
+
+	return folder
 
 bench = "../../bench-repo/"
 make_list_sites(bench=bench)
-
+make_file_map_site()
 
 if check_dev_mode():
 	#PATCH HOOKS
@@ -326,6 +335,6 @@ if check_dev_mode():
 	make_list_installed_packages()
 	#prepare_environment()
 	import reactivity
-else:
-	make_file_map_site()
+#else:
+	#make_file_map_site()
 

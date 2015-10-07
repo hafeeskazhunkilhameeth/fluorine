@@ -65,11 +65,13 @@ meteor_package_message =\
 def meteor_package(whatfor, packages, path_reactivity=None, action="add"):
 	import re
 	from fluorine.utils.file import get_path_reactivity, save_file
+	from fluorine.utils import get_meteor_folder_for_site
 
 	if not path_reactivity:
 		path_reactivity = get_path_reactivity()
 
-	cwd = os.path.join(path_reactivity, whatfor)
+	folder = get_meteor_folder_for_site(whatfor, frappe.local.site)
+	cwd = os.path.join(path_reactivity, folder)
 	if packages:
 		meteor_package_path = os.path.join(cwd, ".meteor", "packages")
 		meteor_packages = frappe.get_file_items(meteor_package_path)
@@ -146,13 +148,15 @@ def _meteor_package(whatfor, packages, path_reactivity=None, action="add"):
 
 def get_packages_list_version(whatfor, path_reactivity=None, only_installed=False):
 	import click, re
+	from fluorine.utils import get_meteor_folder_for_site
 
 	if not path_reactivity:
 		from fluorine.utils.file import get_path_reactivity
 		path_reactivity = get_path_reactivity()
 
-	cwd = os.path.join(path_reactivity, whatfor)
-	click.echo("%s: Getting meteor installed packages. Please wait." % whatfor)
+	folder = get_meteor_folder_for_site(whatfor, frappe.local.site)
+	cwd = os.path.join(path_reactivity, folder)
+	click.echo("%s: Getting meteor installed packages. Please wait." % folder)
 	meteor_package_version_path = os.path.join(cwd, ".meteor", "versions")
 	package_list_version = frappe.get_file_items(meteor_package_version_path)
 
@@ -400,11 +404,16 @@ def get_list_diff(original_list, new_list):
 	return set(original_list).difference(set(new_list))
 
 def make_list_installed_packages():
-	from fluorine.utils import get_meteor_path, fluorine_common_data
+	from fluorine.commands_helpers import get_default_site
+	from fluorine.utils import get_meteor_path, fluorine_common_data, get_meteor_folder_for_site
 	import os
 
+	if not hasattr(frappe.local, "site"):
+		#frappe.local["site"] = get_default_site()
+		frappe.init(get_default_site())
 	for whatfor in whatfor_all:
-		meteor_path = get_meteor_path(whatfor)
+		folder = get_meteor_folder_for_site(whatfor, frappe.local.site)
+		meteor_path = get_meteor_path(folder)
 
 		packages_path = os.path.join(meteor_path, ".meteor", "packages")
 		packages_list = frappe.get_file_items(packages_path)
@@ -497,11 +506,14 @@ def process_meteor_packages_from_apps_first(whatfor):
 
 def copy_file_package_to_meteor_packages(app, dir, whatfor, list_api_addFile):
 	from fluorine.utils.file import get_path_reactivity
+	from fluorine.utils import get_meteor_folder_for_site
 
+
+	folder = get_meteor_folder_for_site(whatfor, frappe.local.site)
 	reactivity_path = get_path_reactivity()
-	dest_meteor_packages_path = os.path.join(reactivity_path, whatfor, "packages")
+	dest_meteor_packages_path = os.path.join(reactivity_path, folder, "packages")
 
-	print "copying... whatfor {} app {} list {}".format(whatfor, app, list_api_addFile)
+	print "copying... whatfor {} app {} list {}".format(folder, app, list_api_addFile)
 	for filepath in list_api_addFile:
 		appname = get_appname_from_package_addFile_directive(filepath, use_default=app)
 		#for root, packg_dirs, files in os.walk(package_start_path):
@@ -538,11 +550,13 @@ def copy_file_package_to_meteor_packages(app, dir, whatfor, list_api_addFile):
 #this add a package to api only if package is installed
 def filterPackagesApi(whatfor, packages):
 	from fluorine.utils.file import get_path_reactivity
+	from fluorine.utils import get_meteor_folder_for_site
 	import os, re
 
+	folder = get_meteor_folder_for_site(whatfor, frappe.local.site)
 	path_reactivity = get_path_reactivity()
 	packages_to_add = []
-	cwd = os.path.join(path_reactivity, whatfor)
+	cwd = os.path.join(path_reactivity, folder)
 	meteor_packages = frappe.get_file_items(os.path.join(cwd, ".meteor", "packages"))
 	for pckg in packages:
 		pckg = frappe._dict(pckg)

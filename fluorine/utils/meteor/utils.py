@@ -19,10 +19,22 @@ default_path_prefix = "/meteordesk"
 PORT = frappe._dict({meteor_web_app: default_port_web, meteor_desk_app: default_port_desk, "port_inc": port_inc})
 
 def meteor_url_path_prefix(whatfor):
+	from fluorine.utils import meteor_config
+
+	site_name = frappe.local.site
+	sites = meteor_config.get("sites")
+	site = sites.get(site_name)
+	if site.get("type") == "Integrated":
+		parent_site = site.get("parent_site")
+		site = meteor_config.get(parent_site)
+
 	if whatfor == meteor_desk_app:
-		url_prefix = default_path_prefix
+		url_prefix = site.get("desk_prefix")
 	else:
-		url_prefix = ""
+		if site.get("web_integration"):
+			url_prefix = site.get("web_prefix")
+		else:
+			url_prefix = ""
 
 	return url_prefix
 
@@ -172,7 +184,7 @@ def meteor_hash_version(manifest, runtimeCfg):
 
 
 def make_meteor_props(context, whatfor, production=False, site=None):
-	from fluorine.utils import get_meteor_runtime_config_path
+	from fluorine.utils import get_meteor_runtime_config_path, get_meteor_folder_for_site
 	from fluorine.utils.file import get_path_reactivity
 
 	path_reactivity = get_path_reactivity()
@@ -185,9 +197,10 @@ def make_meteor_props(context, whatfor, production=False, site=None):
 
 	appId = ""
 	if not production:
-		progarm_path = os.path.join(path_reactivity, whatfor, ".meteor/local/build/programs/web.browser/program.json")
-		config_path = os.path.join(path_reactivity, whatfor, ".meteor/local/build/programs/server/config.json")
-		appId = get_meteor_appId(os.path.join(path_reactivity, whatfor, ".meteor/.id"))
+		folder = get_meteor_folder_for_site(whatfor, frappe.local.site)
+		progarm_path = os.path.join(path_reactivity, folder, ".meteor/local/build/programs/web.browser/program.json")
+		config_path = os.path.join(path_reactivity, folder, ".meteor/local/build/programs/server/config.json")
+		appId = get_meteor_appId(os.path.join(path_reactivity, folder, ".meteor/.id"))
 	else:
 		from fluorine.utils import get_meteor_final_name
 		meteor_final_name = get_meteor_final_name(site, whatfor)

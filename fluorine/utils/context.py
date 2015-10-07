@@ -13,11 +13,13 @@ class MeteorContext(object):
 
 	def meteor_init(self, mongo_custom=False):
 		from fluorine.utils.file import get_path_reactivity
+		from fluorine.utils import get_meteor_folder_for_site
 		from fluorine.commands_helpers.meteor import meteor_run
 
 
 		for app in whatfor_all:
-			app_path = os.path.join(get_path_reactivity(), app)
+			folder = get_meteor_folder_for_site(app, frappe.local.site)
+			app_path = os.path.join(get_path_reactivity(), folder)
 			program_json_path = os.path.join(app_path, ".meteor", "local", "build", "programs", "web.browser", "program.json")
 			if not os.path.exists(program_json_path) and os.path.exists(os.path.join(app_path, ".meteor")):
 				try:

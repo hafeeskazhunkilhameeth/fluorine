@@ -47,10 +47,11 @@ def make_mongodb_default(conf, port=3070, guess_mongodb_port=None):
 		return
 	if not conf.get("meteor_mongo"):
 		import subprocess
-		from fluorine.utils import file
+		from fluorine.utils import file, get_meteor_folder_for_site
 
+		folder = get_meteor_folder_for_site(meteor_web_app, frappe.local.site)
 		path_reactivity = file.get_path_reactivity()
-		meteor_web = os.path.join(path_reactivity, meteor_web_app)
+		meteor_web = os.path.join(path_reactivity, folder)
 		print "getting mongo config please wait..."
 
 		mongodb = None

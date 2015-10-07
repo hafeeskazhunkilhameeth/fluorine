@@ -77,6 +77,7 @@ def copy_common_config(path_reactivity):
 def create_meteor_apps(path_reactivity=None):
 	import subprocess
 	import glob
+	from fluorine.utils import get_meteor_folder_for_site
 
 	if not path_reactivity:
 		from file import get_path_reactivity
@@ -84,15 +85,16 @@ def create_meteor_apps(path_reactivity=None):
 
 	try:
 		for app in whatfor_all:
-			if not os.path.exists(os.path.join(path_reactivity, app)):
-				p = subprocess.Popen(["meteor", "create", app], cwd=path_reactivity, shell=False, close_fds=True)
+			folder = get_meteor_folder_for_site(app, frappe.local.site)
+			if not os.path.exists(os.path.join(path_reactivity, folder)):
+				p = subprocess.Popen(["meteor", "create", folder], cwd=path_reactivity, shell=False, close_fds=True)
 				p.wait()
-				meteor_app = os.path.join(path_reactivity, app)
+				meteor_app = os.path.join(path_reactivity, folder)
 				for f in glob.glob(os.path.join(meteor_app,"meteor_*")):
 					os.remove(f)
 
-			elif not os.path.exists(os.path.join(path_reactivity, app, ".meteor")):
-				raise MeteorInstalationError("Meteor %s folder exists." % app)
+			elif not os.path.exists(os.path.join(path_reactivity, folder, ".meteor")):
+				raise MeteorInstalationError("Meteor %s folder exists." % folder)
 
 	except:
 		print """Error. You must install meteor and node before you can use this app. After that you must create two apps in apps/reactivity folder.
