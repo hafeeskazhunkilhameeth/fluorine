@@ -151,7 +151,7 @@ def cmd_update_version(site=None):
 	click.echo("fluorine apps were updated.")
 
 
-@click.command('remove-meteor-packages')
+@click.command('meteor-remove')
 @click.option('--app', default=None, help='The name of the fluorine app to reset packages.')
 @click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
 def cmd_remove_meteor_packages(app, site=None):
@@ -177,7 +177,7 @@ def cmd_remove_meteor_packages(app, site=None):
 
 
 
-@click.command('add-meteor-packages')
+@click.command('meteor-add')
 @click.option('--app', default=None, help='The name of the fluorine app to reset packages.')
 @click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
 def cmd_add_meteor_packages(app=None, site=None):
@@ -202,10 +202,11 @@ def cmd_add_meteor_packages(app=None, site=None):
 	add_meteor_packages(apps=app, file_add=file_add)
 
 
-@click.command('reset-meteor-packages')
-@click.option('--app', default=None, help='The name of the fluorine app to reset packages.')
+@click.command('meteor-reset')
+@click.argument('apps', nargs=-1)
+#@click.option('--app', default=None, help='The name of the fluorine app to reset packages.')
 @click.option('--site', default=None, help='The site to work with. If not provided it will use the currentsite')
-def cmd_reset_meteor_packages(app=None, site=None):
+def cmd_reset_meteor_packages(apps, site=None):
 	"""Reset meteor packages."""
 	from fluorine.utils.apps import is_valid_fluorine_app
 	from fluorine.commands_helpers.config import get_custom_packages_files
@@ -218,14 +219,17 @@ def cmd_reset_meteor_packages(app=None, site=None):
 
 	file_add, file_remove = get_custom_packages_files()
 
-	if app:
-		if not is_valid_fluorine_app(app):
-			click.echo("Sorry. App %s does not exist as meteor app." % app)
-			return
+	if not apps:
+		return meteor_echo("You must provide ate least one app")
+	#if app:
+	for app in apps:
 		for whatfor in whatfor_all:
+			if not is_valid_fluorine_app(app, whatfor=whatfor):
+				click.echo("%s: Sorry. App %s does not exist as meteor app." % (whatfor, app))
+				continue
 			_reset_packages(app, whatfor, file_add=file_add, file_remove=file_remove)
-	else:
-		_reset_packages_all(file_add=file_add, file_remove=file_remove)
+	#else:
+	#	_reset_packages_all(file_add=file_add, file_remove=file_remove)
 
 
 @click.command('create-meteor-apps')

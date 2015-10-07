@@ -28,7 +28,7 @@ def cmd_packages_from(curr_app, whatfor, package_file_name):
 
 	apps = get_active_apps(whatfor)
 	apps.remove(curr_app)
-	installed_packages = get_packages_list_version(whatfor, path_reactivity=react_path)
+	installed_packages = get_packages_list_version(whatfor, path_reactivity=react_path, only_installed=True)
 	packages_to_remove = set([])
 
 	for app in apps:
@@ -38,10 +38,14 @@ def cmd_packages_from(curr_app, whatfor, package_file_name):
 		#Not permited upgrade packages installed by other modules
 		for i_pckg in installed_packages:
 			for pckg in tmp_app_pckg:
-				pckg_name = pckg.split("@=")[0]
-				if re.match(pckg_name, i_pckg):
-					packages_to_remove.add(pckg)
-					break
+				#pckg_name = pckg.split("@=")[0]
+				re_packg = re.match("(.*)@=?\d+\.\d+\.\d+(?:.*)?", i_pckg, re.S)
+				if re_packg:
+					pckg_name = "%s@" % re_packg.group(1)
+				#if re.match(pckg, i_pckg):
+					if pckg.startswith(pckg_name):
+						packages_to_remove.add(pckg)
+						break
 
 	return set(installed_packages).difference(packages_to_remove)
 
@@ -80,6 +84,8 @@ def meteor_package(whatfor, packages, path_reactivity=None, action="add"):
 					if action == "remove":
 						meteor_packages.remove(i_pckg)
 						print "{}: {} removed.".format(whatfor, pckg)
+					else:
+						print "{}: {} was already added.".format(whatfor, pckg)
 					found = True
 					break
 			if not found and action == "add":
@@ -88,6 +94,8 @@ def meteor_package(whatfor, packages, path_reactivity=None, action="add"):
 					pckg = re_packg.group(1)
 				meteor_packages.append(pckg)
 				print "{}: {} added.".format(whatfor, pckg)
+			elif not found:
+				print "{}: {} was already removed.".format(whatfor, pckg)
 
 		save_file(meteor_package_path, "%s\n%s" % (meteor_package_message, "\n".join(meteor_packages)))
 
@@ -196,7 +204,8 @@ def get_packages_file(app, package_name):
 		return packages
 
 def get_default_packages_file_name(action, whatfor):
-	return "custom_packages_%s_%s" % (action, whatfor)
+	#return "custom_packages_%s_%s" % (action, whatfor)
+	return "packages_%s_%s" % (action, whatfor)
 
 def meteor_package_list(whatfor, packages=None, path_reactivity=None, action="add"):
 	meteor_package(whatfor, packages, path_reactivity=path_reactivity, action=action)
@@ -212,8 +221,10 @@ def meteor_reset_package(app, whatfor, file_add=None, file_remove=None, path_rea
 	packages_add = get_packages_file(app, file_add)
 	packages_remove = get_packages_file(app, file_remove)
 
-	meteor_package_list(whatfor, packages=packages_remove, path_reactivity=path_reactivity, action="remove")
-	meteor_package_list(whatfor, packages=packages_add, path_reactivity=path_reactivity, action="add")
+	#add the packages that were removed by this app
+	meteor_package_list(whatfor, packages=packages_remove, path_reactivity=path_reactivity, action="add")
+	#remove the packages that were added by this app
+	meteor_package_list(whatfor, packages=packages_add, path_reactivity=path_reactivity, action="remove")
 
 
 def meteor_add_package(app, whatfor, file_add=None, path_reactivity=None):

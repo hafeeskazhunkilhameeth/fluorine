@@ -8,6 +8,36 @@ from frappe.model.document import Document
 
 class FluorineSiteNames(Document):
 
+	def on_update(self, method=None):
+		from fluorine.utils import meteor_config
+		from fluorine.utils.meteor.utils import update_common_config
+
+		sites = meteor_config.get("sites")
+		if not sites:
+			meteor_config["sites"] = {}
+			sites = meteor_config.get("sites")
+		sites[self.fluorine_site_name] = site = {}
+
+		site["type"] = self.fluorine_site_type
+		site["desk_prefix"] = self.fluorine_desk_site_root_prefix
+		site["ddp_desk"] = self.fluorine_desk_ddp_conn_url
+		site["web_integration"] = self.fluorine_frappe_web_integration
+		if self.fluorine_frappe_web_integration:
+			site["web_prefix"] = self.fluorine_web_site_root_prefix
+			site["ddp_web"] = self.fluorine_web_ddp_conn_url
+		site["parent_site"] = self.fluorine_site_depends_of_name
+
+		site["addresses"] = addrs = []
+		for app in self.fluorine_table_site_addr:
+			addrs.append({"type": app.fluorine_site_ip_type, "root_url": app.fluorine_site_ip, "port": app.fluorine_site_port})
+
+		site["dependents"] = depend = []
+		for site in self.fluorine_table_site_dependents:
+			depend.append(site.fluorine_site_name)
+
+		update_common_config(meteor_config)
+
+
 	def validate(self, method=None):
 		from fluorine.utils import is_valid_site, update_file_map_site
 
@@ -17,7 +47,7 @@ class FluorineSiteNames(Document):
 
 		if self.fluorine_site_type == "Dedicated":
 
-			if not self.fluorine_ddp_conn_url or self.fluorine_ddp_conn_url.strip() == "":
+			if not self.fluorine_desk_ddp_conn_url or self.fluorine_desk_ddp_conn_url.strip() == "":
 				return frappe.throw("For Dedicated site you must provide a valid DDP ip/url for desk app.")
 			elif not self.fluorine_desk_site_root_prefix or self.fluorine_desk_site_root_prefix.strip() == "":
 				return frappe.throw("For Dedicated site you must provide a valid root url path prefix for desk app.")

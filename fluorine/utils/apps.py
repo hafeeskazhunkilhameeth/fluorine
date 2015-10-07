@@ -41,6 +41,7 @@ def get_active_apps(whatfor):
 
 	if active_apps.get(whatfor) != None:
 		return active_apps.get(whatfor)[:]
+
 	list_ignores = make_ignor_apps_list()
 
 	ign_apps = get_attr_from_json([whatfor, "remove", "apps"], list_ignores)
