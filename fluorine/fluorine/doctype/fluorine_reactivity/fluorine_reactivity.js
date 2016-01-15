@@ -3,6 +3,10 @@ frappe.provide("fluorine");
 
 cur_frm.cscript.onload = function(doc){
 	check_production_mode(doc);
+	/*var list_reports = jasper.getListOnly("testName", "User");
+	list_reports.done(function(){
+		jasper.getOrphanReport({jr_name: "Cherry Local", jr_format: "pdf", page: "testName", doctype_type:"Form", doctype:"User", docids:["Administrator"]});
+	});*/
 }
 
 

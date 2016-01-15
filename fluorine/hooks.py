@@ -19,5 +19,5 @@ app_name=["fluorine"]
 #app_include_js=["/assets/fluorine/js/fluorine_header_loader.js"]
 
 website_route_rules = [
-	{"from_route": "/desk", "to_route": "mdesk"},
+	#{"from_route": "/desk", "to_route": "mdesk"},
 ]
